@@ -41,8 +41,8 @@ export default function UpgradeClient({ currentStatus }: Props) {
           <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
             <Zap className="w-8 h-8 text-blue-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Roamer's Ledger Pro</h1>
-          <p className="text-gray-500 mt-1 text-sm">Unlock the full Roamer's Ledger experience</p>
+          <h1 className="text-2xl font-bold text-gray-900">Roamer&apos;s Ledger Pro</h1>
+          <p className="text-gray-500 mt-1 text-sm">Unlock the full Roamer&apos;s Ledger experience</p>
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-4">

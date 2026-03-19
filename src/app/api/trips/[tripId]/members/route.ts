@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/mongodb";
-import { Trip } from "@/lib/models/Plan";
+import { Trip } from "@/lib/models/Trip";
 import { User } from "@/lib/models/User";
 
 type Params = { params: Promise<{ tripId: string }> };

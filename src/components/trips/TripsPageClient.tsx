@@ -1,19 +1,37 @@
 "use client";
-import { useRouter } from "next/navigation";
 import TripListClient, { type Trip } from "./TripListClient";
 
-type Props = { initialTrips: Trip[]; googleMapsApiKey: string };
+type Props = {
+  initialTrips: Trip[];
+  googleMapsApiKey: string;
+  currentView: "active" | "all";
+  activeTripCount: number;
+  pageTitle?: string;
+  showCreate?: boolean;
+  collectionPath?: "/trips" | "/plans" | "/expense";
+  cardTarget?: "trip" | "plan" | "expense";
+};
 
-export default function TripsPageClient({ initialTrips, googleMapsApiKey }: Props) {
-  const router = useRouter();
+export default function TripsPageClient({
+  initialTrips,
+  googleMapsApiKey,
+  currentView,
+  activeTripCount,
+  pageTitle = "My Trips",
+  showCreate = true,
+  collectionPath = "/trips",
+  cardTarget = "trip",
+}: Props) {
   return (
     <TripListClient
       initialTrips={initialTrips}
-      user={{ name: "", image: "" }}
       googleMapsApiKey={googleMapsApiKey}
-      pageTitle="My Trips"
-      onCardClick={(id) => router.push(`/trips/${id}`)}
-      showCreate
+      pageTitle={pageTitle}
+      showCreate={showCreate}
+      currentView={currentView}
+      activeTripCount={activeTripCount}
+      collectionPath={collectionPath}
+      cardTarget={cardTarget}
     />
   );
 }

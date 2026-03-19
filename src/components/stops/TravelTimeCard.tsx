@@ -1,34 +1,52 @@
-"use client";
-import { Bus, Car, Footprints, Pencil } from "lucide-react";
-
-type TravelMode = "TRANSIT" | "DRIVE" | "WALK";
-
-type TravelTime = {
-  _id: string; fromStopId: string; toStopId: string;
-  mode: TravelMode; durationMinutes: number;
-};
+import Link from "next/link";
+import { Bus, Car, ChevronRight, Footprints } from "lucide-react";
+import type { TravelTimeEntry } from "@/components/map/plan-map/types";
 
 type Props = {
-  travelTime: TravelTime | null;
-  onEdit: () => void;
+  travelTime: TravelTimeEntry | null;
+  href: string;
 };
 
 const ModeIcon = { TRANSIT: Bus, DRIVE: Car, WALK: Footprints } as const;
 
-export default function TravelTimeCard({ travelTime, onEdit }: Props) {
+function formatDistance(distanceMeters?: number | null) {
+  if (!distanceMeters || distanceMeters <= 0) return "";
+  if (distanceMeters < 1000) return `${distanceMeters} m`;
+  return `${(distanceMeters / 1000).toFixed(distanceMeters >= 10000 ? 0 : 1)} km`;
+}
+
+export default function TravelTimeCard({ travelTime, href }: Props) {
   if (!travelTime) return null;
   const Icon = ModeIcon[travelTime.mode];
+  const fallbackSummary =
+    travelTime.mode === "TRANSIT"
+      ? `${travelTime.durationMinutes} min`
+      : [formatDistance(travelTime.distanceMeters), `${travelTime.durationMinutes} min`]
+          .filter(Boolean)
+          .join(" • ");
+  const summary = travelTime.summary || fallbackSummary;
+
   return (
-    <div className="flex items-center justify-center gap-2 my-1.5 px-4">
-      <div className="flex-1 h-px bg-border/40" />
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/60 text-muted-foreground border border-border/40">
-        <Icon className="w-3.5 h-3.5" />
-        <span className="text-xs font-semibold">{travelTime.durationMinutes} min</span>
-        <button onClick={onEdit} className="p-0.5 rounded hover:bg-muted transition-colors" title="Change travel mode">
-          <Pencil className="w-3 h-3" />
-        </button>
-      </div>
-      <div className="flex-1 h-px bg-border/40" />
+    <div className="py-0 px-4 my-1">
+      <Link
+        href={href}
+        className="block w-full rounded-xl bg-muted/50 hover:bg-muted text-left transition-colors px-3 py-2"
+      >
+        <div className="flex items-start gap-2">
+          <div className="mt-0.5 rounded-full bg-background/80 p-1.5 text-muted-foreground">
+            <Icon className="w-3.5 h-3.5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-foreground truncate">
+              {summary}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Total: {travelTime.durationMinutes} min
+            </p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground/70 flex-shrink-0 mt-1" />
+        </div>
+      </Link>
     </div>
   );
 }

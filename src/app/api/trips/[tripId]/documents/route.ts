@@ -1,53 +1,78 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/lib/mongodb";
-import { Trip } from "@/lib/models/Plan";
+import {
+  TripServiceError,
+  addTripDocumentForUser,
+  removeTripDocumentForUser,
+} from "@/features/trips/service";
 
 type Params = { params: Promise<{ tripId: string }> };
 
-function canAccess(trip: { userId: string; editors?: string[] }, userId: string) {
-  return trip.userId === userId || (trip.editors ?? []).includes(userId);
+function getStatusCode(error: TripServiceError) {
+  switch (error.code) {
+    case "FORBIDDEN":
+      return 403;
+    case "NOT_FOUND":
+      return 404;
+    case "VALIDATION_ERROR":
+    case "INVALID_STATE":
+      return 400;
+    default:
+      return 500;
+  }
 }
 
-// POST /api/trips/[tripId]/documents — add a document link
-export async function POST(req: NextRequest, { params }: Params) {
+export async function POST(request: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { tripId } = await params;
-  await connectDB();
+  const body = await request.json();
 
-  const trip = await Trip.findOne({ _id: tripId }).lean() as {
-    userId: string; editors?: string[]; status?: string
-  } | null;
-  if (!trip || !canAccess(trip, session.user.id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (trip.status === "archived") return NextResponse.json({ error: "Trip is archived" }, { status: 403 });
+  try {
+    const documents = await addTripDocumentForUser(tripId, session.user.id, {
+      name: body.name ?? "",
+      url: body.url ?? "",
+    });
 
-  const { name, url } = await req.json();
-  if (!name?.trim() || !url?.trim()) return NextResponse.json({ error: "Name and URL are required" }, { status: 400 });
-  if (!url.includes("google.com")) return NextResponse.json({ error: "URL must be a Google link" }, { status: 400 });
+    return NextResponse.json(documents, { status: 201 });
+  } catch (error) {
+    if (error instanceof TripServiceError) {
+      return NextResponse.json(
+        { error: error.code, message: error.message },
+        { status: getStatusCode(error) },
+      );
+    }
 
-  const updated = await Trip.findByIdAndUpdate(
-    tripId,
-    { $push: { documents: { name: name.trim(), url: url.trim() } } },
-    { new: true, select: "documents" }
-  ).lean() as { documents: Array<{ _id: unknown; name: string; url: string }> } | null;
-
-  const docs = (updated?.documents ?? []).map(d => ({ _id: String(d._id), name: d.name, url: d.url }));
-  return NextResponse.json(docs, { status: 201 });
+    return NextResponse.json({ error: "Failed to add document" }, { status: 500 });
+  }
 }
 
-// DELETE /api/trips/[tripId]/documents?docId=xxx — remove a document link
-export async function DELETE(req: NextRequest, { params }: Params) {
+export async function DELETE(request: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { tripId } = await params;
-  const docId = new URL(req.url).searchParams.get("docId");
-  if (!docId) return NextResponse.json({ error: "docId required" }, { status: 400 });
+  const documentId = new URL(request.url).searchParams.get("docId");
+  if (!documentId) {
+    return NextResponse.json({ error: "docId required" }, { status: 400 });
+  }
 
-  await connectDB();
-  const trip = await Trip.findOne({ _id: tripId }).lean() as { userId: string; editors?: string[] } | null;
-  if (!trip || !canAccess(trip, session.user.id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    await removeTripDocumentForUser(tripId, session.user.id, documentId);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof TripServiceError) {
+      return NextResponse.json(
+        { error: error.code, message: error.message },
+        { status: getStatusCode(error) },
+      );
+    }
 
-  await Trip.findByIdAndUpdate(tripId, { $pull: { documents: { _id: docId } } });
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ error: "Failed to remove document" }, { status: 500 });
+  }
 }

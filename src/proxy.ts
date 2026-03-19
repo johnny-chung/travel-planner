@@ -1,20 +1,32 @@
 import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
-export default auth((req) => {
-  const { pathname } = req.nextUrl;
-  const isLoggedIn = !!req.auth;
+export const protectedRoute = [
+  "/trips",
+  "/plans",
+  "/expense",
+  "/notifications",
+  "/profile",
+  "/upgrade",
+] as const;
 
-  const publicPaths = ["/login"];
-  if (publicPaths.includes(pathname)) return NextResponse.next();
+export async function proxy(
+  request: NextRequest & { auth: { user?: unknown } | null },
+) {
+  const { pathname } = request.nextUrl;
 
-  if (!isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  if (protectedRoute.some((route) => pathname.startsWith(route))) {
+    const session = await auth();
+    if (!session || new Date(session.expires).getTime() < Date.now()) {
+      request.nextUrl.pathname = `/login`;
+      return NextResponse.redirect(request.nextUrl);
+    }
   }
-
   return NextResponse.next();
-});
+}
+
+export default auth(proxy);
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next|assets|favicon.ico).*)"],
 };

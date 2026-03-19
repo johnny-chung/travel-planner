@@ -1,21 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/lib/mongodb";
-import { Trip } from "@/lib/models/Plan";
+import { TripServiceError, denyTripRequestForOwner } from "@/features/trips/service";
 
 type Params = { params: Promise<{ tripId: string }> };
 
-export async function POST(req: NextRequest, { params }: Params) {
+function getStatusCode(error: TripServiceError) {
+  switch (error.code) {
+    case "FORBIDDEN":
+      return 403;
+    case "NOT_FOUND":
+      return 404;
+    default:
+      return 500;
+  }
+}
+
+export async function POST(request: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { tripId } = await params;
-  const { userId } = await req.json();
-  await connectDB();
-  const trip = await Trip.findOne({ _id: tripId, userId: session.user.id });
-  if (!trip) return NextResponse.json({ error: "Not found or not owner" }, { status: 404 });
-  const pendingIdx = trip.pendingEditors.findIndex((e: { userId: string }) => e.userId === userId);
-  if (pendingIdx === -1) return NextResponse.json({ error: "Not in pending list" }, { status: 404 });
-  trip.pendingEditors.splice(pendingIdx, 1);
-  await trip.save();
-  return NextResponse.json({ success: true });
+  const { userId } = await request.json();
+
+  try {
+    await denyTripRequestForOwner(tripId, session.user.id, userId);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof TripServiceError) {
+      return NextResponse.json(
+        { error: error.code, message: error.message },
+        { status: getStatusCode(error) },
+      );
+    }
+
+    return NextResponse.json({ error: "Failed to deny request" }, { status: 500 });
+  }
 }

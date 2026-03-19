@@ -1,6 +1,6 @@
 import { signIn } from "@/auth";
+import BrandLogo from "@/components/branding/BrandLogo";
 import { Button } from "@/components/ui/button";
-import { MapPin } from "lucide-react";
 
 export default function LoginPage() {
   return (
@@ -8,10 +8,15 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo / Branding */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-sm mb-5 shadow-xl">
-            <MapPin className="w-10 h-10 text-white" />
+          <div className="flex justify-center mb-5">
+            <BrandLogo
+              size={80}
+              priority
+              showLabel={false}
+              iconClassName="h-20 w-20 rounded-3xl bg-white/20 p-2 shadow-xl backdrop-blur-sm"
+            />
           </div>
-          <h1 className="text-4xl font-bold text-white tracking-tight">Roamer's Ledger</h1>
+          <h1 className="text-4xl font-bold text-white tracking-tight">Roamer&apos;s Ledger</h1>
           <p className="text-blue-100 mt-2 text-base">Your personal travel planner</p>
         </div>
 
@@ -23,7 +28,7 @@ export default function LoginPage() {
           <form
             action={async () => {
               "use server";
-              await signIn("auth0", { redirectTo: "/plans" });
+              await signIn("auth0", { redirectTo: "/trips" });
             }}
           >
             <Button type="submit" className="w-full h-12 text-base rounded-xl font-semibold bg-blue-600 hover:bg-blue-700">

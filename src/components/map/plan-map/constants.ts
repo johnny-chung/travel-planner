@@ -1,0 +1,36 @@
+export const DATE_COLORS = [
+  "#e53e3e",
+  "#2b6cb0",
+  "#6b46c1",
+  "#0bc5ea",
+  "#38a169",
+  "#d53f8c",
+  "#48bb78",
+  "#ed8936",
+  "#667eea",
+  "#dd6b20",
+  "#9f7aea",
+  "#f687b3",
+  "#4299e1",
+  "#68d391",
+  "#fc8181",
+  "#f6ad55",
+  "#76e4f7",
+  "#b794f4",
+  "#fbb6ce",
+  "#90cdf4",
+  "#c6f6d5",
+  "#fefcbf",
+  "#bee3f8",
+  "#e9d8fd",
+  "#fed7d7",
+  "#feebc8",
+  "#c6f6d5",
+  "#e2e8f0",
+  "#f093fb",
+  "#d69e2e",
+] as const;
+
+export const DEFAULT_MAP_CENTER = { lat: 35.6762, lng: 139.6503 };
+
+export const MARKER_STYLE_ID = "waypoint-marker-style";

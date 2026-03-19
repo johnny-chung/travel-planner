@@ -6,7 +6,8 @@ import { useTheme } from "next-themes";
 import { MapPin, Map, ChevronRight, Heart, User, LogOut, Mail, Sun, Moon, Bell } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { signOut } from "next-auth/react";
+import { signOutAction } from "@/features/auth/actions";
+import BrandLogo from "@/components/branding/BrandLogo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,11 +31,10 @@ type Plan = {
 type Props = {
   user: { name: string; email: string; image: string };
   plans: Plan[];
-  googleMapsApiKey: string;
   membershipStatus: "basic" | "pro";
 };
 
-export default function HomeClient({ user, plans, googleMapsApiKey: _, membershipStatus }: Props) {
+export default function HomeClient({ user, plans, membershipStatus }: Props) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -52,12 +52,12 @@ export default function HomeClient({ user, plans, googleMapsApiKey: _, membershi
         <div className="max-w-4xl mx-auto">
           {/* Mobile header row */}
           <div className="flex items-center justify-between mb-4 md:hidden">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <span className="font-bold text-lg">Roamer's Ledger</span>
-            </div>
+            <BrandLogo
+              size={32}
+              priority
+              iconClassName="h-8 w-8 rounded-xl bg-white/20 p-1"
+              labelClassName="text-lg text-white"
+            />
 
             {/* Avatar triggers side sheet */}
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -90,7 +90,7 @@ export default function HomeClient({ user, plans, googleMapsApiKey: _, membershi
                           ? "bg-amber-400/30 text-amber-200"
                           : "bg-white/20 text-white/70"
                       }`}>
-                        {membershipStatus === "pro" ? "✦ PRO" : "BASIC"}
+                        {membershipStatus === "pro" ? "PRO" : "BASIC"}
                       </span>
                     </div>
                   </div>
@@ -135,13 +135,15 @@ export default function HomeClient({ user, plans, googleMapsApiKey: _, membershi
                 </div>
 
                 <div className="px-4 pb-8">
-                  <Button
-                    variant="outline"
-                    className="w-full h-12 rounded-2xl text-red-500 border-red-200 hover:bg-red-50 gap-2 font-semibold"
-                    onClick={() => signOut({ callbackUrl: "/login" })}
-                  >
-                    <LogOut className="w-4 h-4" /> Sign Out
-                  </Button>
+                  <form action={signOutAction}>
+                    <Button
+                      type="submit"
+                      variant="outline"
+                      className="w-full h-12 rounded-2xl text-red-500 border-red-200 hover:bg-red-50 gap-2 font-semibold"
+                    >
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </Button>
+                  </form>
                 </div>
               </SheetContent>
             </Sheet>

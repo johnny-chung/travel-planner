@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
-import { Plan } from "@/lib/models/Plan";
+import { Trip } from "@/lib/models/Trip";
 
 export async function GET() {
   const session = await auth();
@@ -12,7 +12,7 @@ export async function GET() {
 
   const dbUser = await User.findOne({ userId: session.user.id }).lean();
   const allUsers = await User.find({}).lean();
-  const allPlans = await Plan.find({}).lean();
+  const allTrips = await Trip.find({}).lean();
 
   return NextResponse.json({
     session_user_id: session.user.id,
@@ -21,7 +21,7 @@ export async function GET() {
     db_user: dbUser,
     all_users_count: allUsers.length,
     all_users: allUsers.map((u: Record<string, unknown>) => ({ userId: u.userId, auth0Sub: u.auth0Sub, email: u.email })),
-    all_plans_count: allPlans.length,
-    all_plans: allPlans.map((p: Record<string, unknown>) => ({ _id: String(p._id), userId: p.userId, name: p.name })),
+    all_trips_count: allTrips.length,
+    all_trips: allTrips.map((p: Record<string, unknown>) => ({ _id: String(p._id), userId: p.userId, name: p.name })),
   });
 }

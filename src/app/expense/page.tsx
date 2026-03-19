@@ -1,27 +1,34 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
-import { connectDB } from "@/lib/mongodb";
-import { Trip } from "@/lib/models/Plan";
-import ExpensePageClient from "@/components/trips/ExpensePageClient";
+import { requireUserId } from "@/features/auth/session";
+import { getTripSummariesForUser } from "@/features/trips/service";
+import TripsPageClient from "@/components/trips/TripsPageClient";
 
-export default async function ExpensePage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
-  await connectDB();
-  const [ownedRaw, editorRaw] = await Promise.all([
-    Trip.find({ userId: session.user.id }).sort({ createdAt: -1 }).lean(),
-    Trip.find({ editors: session.user.id }).sort({ createdAt: -1 }).lean(),
+type Props = {
+  searchParams: Promise<{ view?: string }>;
+};
+
+export default async function ExpensePage({ searchParams }: Props) {
+  const userId = await requireUserId();
+  const [{ view }, allTrips] = await Promise.all([
+    searchParams,
+    getTripSummariesForUser(userId),
   ]);
-  const planMap = new Map();
-  for (const p of ownedRaw) planMap.set(String(p._id), { ...p, role: "owner" });
-  for (const p of editorRaw) if (!planMap.has(String(p._id))) planMap.set(String(p._id), { ...p, role: "editor" });
-  const trips = [...planMap.values()].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const serialized = trips.map(p => ({
-    _id: String(p._id), name: p.name as string, description: (p.description ?? "") as string,
-    centerName: (p.centerName ?? "") as string, centerLat: (p.centerLat ?? null) as number | null,
-    centerLng: (p.centerLng ?? null) as number | null,
-    createdAt: p.createdAt ? new Date(p.createdAt as Date).toISOString() : "",
-    role: p.role as "owner" | "editor" | "pending", shareCode: (p.shareCode ?? "") as string,
-  }));
-  return <ExpensePageClient initialTrips={serialized} googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""} />;
+  const currentView = view === "all" ? "all" : "active";
+  const trips =
+    currentView === "all"
+      ? allTrips
+      : allTrips.filter((trip) => trip.status !== "archived");
+  const activeTripCount = allTrips.filter((trip) => trip.status !== "archived").length;
+
+  return (
+    <TripsPageClient
+      initialTrips={trips}
+      currentView={currentView}
+      activeTripCount={activeTripCount}
+      googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""}
+      pageTitle="Expenses"
+      showCreate={false}
+      collectionPath="/expense"
+      cardTarget="expense"
+    />
+  );
 }

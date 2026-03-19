@@ -47,9 +47,9 @@ export default function DonateClient({ success, canceled }: Props) {
         <div className="w-16 h-16 rounded-3xl bg-white/20 flex items-center justify-center mx-auto mb-4">
           <Heart className="w-8 h-8 text-white fill-white" />
         </div>
-        <h1 className="text-2xl font-bold">Support Roamer's Ledger</h1>
+        <h1 className="text-2xl font-bold">Support Roamer&apos;s Ledger</h1>
         <p className="text-blue-100 text-sm mt-2 max-w-xs mx-auto">
-          Your contribution helps keep Roamer's Ledger free and growing. Every bit counts!
+          Your contribution helps keep Roamer&apos;s Ledger free and growing. Every bit counts!
         </p>
       </div>
 
@@ -60,7 +60,7 @@ export default function DonateClient({ success, canceled }: Props) {
             <CheckCircle2 className="w-14 h-14 text-green-500 mb-4" />
             <h2 className="text-xl font-bold text-foreground">Thank you so much! ❤️</h2>
             <p className="text-muted-foreground text-sm mt-2 max-w-xs">
-              Your generosity means the world to us and helps us keep improving Roamer's Ledger.
+              Your generosity means the world to us and helps us keep improving Roamer&apos;s Ledger.
             </p>
             <Link href="/" className="mt-6">
               <Button className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white h-11 px-8 font-semibold">Back to Home</Button>

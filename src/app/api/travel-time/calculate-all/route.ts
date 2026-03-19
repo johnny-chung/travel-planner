@@ -6,7 +6,7 @@ import { ApiUsage } from "@/lib/models/ApiUsage";
 import { UserMonthlyUsage } from "@/lib/models/UserMonthlyUsage";
 import { User } from "@/lib/models/User";
 import { Stop } from "@/lib/models/Stop";
-import { Trip } from "@/lib/models/Plan";
+import { Trip } from "@/lib/models/Trip";
 import { calculateWithFallback, type TravelMode } from "@/lib/routes-api";
 
 function getYearMonth(): string {
@@ -100,13 +100,20 @@ export async function POST(req: NextRequest) {
     );
     if (!result) continue;
 
-    const { durationMinutes, mode: actualMode } = result;
+    const { durationMinutes, distanceMeters, summary, details, mode: actualMode } = result;
 
-    await TravelTime.findOneAndUpdate(
-      { fromStopId, toStopId, mode: actualMode },
-      { planId, fromStopId, toStopId, mode: actualMode, durationMinutes, calculatedAt: new Date() },
-      { upsert: true, new: true }
-    );
+    await TravelTime.deleteMany({ fromStopId, toStopId });
+    await TravelTime.create({
+      planId,
+      fromStopId,
+      toStopId,
+      mode: actualMode,
+      durationMinutes,
+      distanceMeters,
+      summary,
+      details,
+      calculatedAt: new Date(),
+    });
 
     calculatedCount++;
 
@@ -128,6 +135,21 @@ export async function POST(req: NextRequest) {
   }
 
   // Return all travel times for the plan
-  const allTravelTimes = await TravelTime.find({ planId }).lean();
-  return NextResponse.json(allTravelTimes);
+  const allTravelTimes = await TravelTime.find({ planId }).sort({ calculatedAt: -1 }).lean() as Array<Record<string, unknown>>;
+  const uniqueTimes = new Map<string, Record<string, unknown>>();
+  for (const time of allTravelTimes) {
+    const key = `${String(time.fromStopId)}:${String(time.toStopId)}`;
+    if (!uniqueTimes.has(key)) {
+      uniqueTimes.set(key, time);
+    }
+  }
+  return NextResponse.json(
+    [...uniqueTimes.values()].map((travelTime) => ({
+      ...travelTime,
+      _id: String(travelTime._id ?? ""),
+      planId: String(travelTime.planId ?? ""),
+      fromStopId: String(travelTime.fromStopId ?? ""),
+      toStopId: String(travelTime.toStopId ?? ""),
+    })),
+  );
 }

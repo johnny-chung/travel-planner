@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import "next-auth";
 
 declare module "next-auth" {
   // Extends the User stored in the database adapter

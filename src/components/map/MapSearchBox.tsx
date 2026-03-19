@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Search, X, MapPin, Loader2 } from "lucide-react";
-import type { PendingLocation } from "@/components/map/PlanMapClient";
+import type { PendingLocation } from "@/components/map/plan-map/types";
 
 type Prediction = {
   mainText: string;

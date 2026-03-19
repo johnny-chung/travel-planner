@@ -97,7 +97,7 @@ export default function ExpenseDetailClient({ tripId, tripName, currentUserId, m
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}>
         <div className="max-w-2xl mx-auto">
           <button onClick={() => router.push("/expense")} className="flex items-center gap-1 text-blue-200 hover:text-white text-sm mb-3 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> All Trips
+            <ArrowLeft className="w-4 h-4" /> All Expenses
           </button>
           <h1 className="text-xl font-bold">{tripName}</h1>
           <p className="text-blue-200 text-sm mt-0.5">Expense Tracker</p>

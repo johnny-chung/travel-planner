@@ -55,13 +55,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "NO_ROUTE", message: "No route found between these stops" }, { status: 422 });
   }
 
-  const { durationMinutes, mode: actualMode } = result;
+  const { durationMinutes, distanceMeters, summary, details, mode: actualMode } = result;
 
-  const travelTime = await TravelTime.findOneAndUpdate(
-    { fromStopId, toStopId, mode: actualMode },
-    { planId, fromStopId, toStopId, mode: actualMode, durationMinutes, calculatedAt: new Date() },
-    { upsert: true, new: true }
-  ).lean();
+  await TravelTime.deleteMany({ fromStopId, toStopId });
+
+  const travelTime = await TravelTime.create({
+    planId,
+    fromStopId,
+    toStopId,
+    mode: actualMode,
+    durationMinutes,
+    distanceMeters,
+    summary,
+    details,
+    calculatedAt: new Date(),
+  });
 
   await ApiUsage.findOneAndUpdate(
     { yearMonth, apiType: "routes" },
@@ -75,5 +83,11 @@ export async function POST(req: NextRequest) {
     { upsert: true }
   );
 
-  return NextResponse.json(travelTime);
+  return NextResponse.json({
+    ...travelTime.toObject(),
+    _id: String(travelTime._id),
+    planId: String(travelTime.planId),
+    fromStopId: String(travelTime.fromStopId),
+    toStopId: String(travelTime.toStopId),
+  });
 }

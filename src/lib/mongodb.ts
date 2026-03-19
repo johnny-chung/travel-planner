@@ -20,7 +20,6 @@ function buildConnectionUri(baseUri: string, dbName: string): string {
 const CONNECTION_URI = buildConnectionUri(MONGODB_URI, MONGODB_DB);
 
 declare global {
-  // eslint-disable-next-line no-var
   var mongooseCache: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null };
 }
 

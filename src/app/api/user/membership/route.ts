@@ -1,13 +1,13 @@
-import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
-import { User } from "@/lib/models/User";
+import { auth } from "@/auth";
+import { getNavigationSummary } from "@/features/navigation/service";
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  await connectDB();
-  const user = await User.findOne({ userId: session.user.id }).select("membershipStatus").lean();
-  const membershipStatus = (user as { membershipStatus?: string } | null)?.membershipStatus ?? "basic";
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { membershipStatus } = await getNavigationSummary(session.user.id);
   return NextResponse.json({ membershipStatus });
 }

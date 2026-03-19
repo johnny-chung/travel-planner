@@ -2,7 +2,7 @@ import mongoose, { Schema, model } from "mongoose";
 
 const StopSchema = new Schema(
   {
-    planId: { type: Schema.Types.ObjectId, ref: "Plan", required: true, index: true },
+    planId: { type: Schema.Types.ObjectId, ref: "Trip", required: true, index: true },
     userId: { type: String, required: true },
     name: { type: String, required: true },
     address: { type: String, default: "" },
@@ -15,6 +15,16 @@ const StopSchema = new Schema(
     website: { type: String, default: "" },
     thumbnail: { type: String, default: "" },
     linkedDocIds: { type: [String], default: [] },
+    sourceType: {
+      type: String,
+      enum: ["manual", "flight", "custom_transport", "stay"],
+      default: "manual",
+      index: true,
+    },
+    sourceId: { type: String, default: "", index: true },
+    sourceLabel: { type: String, default: "" },
+    displayTime: { type: Boolean, default: true },
+    editable: { type: Boolean, default: true },
     arrivals: {
       type: [{ date: { type: String, required: true }, time: { type: String, required: true } }],
       required: true,

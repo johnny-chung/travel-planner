@@ -1,20 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/lib/mongodb";
-import { Trip } from "@/lib/models/Plan";
+import { TripServiceError, removeTripMemberForUser } from "@/features/trips/service";
 
 type Params = { params: Promise<{ tripId: string; memberId: string }> };
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
+function getStatusCode(error: TripServiceError) {
+  switch (error.code) {
+    case "FORBIDDEN":
+      return 403;
+    case "NOT_FOUND":
+      return 404;
+    default:
+      return 500;
+  }
+}
+
+export async function DELETE(_request: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { tripId, memberId } = await params;
-  await connectDB();
-  const trip = await Trip.findOne({ _id: tripId });
-  if (!trip) return NextResponse.json({ error: "Trip not found" }, { status: 404 });
-  if (trip.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  trip.editors = (trip.editors ?? []).filter((id: string) => id !== memberId);
-  trip.pendingEditors = (trip.pendingEditors ?? []).filter((e: { userId: string }) => e.userId !== memberId);
-  await trip.save();
-  return NextResponse.json({ success: true });
+
+  try {
+    await removeTripMemberForUser(tripId, session.user.id, memberId);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof TripServiceError) {
+      return NextResponse.json(
+        { error: error.code, message: error.message },
+        { status: getStatusCode(error) },
+      );
+    }
+
+    return NextResponse.json({ error: "Failed to remove member" }, { status: 500 });
+  }
 }

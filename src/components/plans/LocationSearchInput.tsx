@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import { MapPin, X, Loader2 } from "lucide-react";
+import { loadGoogleLibrary } from "@/lib/google-maps-loader";
 
 type LocationResult = {
   name: string;
@@ -34,11 +34,7 @@ export default function LocationSearchInput({ value, onChange, onSelect, apiKey 
     if (!apiKey) return;
     const init = async () => {
       try {
-        // Only call setOptions if the Maps bootstrap hasn't run yet
-        if (!window.google?.maps?.importLibrary) {
-          setOptions({ key: apiKey, v: "weekly" });
-        }
-        await importLibrary("places");
+        await loadGoogleLibrary<google.maps.PlacesLibrary>(apiKey, "places");
         setReady(true);
       } catch { /* Maps API unavailable */ }
     };

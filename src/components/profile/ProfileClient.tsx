@@ -1,10 +1,11 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Mail, Phone, User, LogOut, ArrowLeft, Crown, Navigation } from "lucide-react";
+import { signOutAction } from "@/features/auth/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { signOut } from "next-auth/react";
 import Link from "next/link";
 
 type Props = {
@@ -115,13 +116,15 @@ export default function ProfileClient({ user }: Props) {
         </div>
 
         <div className="mt-4">
-          <Button
-            variant="outline"
-            className="w-full h-12 rounded-2xl text-red-500 border-red-200 hover:bg-red-50 gap-2 font-semibold"
-            onClick={() => signOut({ callbackUrl: "/login" })}
-          >
-            <LogOut className="w-4 h-4" /> Sign Out
-          </Button>
+          <form action={signOutAction}>
+            <Button
+              type="submit"
+              variant="outline"
+              className="w-full h-12 rounded-2xl text-red-500 border-red-200 hover:bg-red-50 gap-2 font-semibold"
+            >
+              <LogOut className="w-4 h-4" /> Sign Out
+            </Button>
+          </form>
         </div>
       </div>
 
@@ -129,7 +132,7 @@ export default function ProfileClient({ user }: Props) {
   );
 }
 
-function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function InfoRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-100 flex items-center gap-3">
       <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
@@ -142,5 +145,3 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
     </div>
   );
 }
-
-

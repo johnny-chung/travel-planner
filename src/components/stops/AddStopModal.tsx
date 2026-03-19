@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { MapPin, X, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { createStopAction, type StopFormActionState } from "@/features/stops/actions";
+import SubmitButton from "@/components/shared/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import TimePicker from "@/components/ui/TimePicker";
-import type { TripDoc } from "@/components/map/PlanMapClient";
+import type { TripDoc } from "@/components/map/plan-map/types";
 
 type Location = {
   name: string;
@@ -22,19 +24,28 @@ type Location = {
 };
 
 type Props = {
+  tripId: string;
   location: Location;
   tripDocs?: TripDoc[];
-  onSave: (data: { date: string; time: string; notes: string; linkedDocIds: string[] }) => void;
+  returnTo: string;
   onCancel: () => void;
 };
 
-export default function AddStopModal({ location, tripDocs = [], onSave, onCancel }: Props) {
+const initialState: StopFormActionState = {};
+
+export default function AddStopModal({
+  tripId,
+  location,
+  tripDocs = [],
+  returnTo,
+  onCancel,
+}: Props) {
+  const [state, formAction] = useActionState(createStopAction, initialState);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [notes, setNotes] = useState("");
   const [linkedDocIds, setLinkedDocIds] = useState<string[]>([]);
   const [docsOpen, setDocsOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   const isValid = date && time;
 
@@ -42,18 +53,32 @@ export default function AddStopModal({ location, tripDocs = [], onSave, onCancel
     setLinkedDocIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }
 
-  async function handleSave() {
-    if (!isValid) return;
-    setSaving(true);
-    await onSave({ date, time, notes, linkedDocIds });
-    setSaving(false);
-  }
-
   return (
-    <div className="absolute inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center pb-[calc(env(safe-area-inset-bottom)+4.5rem)] md:pb-0">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
 
-      <div className="relative w-full max-w-lg bg-white rounded-t-3xl shadow-2xl z-10 animate-in slide-in-from-bottom duration-300 max-h-[90vh] flex flex-col">
+      <form
+        action={formAction}
+        className="relative z-10 flex max-h-[calc(100vh-6.5rem-env(safe-area-inset-bottom))] w-full max-w-lg flex-col rounded-t-3xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-300 md:max-h-[90vh]"
+      >
+        <input type="hidden" name="tripId" value={tripId} />
+        <input type="hidden" name="returnTo" value={returnTo} />
+        <input type="hidden" name="name" value={location.name} />
+        <input type="hidden" name="address" value={location.address} />
+        <input type="hidden" name="lat" value={location.lat} />
+        <input type="hidden" name="lng" value={location.lng} />
+        <input type="hidden" name="placeId" value={location.placeId} />
+        <input type="hidden" name="phone" value={location.phone} />
+        <input type="hidden" name="website" value={location.website} />
+        <input type="hidden" name="thumbnail" value={location.thumbnail} />
+        {location.openingHours.map((openingHour, index) => (
+          <input
+            key={`${openingHour}-${index}`}
+            type="hidden"
+            name="openingHours"
+            value={openingHour}
+          />
+        ))}
         <div className="flex-shrink-0 p-6 pb-4">
           <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
           <div className="flex items-start justify-between">
@@ -66,7 +91,7 @@ export default function AddStopModal({ location, tripDocs = [], onSave, onCancel
                 <p className="text-gray-400 text-sm truncate mt-0.5">{location.address}</p>
               </div>
             </div>
-            <button onClick={onCancel} className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400 ml-2 flex-shrink-0">
+            <button type="button" onClick={onCancel} className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400 ml-2 flex-shrink-0">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -78,19 +103,27 @@ export default function AddStopModal({ location, tripDocs = [], onSave, onCancel
               <Label className="text-sm font-medium">
                 Date <span className="text-red-500">*</span>
               </Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl h-11" />
+              <Input
+                type="date"
+                name="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="rounded-xl h-11"
+              />
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium">
                 Time <span className="text-red-500">*</span>
               </Label>
               <TimePicker value={time} onChange={setTime} />
+              <input type="hidden" name="time" value={time} />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Notes</Label>
             <Textarea
+              name="notes"
               placeholder="Add notes about this stop..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -129,29 +162,35 @@ export default function AddStopModal({ location, tripDocs = [], onSave, onCancel
                           {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </div>
                         <FileText className={`w-4 h-4 shrink-0 ${checked ? "text-blue-500" : "text-gray-400"}`} />
-                        <span className={`text-sm font-medium truncate ${checked ? "text-blue-700" : "text-gray-700"}`}>{doc.name}</span>
-                      </button>
-                    );
+                          <span className={`text-sm font-medium truncate ${checked ? "text-blue-700" : "text-gray-700"}`}>{doc.name}</span>
+                        </button>
+                      );
                   })}
                 </div>
               )}
             </div>
           )}
+          {linkedDocIds.map((docId) => (
+            <input key={docId} type="hidden" name="linkedDocIds" value={docId} />
+          ))}
+          {state.error ? (
+            <p className="text-sm text-red-500">{state.error}</p>
+          ) : null}
         </div>
 
-        <div className="flex-shrink-0 flex gap-3 px-6 pt-3 pb-8 border-t border-gray-100">
+        <div className="flex-shrink-0 flex gap-3 border-t border-gray-100 px-6 pt-3 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] md:pb-8">
           <Button variant="outline" className="flex-1 rounded-xl h-12" onClick={onCancel}>
             Cancel
           </Button>
-          <Button
+          <SubmitButton
             className="flex-1 rounded-xl h-12 bg-blue-600 hover:bg-blue-700 font-semibold"
-            onClick={handleSave}
-            disabled={!isValid || saving}
+            disabled={!isValid}
+            pendingLabel="Saving..."
           >
-            {saving ? "Saving..." : "Save Stop"}
-          </Button>
+            Save Stop
+          </SubmitButton>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
