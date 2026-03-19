@@ -27,6 +27,7 @@ export default async function TripDetailPage({ params }: Props) {
       totalExpense={detail.totalExpense}
       currentUserId={userId}
       googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""}
+      backHref="/trips"
     />
   );
 }

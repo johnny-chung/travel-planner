@@ -1,8 +1,14 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import ProfileClient from "@/components/profile/ProfileClient";
+import { getRouteCallLimitForMembership } from "@/features/settings/service";
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
+import { UserMonthlyUsage } from "@/lib/models/UserMonthlyUsage";
+
+function getYearMonth() {
+  return new Date().toISOString().slice(0, 7);
+}
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -11,8 +17,15 @@ export default async function ProfilePage() {
   await connectDB();
   const user = await User.findOne({ userId: session.user.id }).lean() as {
     membershipStatus?: string;
-    navigationUsage?: Date[];
   } | null;
+  const membershipStatus = user?.membershipStatus === "pro" ? "pro" : "basic";
+  const [usage, routeLimit] = await Promise.all([
+    UserMonthlyUsage.findOne({
+      userId: session.user.id,
+      yearMonth: getYearMonth(),
+    }).lean() as Promise<{ commuteCount?: number } | null>,
+    getRouteCallLimitForMembership(membershipStatus),
+  ]);
 
   return (
     <ProfileClient
@@ -22,8 +35,9 @@ export default async function ProfilePage() {
         email: session.user.email ?? "",
         image: session.user.image ?? "",
         phone: session.user.phone ?? "",
-        membershipStatus: user?.membershipStatus ?? "basic",
-        navigationUsage: (user?.navigationUsage ?? []).map((d) => new Date(d).toISOString()),
+        membershipStatus,
+        routeUsageCount: usage?.commuteCount ?? 0,
+        routeUsageLimit: membershipStatus === "pro" ? null : routeLimit,
       }}
     />
   );

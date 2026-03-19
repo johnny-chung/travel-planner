@@ -20,6 +20,8 @@ export type PendingLocation = {
   phone: string;
   website: string;
   thumbnail: string;
+  rating?: number | null;
+  userRatingCount?: number | null;
 };
 
 export type TravelTimeEntry = {
@@ -62,6 +64,7 @@ export type PlanMapProps = {
   searchState: PlannerSearchState;
   isArchived?: boolean;
   tripDocs?: TripDoc[];
+  accessMode?: "user" | "guest";
 };
 
 export type PlannerTimelineStopItem = {

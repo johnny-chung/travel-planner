@@ -29,6 +29,7 @@ export default async function ExpensePage({ searchParams }: Props) {
       showCreate={false}
       collectionPath="/expense"
       cardTarget="expense"
+      decorationImage="/material/Notebook.png"
     />
   );
 }

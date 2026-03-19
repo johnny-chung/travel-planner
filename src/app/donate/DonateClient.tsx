@@ -40,15 +40,18 @@ export default function DonateClient({ success, canceled }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-600 to-blue-800 flex flex-col">
       {/* Header */}
-      <div className="px-4 pt-12 pb-8 text-white text-center">
-        <Link href="/" className="absolute top-5 left-4 p-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors">
+      <div className="px-4 pt-24 pb-8 text-white text-center">
+        <Link href="/" className="absolute top-24 left-4 p-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors">
           <ArrowLeft className="w-5 h-5 text-white" />
         </Link>
         <div className="w-16 h-16 rounded-3xl bg-white/20 flex items-center justify-center mx-auto mb-4">
-          <Heart className="w-8 h-8 text-white fill-white" />
+          <Heart className="w-8 h-8 text-white fill-red-600" />
         </div>
         <h1 className="text-2xl font-bold">Support Roamer&apos;s Ledger</h1>
-        <p className="text-blue-100 text-sm mt-2 max-w-xs mx-auto">
+        <p className="text-blue-100  my-2 text-sm">
+            This is jsut a personal project and API call ain&apos;t free.            
+          </p>
+        <p className="text-blue-200 text-sm mt-2 max-w-xs mx-auto">
           Your contribution helps keep Roamer&apos;s Ledger free and growing. Every bit counts!
         </p>
       </div>

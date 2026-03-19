@@ -28,6 +28,12 @@ import {
   updateStopAction,
   deleteStopAction,
 } from "@/features/stops/actions";
+import {
+  addGuestStopArrivalAction,
+  deleteGuestStopAction,
+  removeGuestStopArrivalAction,
+  updateGuestStopAction,
+} from "@/features/guest/actions";
 import SubmitButton from "@/components/shared/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +55,8 @@ type Props = {
   prevHref?: string | null;
   nextHref?: string | null;
   deleteReturnTo: string;
+  accessMode?: "user" | "guest";
+  canVisitAgain?: boolean;
 };
 
 const initialState: StopFormActionState = {};
@@ -64,15 +72,21 @@ export default function StopDetailModal({
   prevHref,
   nextHref,
   deleteReturnTo,
+  accessMode = "user",
+  canVisitAgain = true,
 }: Props) {
   const router = useRouter();
   const canEdit = stop.editable !== false;
+  const updateAction =
+    accessMode === "guest" ? updateGuestStopAction : updateStopAction;
+  const addArrivalAction =
+    accessMode === "guest" ? addGuestStopArrivalAction : addStopArrivalAction;
   const [updateState, updateFormAction] = useActionState(
-    updateStopAction,
+    updateAction,
     initialState,
   );
   const [addArrivalState, addArrivalFormAction] = useActionState(
-    addStopArrivalAction,
+    addArrivalAction,
     initialState,
   );
   const [date, setDate] = useState(stop.date);
@@ -108,6 +122,9 @@ export default function StopDetailModal({
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.address)}&query_place_id=${stop.placeId}`;
 
   const formattedDate = (() => {
+    if (!stop.date) {
+      return "Not scheduled yet";
+    }
     try {
       return format(new Date(`${stop.date}T00:00:00`), "EEE, MMM d, yyyy");
     } catch {
@@ -125,7 +142,7 @@ export default function StopDetailModal({
     }
 
     if (currentArrivals.length <= 1) {
-      return [{ date, time }];
+      return date ? [{ date, time }] : [];
     }
 
     return currentArrivals.map((arrival, index) =>
@@ -133,7 +150,7 @@ export default function StopDetailModal({
     );
   }, [date, isEdit, stop._arrivalIndex, stop.arrivals, time]);
 
-  const showTime = stop.displayTime !== false;
+  const showTime = stop.displayTime !== false && !!stop.time;
 
   return (
     <div className="absolute inset-0 z-50 flex items-end justify-center">
@@ -209,15 +226,27 @@ export default function StopDetailModal({
                   <Input
                     type="date"
                     value={date}
-                    onChange={(event) => setDate(event.target.value)}
+                    onChange={(event) => {
+                      const nextDate = event.target.value;
+                      setDate(nextDate);
+                      if (!nextDate) {
+                        setTime("");
+                      }
+                    }}
                     className="rounded-xl h-10 text-sm"
                   />
+                  <p className="text-[11px] text-gray-400">
+                    Leave blank to keep this stop in the unscheduled list.
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-gray-500 font-medium">
                     Time
                   </Label>
                   <TimePicker value={time} onChange={setTime} />
+                  <p className="text-[11px] text-gray-400">
+                    Optional when a date is selected.
+                  </p>
                 </div>
               </div>
               <div className="space-y-1.5">
@@ -354,7 +383,13 @@ export default function StopDetailModal({
                             </div>
                           </div>
                             {canEdit ? (
-                            <form action={removeStopArrivalAction}>
+                            <form
+                              action={
+                                accessMode === "guest"
+                                  ? removeGuestStopArrivalAction
+                                  : removeStopArrivalAction
+                              }
+                            >
                               <input type="hidden" name="tripId" value={tripId} />
                               <input type="hidden" name="stopId" value={stop._id} />
                               <input type="hidden" name="arrivalIndex" value={index} />
@@ -374,7 +409,7 @@ export default function StopDetailModal({
                   ) : null}
                 </div>
               ) : (
-                <div className="bg-blue-50 rounded-2xl p-4 flex items-center gap-4">
+                <div className="rounded-2xl bg-blue-50 p-4 flex items-center gap-4">
                   <div className="flex items-center gap-2 text-blue-700">
                     <Calendar className="w-4 h-4" />
                     <span className="text-sm font-semibold">{formattedDate}</span>
@@ -553,7 +588,14 @@ export default function StopDetailModal({
                   >
                     No, keep it
                   </Button>
-                  <form action={deleteStopAction} className="flex-1">
+                  <form
+                    action={
+                      accessMode === "guest"
+                        ? deleteGuestStopAction
+                        : deleteStopAction
+                    }
+                    className="flex-1"
+                  >
                     <input type="hidden" name="tripId" value={tripId} />
                     <input type="hidden" name="stopId" value={stop._id} />
                     <input type="hidden" name="returnTo" value={deleteReturnTo} />
@@ -580,7 +622,6 @@ export default function StopDetailModal({
                   <SubmitButton
                     form="stop-update-form"
                     className="flex-1 rounded-xl h-11 bg-blue-600 hover:bg-blue-700 font-semibold"
-                    disabled={!date || !time}
                     pendingLabel="Saving..."
                   >
                     Save Changes
@@ -622,17 +663,19 @@ export default function StopDetailModal({
                       >
                         <Edit2 className="w-4 h-4" /> Edit
                       </Button>
-                      <Button
-                        variant="outline"
-                        className="flex-1 rounded-xl h-10 gap-2 text-green-600 border-green-200 hover:bg-green-50"
-                        onClick={() => {
-                          setNewArrivalDate("");
-                          setNewArrivalTime("");
-                          setShowVisitAgain(true);
-                        }}
-                      >
-                        <RefreshCw className="w-4 h-4" /> Visit Again
-                      </Button>
+                      {canVisitAgain ? (
+                        <Button
+                          variant="outline"
+                          className="flex-1 rounded-xl h-10 gap-2 text-green-600 border-green-200 hover:bg-green-50"
+                          onClick={() => {
+                            setNewArrivalDate("");
+                            setNewArrivalTime("");
+                            setShowVisitAgain(true);
+                          }}
+                        >
+                          <RefreshCw className="w-4 h-4" /> Visit Again
+                        </Button>
+                      ) : null}
                     </>
                   ) : null}
                 </div>

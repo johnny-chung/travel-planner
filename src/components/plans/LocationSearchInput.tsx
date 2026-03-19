@@ -8,6 +8,8 @@ type LocationResult = {
   name: string;
   lat: number;
   lng: number;
+  placeId: string;
+  thumbnail: string;
 };
 
 type Prediction = {
@@ -78,12 +80,14 @@ export default function LocationSearchInput({ value, onChange, onSelect, apiKey 
     setOpen(false);
     try {
       const place = prediction.placePrediction.toPlace();
-      await place.fetchFields({ fields: ["formattedAddress", "location"] });
+      await place.fetchFields({ fields: ["formattedAddress", "location", "photos"] });
       if (!place.location) return;
       onSelect({
         name: place.formattedAddress ?? prediction.mainText,
         lat: place.location.lat(),
         lng: place.location.lng(),
+        placeId: place.id ?? "",
+        thumbnail: place.photos?.[0]?.getURI({ maxWidth: 400, maxHeight: 400 }) ?? "",
       });
     } catch { /* fetch failed */ }
   }

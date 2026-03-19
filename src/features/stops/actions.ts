@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUserId } from "@/features/auth/session";
 import {
+  applyStopSchedulesForUser,
   StopServiceError,
   addArrivalToStopForUser,
   createStopForUser,
   deleteStopForUser,
   removeArrivalFromStopForUser,
+  reorderStopsForUser,
   updateStopForUser,
 } from "@/features/stops/service";
 
@@ -41,6 +43,51 @@ function parseStringList(formData: FormData, key: string) {
     .filter(Boolean);
 }
 
+function parseArrivals(formData: FormData) {
+  const date = String(formData.get("date") ?? "").trim();
+  const time = String(formData.get("time") ?? "").trim();
+
+  if (!date) {
+    return [];
+  }
+
+  return [{ date, time }];
+}
+
+function parseSchedulePayload(formData: FormData) {
+  const raw = String(formData.get("payload") ?? "");
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Array<{
+      stopId?: unknown;
+      date?: unknown;
+      time?: unknown;
+      sequence?: unknown;
+    }>;
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((entry) => ({
+        stopId: typeof entry.stopId === "string" ? entry.stopId : "",
+        date: typeof entry.date === "string" ? entry.date : "",
+        time: typeof entry.time === "string" ? entry.time : "",
+        sequence:
+          typeof entry.sequence === "number" && Number.isFinite(entry.sequence)
+            ? entry.sequence
+            : 0,
+      }))
+      .filter((entry) => entry.stopId);
+  } catch {
+    return [];
+  }
+}
+
 function revalidateTripPlan(tripId: string) {
   revalidatePath(`/trips/${tripId}/plan`);
   revalidatePath(`/plans`);
@@ -67,12 +114,7 @@ export async function createStopAction(
       website: String(formData.get("website") ?? ""),
       thumbnail: String(formData.get("thumbnail") ?? ""),
       linkedDocIds: parseStringList(formData, "linkedDocIds"),
-      arrivals: [
-        {
-          date: String(formData.get("date") ?? ""),
-          time: String(formData.get("time") ?? ""),
-        },
-      ],
+      arrivals: parseArrivals(formData),
     });
   } catch (error) {
     return {
@@ -157,6 +199,28 @@ export async function removeStopArrivalAction(formData: FormData) {
   const returnTo = parseReturnTo(formData, tripId);
 
   await removeArrivalFromStopForUser(tripId, stopId, userId, arrivalIndex);
+  revalidateTripPlan(tripId);
+  redirect(returnTo);
+}
+
+export async function reorderStopsAction(formData: FormData) {
+  const userId = await requireUserId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const returnTo = parseReturnTo(formData, tripId);
+  const stopIds = parseStringList(formData, "stopIds");
+
+  await reorderStopsForUser(tripId, userId, stopIds);
+  revalidateTripPlan(tripId);
+  redirect(returnTo);
+}
+
+export async function applyStopSchedulesAction(formData: FormData) {
+  const userId = await requireUserId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const returnTo = parseReturnTo(formData, tripId);
+  const schedules = parseSchedulePayload(formData);
+
+  await applyStopSchedulesForUser(tripId, userId, schedules);
   revalidateTripPlan(tripId);
   redirect(returnTo);
 }

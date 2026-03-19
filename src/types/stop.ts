@@ -2,7 +2,7 @@ import type { TripStopSourceType } from "@/types/trip-logistics";
 
 export type StopArrival = {
   date: string;
-  time: string;
+  time?: string;
 };
 
 export type TripStop = {
@@ -15,6 +15,8 @@ export type TripStop = {
   placeId: string;
   date: string;
   time: string;
+  sequence: number;
+  isScheduled: boolean;
   notes: string;
   openingHours: string[];
   phone: string;

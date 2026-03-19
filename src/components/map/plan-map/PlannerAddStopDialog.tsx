@@ -22,6 +22,7 @@ type Props = {
   tripDocs: TripDoc[];
   returnTo: string;
   apiKey: string;
+  accessMode?: "user" | "guest";
   disabled?: boolean;
   triggerClassName?: string;
   iconOnly?: boolean;
@@ -32,6 +33,7 @@ export default function PlannerAddStopDialog({
   tripDocs,
   returnTo,
   apiKey,
+  accessMode = "user",
   disabled = false,
   triggerClassName,
   iconOnly = true,
@@ -88,8 +90,8 @@ export default function PlannerAddStopDialog({
           <DialogHeader>
             <DialogTitle>Add a stop</DialogTitle>
             <DialogDescription>
-              Search for a place first, then confirm the date and time in the
-              next step.
+              Search for a place first, then optionally assign a date and time
+              in the next step.
             </DialogDescription>
           </DialogHeader>
 
@@ -118,6 +120,7 @@ export default function PlannerAddStopDialog({
           tripDocs={tripDocs}
           returnTo={returnTo}
           onCancel={() => setPendingLocation(null)}
+          accessMode={accessMode}
         />
       ) : null}
     </>

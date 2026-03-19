@@ -13,11 +13,12 @@ type Prediction = {
 type Props = {
   map: google.maps.Map | null;
   onSelect: (info: PendingLocation) => void;
+  className?: string;
 };
 
 // Rendered only after importLibrary("places") has resolved in PlanMapClient.
 // Uses the new AutocompleteSuggestion API (AutocompleteService is legacy-only).
-export default function MapSearchBox({ map, onSelect }: Props) {
+export default function MapSearchBox({ map, onSelect, className }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [query, setQuery] = useState("");
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -65,7 +66,7 @@ export default function MapSearchBox({ map, onSelect }: Props) {
       const place = prediction.placePrediction.toPlace();
       await place.fetchFields({
         fields: ["displayName", "formattedAddress", "location", "id",
-                 "regularOpeningHours", "nationalPhoneNumber", "websiteURI", "photos"],
+                 "regularOpeningHours", "nationalPhoneNumber", "websiteURI", "photos", "rating", "userRatingCount"],
       });
       if (!place.location) return;
       if (map) { map.panTo(place.location); map.setZoom(16); }
@@ -80,6 +81,8 @@ export default function MapSearchBox({ map, onSelect }: Props) {
         phone: place.nationalPhoneNumber ?? "",
         website: place.websiteURI ?? "",
         thumbnail,
+        rating: place.rating ?? null,
+        userRatingCount: place.userRatingCount ?? null,
       });
       fetch("/api/usage/track", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "places" }) }).catch(() => {});
       setQuery("");
@@ -97,7 +100,7 @@ export default function MapSearchBox({ map, onSelect }: Props) {
   const showDropdown = open && (loading || predictions.length > 0);
 
   return (
-    <div className="absolute top-3 left-3 right-3 z-20">
+    <div className={className}>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         <input

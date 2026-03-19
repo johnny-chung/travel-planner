@@ -10,6 +10,7 @@ type Props = {
   tripId: string;
   items: TripStayItem[];
   isArchived: boolean;
+  canManage?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddStay: () => void;
@@ -19,6 +20,7 @@ export default function TripStayCard({
   tripId,
   items,
   isArchived,
+  canManage = true,
   open,
   onOpenChange,
   onAddStay,
@@ -33,7 +35,7 @@ export default function TripStayCard({
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <BedDouble className="w-4 h-4 text-muted-foreground" /> Stay
           {items.length > 0 ? (
-            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs px-1.5 py-0.5 rounded-full font-medium">
+            <span className="rounded-full bg-[#f1dfc5] px-1.5 py-0.5 text-xs font-medium text-[#9d6030]">
               {items.length}
             </span>
           ) : null}
@@ -69,7 +71,7 @@ export default function TripStayCard({
                         {item.address}
                       </p>
                     </div>
-                    {!isArchived ? (
+                    {!isArchived && canManage ? (
                       <form action={deleteStayAction}>
                         <input type="hidden" name="tripId" value={tripId} />
                         <input type="hidden" name="stayId" value={item._id} />
@@ -92,7 +94,7 @@ export default function TripStayCard({
                   type="button"
                   variant="ghost"
                   onClick={onAddStay}
-                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-500 font-medium transition-colors p-0"
+                  className="flex items-center gap-2 p-0 text-sm font-medium text-[#9d6030] transition-colors hover:text-[#85502a]"
                 >
                   <Plus className="w-4 h-4" /> Add stay
                 </Button>

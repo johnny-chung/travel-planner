@@ -1,6 +1,11 @@
 import "server-only";
 
 import { connectDB } from "@/lib/mongodb";
+import {
+  buildTripCapabilities,
+  canActorAccessTrip,
+  type TripActor,
+} from "@/features/trips/access";
 import { Trip } from "@/lib/models/Trip";
 import { Stop } from "@/lib/models/Stop";
 import { serializeStops } from "@/features/stops/serialization";
@@ -15,11 +20,14 @@ import {
   buildExpandedStops,
   buildOrderedStops,
   expandStops,
+  sortStopsBySchedule,
 } from "@/components/map/plan-map/utils";
 
 type RawTrip = {
   _id: unknown;
   userId: string;
+  ownerType?: "user" | "guest";
+  guestId?: string | null;
   name: string;
   description?: string;
   travelDates?: string[];
@@ -32,33 +40,33 @@ type RawTrip = {
   documents?: Array<{ _id: unknown; name: string; url: string }>;
 };
 
-export async function getTripPlannerDataForUser(
+async function getTripPlannerDataForActor(
   tripId: string,
-  userId: string,
+  actor: TripActor,
   from: string,
   to: string,
 ) {
   await connectDB();
 
   const trip = (await Trip.findOne({ _id: tripId }).lean()) as RawTrip | null;
-  if (
-    !trip ||
-    (trip.userId !== userId && !(trip.editors ?? []).includes(userId))
-  ) {
+  if (!trip || !canActorAccessTrip(trip, actor)) {
     return null;
   }
 
   const [stopDocs, travelTimes, transportItems, stayItems] = await Promise.all([
-    Stop.find({ planId: tripId })
-      .sort({ "arrivals.0.date": 1, "arrivals.0.time": 1 })
-      .lean(),
+    Stop.find({ planId: tripId }).sort({ sequence: 1, createdAt: 1 }).lean(),
     getTravelTimesForTrip(tripId),
     getTransportItemsForTrip(tripId),
     getStayItemsForTrip(tripId),
   ]);
 
   const stops = serializeStops(stopDocs);
-  const allOrderedStops = applyStopOrder(stops);
+  const sortedStops = applyStopOrder(sortStopsBySchedule(stops));
+  const scheduledStops = sortedStops.filter((stop) => stop.isScheduled);
+  const unscheduledStops = applyStopOrder(
+    sortedStops.filter((stop) => !stop.isScheduled),
+  );
+  const allOrderedStops = applyStopOrder(scheduledStops);
   const orderedStops = buildOrderedStops(stops, from, to);
   const expandedStops = buildExpandedStops(orderedStops, from, to);
   const allExpandedStops = expandStops(allOrderedStops);
@@ -82,6 +90,7 @@ export async function getTripPlannerDataForUser(
         | "transit"
         | "drive",
     },
+    capabilities: buildTripCapabilities(actor),
     isArchived: trip.status === "archived",
     travelDates: trip.travelDates ?? [],
     tripDocs: (trip.documents ?? []).map((document) => ({
@@ -89,11 +98,31 @@ export async function getTripPlannerDataForUser(
       name: document.name,
       url: document.url,
     })),
+    allStops: sortedStops,
     orderedStops,
     expandedStops,
     allExpandedStops,
+    unscheduledStops,
     stayItems,
     timelineItems,
     travelTimes,
   };
+}
+
+export async function getTripPlannerDataForUser(
+  tripId: string,
+  userId: string,
+  from: string,
+  to: string,
+) {
+  return getTripPlannerDataForActor(tripId, { kind: "user", userId }, from, to);
+}
+
+export async function getTripPlannerDataForGuest(
+  tripId: string,
+  guestId: string,
+  from: string,
+  to: string,
+) {
+  return getTripPlannerDataForActor(tripId, { kind: "guest", guestId }, from, to);
 }

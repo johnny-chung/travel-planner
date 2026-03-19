@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { ChevronDown, ChevronRight, ChevronUp, Map, MapPin, Share2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -12,10 +13,15 @@ import type { TripSummary } from "@/types/travel";
 
 type Props = {
   trips: TripSummary[];
-  cardTarget?: "trip" | "plan" | "expense";
+  cardTarget?: "trip" | "plan" | "expense" | "trial";
+  canShareCode?: boolean;
 };
 
-function getTripHref(tripId: string, cardTarget: "trip" | "plan" | "expense") {
+function getTripHref(tripId: string, cardTarget: "trip" | "plan" | "expense" | "trial") {
+  if (cardTarget === "trial") {
+    return `/try/${tripId}`;
+  }
+
   if (cardTarget === "plan") {
     return `/trips/${tripId}/plan`;
   }
@@ -53,7 +59,11 @@ function getTravelDateRangeLabel(travelDates: string[]) {
   return `${format(start, "MMM d, yyyy")} - ${format(end, "MMM d, yyyy")}`;
 }
 
-export default function TripCardGrid({ trips, cardTarget = "trip" }: Props) {
+export default function TripCardGrid({
+  trips,
+  cardTarget = "trip",
+  canShareCode = true,
+}: Props) {
   const [shareTrip, setShareTrip] = useState<TripSummary | null>(null);
   const [archivedOpen, setArchivedOpen] = useState(false);
 
@@ -63,11 +73,11 @@ export default function TripCardGrid({ trips, cardTarget = "trip" }: Props) {
   if (trips.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="w-20 h-20 rounded-3xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
-          <Map className="w-10 h-10 text-blue-500 dark:text-blue-400" />
+        <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-[1.8rem] bg-[#f1dfc5]">
+          <Map className="h-10 w-10 text-[#a56639]" />
         </div>
-        <h3 className="font-semibold text-foreground text-lg">No trips yet</h3>
-        <p className="text-muted-foreground text-sm mt-1">
+        <h3 className="text-lg font-semibold text-[#4a3223]">No trips yet</h3>
+        <p className="mt-1 text-sm text-[#6f5138]">
           Create your first trip to get started
         </p>
       </div>
@@ -76,16 +86,17 @@ export default function TripCardGrid({ trips, cardTarget = "trip" }: Props) {
 
   function TripCard({ trip }: { trip: TripSummary }) {
     const isPending = trip.role === "pending";
-    const canShare = trip.role !== "pending" && trip.status !== "archived";
+    const canShare =
+      canShareCode && trip.role !== "pending" && trip.status !== "archived";
     const travelDateLabel = getTravelDateRangeLabel(trip.travelDates);
 
     return (
       <Link
         href={isPending ? "#" : getTripHref(trip._id, cardTarget)}
-        className={`bg-card rounded-2xl p-4 shadow-sm border border-border flex items-center gap-3 transition-all ${
+        className={`flex items-center gap-3 rounded-[1.7rem] border border-[#d9b58c]/60 bg-[#fff9f0] p-4 shadow-[0_18px_45px_rgba(86,58,35,0.08)] transition-all ${
           isPending
             ? "opacity-60 cursor-not-allowed"
-            : "cursor-pointer active:scale-[0.98] hover:shadow-md"
+            : "cursor-pointer active:scale-[0.98] hover:shadow-[0_22px_55px_rgba(86,58,35,0.12)]"
         }`}
         onClick={(event) => {
           if (isPending) {
@@ -93,45 +104,59 @@ export default function TripCardGrid({ trips, cardTarget = "trip" }: Props) {
           }
         }}
       >
-        <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-          <Map className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+        <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-[1.15rem] bg-[#f1dfc5]">
+          {trip.centerThumbnail ? (
+            <Image
+              src={trip.centerThumbnail}
+              alt=""
+              fill
+              unoptimized
+              className="object-cover"
+              sizes="48px"
+            />
+          ) : (
+            <Map className="h-6 w-6 text-[#a56639]" />
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <h3 className="font-semibold text-foreground truncate max-w-[140px]">
+            <h3 className="max-w-[140px] truncate font-semibold text-[#4a3223]">
               {trip.name}
             </h3>
             {trip.role === "editor" ? (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+              <Badge
+                variant="secondary"
+                className="h-4 bg-[#f1dfc5] px-1.5 py-0 text-[10px] text-[#7b4c2b] hover:bg-[#f1dfc5]"
+              >
                 Editor
               </Badge>
             ) : null}
             {trip.role === "pending" ? (
               <Badge
                 variant="outline"
-                className="text-[10px] px-1.5 py-0 h-4 text-yellow-600 border-yellow-300"
+                className="h-4 border-[#d3ad66] px-1.5 py-0 text-[10px] text-[#9a6a1f]"
               >
                 Pending
               </Badge>
             ) : null}
             {trip.status === "archived" ? (
-              <Badge className="text-[10px] px-1.5 py-0 h-4 bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
+              <Badge className="h-4 bg-[#efe1cb] px-1.5 py-0 text-[10px] text-[#8a633f] hover:bg-[#efe1cb]">
                 Archived
               </Badge>
             ) : null}
           </div>
           {trip.centerName ? (
-            <p className="text-muted-foreground text-sm truncate flex items-center gap-1 mt-0.5">
+            <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-[#6f5138]">
               <MapPin className="w-3 h-3 flex-shrink-0" />
               {trip.centerName}
             </p>
           ) : trip.description ? (
-            <p className="text-muted-foreground text-sm truncate mt-0.5">
+            <p className="mt-0.5 truncate text-sm text-[#6f5138]">
               {trip.description}
             </p>
           ) : null}
           {travelDateLabel ? (
-            <p className="text-muted-foreground/60 text-xs mt-0.5">
+            <p className="mt-0.5 text-xs text-[#8b6a50]">
               {travelDateLabel}
             </p>
           ) : null}
@@ -142,7 +167,7 @@ export default function TripCardGrid({ trips, cardTarget = "trip" }: Props) {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground/60 hover:text-blue-500"
+              className="h-8 w-8 rounded-xl text-[#8b6a50] hover:bg-[#f1dfc5] hover:text-[#9a6036]"
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -152,7 +177,7 @@ export default function TripCardGrid({ trips, cardTarget = "trip" }: Props) {
               <Share2 className="w-4 h-4" />
             </Button>
           ) : null}
-          {!isPending ? <ChevronRight className="w-4 h-4 text-muted-foreground/60" /> : null}
+          {!isPending ? <ChevronRight className="w-4 h-4 text-[#a07d60]" /> : null}
         </div>
       </Link>
     );
@@ -171,7 +196,7 @@ export default function TripCardGrid({ trips, cardTarget = "trip" }: Props) {
 
         {archivedTrips.length > 0 ? (
           <Collapsible open={archivedOpen} onOpenChange={setArchivedOpen}>
-            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1">
+            <CollapsibleTrigger className="flex items-center gap-2 py-1 text-sm font-medium text-[#7a5a40] transition-colors hover:text-[#4a3223]">
               {archivedOpen ? (
                 <ChevronUp className="w-4 h-4" />
               ) : (

@@ -146,6 +146,8 @@ export default function PlaceSearchInput({
           "nationalPhoneNumber",
           "websiteURI",
           "photos",
+          "rating",
+          "userRatingCount",
         ],
       });
 
@@ -163,6 +165,8 @@ export default function PlaceSearchInput({
         phone: place.nationalPhoneNumber ?? "",
         website: place.websiteURI ?? "",
         thumbnail: place.photos?.[0]?.getURI({ maxWidth: 400 }) ?? "",
+        rating: place.rating ?? null,
+        userRatingCount: place.userRatingCount ?? null,
       });
     } finally {
       setLoading(false);

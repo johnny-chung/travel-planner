@@ -1,6 +1,7 @@
 import "server-only";
 
 import { connectDB } from "@/lib/mongodb";
+import { getAppLimits, getRouteCallLimitForMembership } from "@/features/settings/service";
 import { TravelTime } from "@/lib/models/TravelTime";
 import { ApiUsage } from "@/lib/models/ApiUsage";
 import { UserMonthlyUsage } from "@/lib/models/UserMonthlyUsage";
@@ -14,6 +15,7 @@ import {
 import { buildRouteSegments, buildTimelineItems } from "@/features/planner/timeline";
 import { calculateWithFallback, type TravelMode } from "@/lib/routes-api";
 import type { TravelTimeEntry } from "@/components/map/plan-map/types";
+import { applyStopOrder, buildExpandedStops } from "@/components/map/plan-map/utils";
 
 export class TravelTimeServiceError extends Error {
   constructor(
@@ -34,7 +36,8 @@ type StopRecord = {
   _id: unknown;
   lat: number;
   lng: number;
-  arrivals?: Array<{ date: string; time: string }>;
+  sequence?: number;
+  arrivals?: Array<{ date: string; time?: string }>;
 };
 
 type TravelTimeRecord = Record<string, unknown>;
@@ -78,12 +81,13 @@ async function getAccessibleTrip(tripId: string, userId: string) {
 
 async function assertUsageAllowed(userId: string) {
   const yearMonth = getYearMonth();
+  const limits = await getAppLimits();
 
   const apiUsage = (await ApiUsage.findOne({
     yearMonth,
     apiType: "routes",
   }).lean()) as { count?: number } | null;
-  if ((apiUsage?.count ?? 0) >= 10000) {
+  if ((apiUsage?.count ?? 0) >= limits.globalRouteCallsPerMonth) {
     throw new TravelTimeServiceError(
       "GLOBAL_LIMIT",
       "Monthly API limit reached",
@@ -91,18 +95,19 @@ async function assertUsageAllowed(userId: string) {
   }
 
   const user = (await User.findOne({ userId }).lean()) as
-    | { membershipStatus?: string }
+    | { membershipStatus?: "basic" | "pro" }
     | null;
-  const isPro = user?.membershipStatus === "pro";
   const userUsage = (await UserMonthlyUsage.findOne({
     userId,
     yearMonth,
   }).lean()) as { commuteCount?: number } | null;
-  const commuteLimit = isPro ? 100 : 10;
+  const commuteLimit = await getRouteCallLimitForMembership(
+    user?.membershipStatus === "pro" ? "pro" : "basic",
+  );
   if ((userUsage?.commuteCount ?? 0) >= commuteLimit) {
     throw new TravelTimeServiceError(
       "USER_LIMIT",
-      "Monthly calculation limit reached. Upgrade to Pro for more.",
+      `Monthly calculation limit reached (${commuteLimit}/month). Upgrade to Pro for more.`,
     );
   }
 
@@ -220,38 +225,46 @@ export async function calculateAllTravelTimesForUser(
 
   const [stops, stayItems, transportItems] = await Promise.all([
     Stop.find({ planId })
-      .sort({ "arrivals.0.date": 1, "arrivals.0.time": 1 })
+      .sort({ sequence: 1, createdAt: 1 })
       .lean() as Promise<StopRecord[]>,
     getStayItemsForTrip(planId),
     getTransportItemsForTrip(planId),
   ]);
 
-  const timelineStops = stops.flatMap((stop) =>
-    (stop.arrivals ?? []).map((arrival, arrivalIndex) => ({
-      _id: String(stop._id),
-      planId,
-      name: "",
-      address: "",
-      lat: stop.lat,
-      lng: stop.lng,
-      placeId: "",
-      date: arrival.date,
-      time: arrival.time,
-      notes: "",
-      openingHours: [],
-      phone: "",
-      website: "",
-      thumbnail: "",
-      order: 0,
-      linkedDocIds: [],
-      arrivals: stop.arrivals ?? [],
-      _arrivalIndex: arrivalIndex,
-      sourceType: "manual" as const,
-      sourceId: "",
-      sourceLabel: "",
-      displayTime: true,
-      editable: true,
-    })),
+  const timelineStops = buildExpandedStops(
+    applyStopOrder(
+      stops.map((stop, index) => ({
+        _id: String(stop._id),
+        planId,
+        name: "",
+        address: "",
+        lat: stop.lat,
+        lng: stop.lng,
+        placeId: "",
+        date: stop.arrivals?.[0]?.date ?? "",
+        time: stop.arrivals?.[0]?.time ?? "",
+        sequence:
+          typeof stop.sequence === "number" && Number.isFinite(stop.sequence)
+            ? stop.sequence
+            : index + 1,
+        isScheduled: Array.isArray(stop.arrivals) && stop.arrivals.length > 0,
+        notes: "",
+        openingHours: [],
+        phone: "",
+        website: "",
+        thumbnail: "",
+        order: 0,
+        linkedDocIds: [],
+        arrivals: stop.arrivals ?? [],
+        sourceType: "manual" as const,
+        sourceId: "",
+        sourceLabel: "",
+        displayTime: Boolean(stop.arrivals?.[0]?.time),
+        editable: true,
+      })),
+    ),
+    "",
+    "",
   );
 
   const routeSegments = buildRouteSegments(

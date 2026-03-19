@@ -7,6 +7,7 @@ import {
   joinTripAction,
   type FormActionState,
 } from "@/features/trips/actions";
+import { createTrialTripAction } from "@/features/guest/actions";
 import SubmitButton from "@/components/shared/SubmitButton";
 import LocationSearchInput from "@/components/plans/LocationSearchInput";
 import { Button } from "@/components/ui/button";
@@ -26,13 +27,24 @@ type Props = {
   apiKey: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  mode?: "user" | "guest";
+  allowJoin?: boolean;
+  title?: string;
 };
 
 const initialState: FormActionState = {};
 
-export default function TripCreateDialog({ apiKey, open, onOpenChange }: Props) {
+export default function TripCreateDialog({
+  apiKey,
+  open,
+  onOpenChange,
+  mode = "user",
+  allowJoin = true,
+  title = "New Trip",
+}: Props) {
+  const createAction = mode === "guest" ? createTrialTripAction : createTripAction;
   const [createState, createFormAction] = useActionState<FormActionState, FormData>(
-    createTripAction,
+    createAction,
     initialState,
   );
   const [joinState, joinFormAction] = useActionState<FormActionState, FormData>(
@@ -44,6 +56,8 @@ export default function TripCreateDialog({ apiKey, open, onOpenChange }: Props) 
   const [location, setLocation] = useState("");
   const [locationLat, setLocationLat] = useState<number | null>(null);
   const [locationLng, setLocationLng] = useState<number | null>(null);
+  const [locationPlaceId, setLocationPlaceId] = useState("");
+  const [locationThumbnail, setLocationThumbnail] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [rentCar, setRentCar] = useState(false);
 
@@ -55,6 +69,8 @@ export default function TripCreateDialog({ apiKey, open, onOpenChange }: Props) 
     setLocation("");
     setLocationLat(null);
     setLocationLng(null);
+    setLocationPlaceId("");
+    setLocationThumbnail("");
     setJoinCode("");
     setRentCar(false);
   }
@@ -69,11 +85,12 @@ export default function TripCreateDialog({ apiKey, open, onOpenChange }: Props) 
         }
       }}
     >
-      <DialogContent className="rounded-3xl mx-4 max-w-sm">
+        <DialogContent className="rounded-3xl mx-4 max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-xl">New Trip</DialogTitle>
+          <DialogTitle className="text-xl">{title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
+          {allowJoin ? (
           <form action={joinFormAction} className="space-y-2">
             <Label>Join existing trip</Label>
             <div className="relative">
@@ -116,14 +133,17 @@ export default function TripCreateDialog({ apiKey, open, onOpenChange }: Props) 
               </div>
             ) : null}
           </form>
+          ) : null}
 
           {!isJoining ? (
             <form action={createFormAction} className="space-y-4">
-              <div className="flex items-center gap-2 text-muted-foreground/60 text-xs">
-                <div className="flex-1 h-px bg-border" />
-                OR
-                <div className="flex-1 h-px bg-border" />
-              </div>
+              {allowJoin ? (
+                <div className="flex items-center gap-2 text-muted-foreground/60 text-xs">
+                  <div className="flex-1 h-px bg-border" />
+                  OR
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+              ) : null}
               <div className="space-y-2">
                 <Label>
                   Trip Name <span className="text-red-500">*</span>
@@ -148,17 +168,23 @@ export default function TripCreateDialog({ apiKey, open, onOpenChange }: Props) 
                     setLocation(text);
                     setLocationLat(null);
                     setLocationLng(null);
+                    setLocationPlaceId("");
+                    setLocationThumbnail("");
                   }}
                   onSelect={(selectedLocation) => {
                     setLocation(selectedLocation.name);
                     setLocationLat(selectedLocation.lat);
                     setLocationLng(selectedLocation.lng);
+                    setLocationPlaceId(selectedLocation.placeId);
+                    setLocationThumbnail(selectedLocation.thumbnail);
                   }}
                   apiKey={apiKey}
                 />
                 <input type="hidden" name="location" value={location} />
                 <input type="hidden" name="locationLat" value={locationLat ?? ""} />
                 <input type="hidden" name="locationLng" value={locationLng ?? ""} />
+                <input type="hidden" name="locationPlaceId" value={locationPlaceId} />
+                <input type="hidden" name="locationThumbnail" value={locationThumbnail} />
               </div>
               <div className="space-y-2">
                 <Label>

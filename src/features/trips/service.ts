@@ -1,7 +1,13 @@
 import "server-only";
 
 import { archiveTripAndDelete } from "@/features/trips/archive";
+import { getAppLimits } from "@/features/settings/service";
 import { TripServiceError } from "@/features/trips/errors";
+import {
+  buildTripCapabilities,
+  canActorAccessTrip,
+  type TripActor,
+} from "@/features/trips/access";
 import { connectDB } from "@/lib/mongodb";
 import { normalizeTravelDates } from "@/features/trips/travel-dates";
 import { Expense } from "@/lib/models/Expense";
@@ -29,6 +35,8 @@ type LocationInput = {
   location?: string;
   locationLat?: number | null;
   locationLng?: number | null;
+  locationPlaceId?: string;
+  locationThumbnail?: string;
 };
 
 type CreateTripInput = LocationInput & {
@@ -39,10 +47,14 @@ type CreateTripInput = LocationInput & {
 
 type RawTrip = {
   _id: unknown;
-  userId: string;
+  ownerType?: "user" | "guest";
+  userId?: string;
+  guestId?: string | null;
   name: string;
   description?: string;
   centerName?: string;
+  centerPlaceId?: string;
+  centerThumbnail?: string;
   centerLat?: number | null;
   centerLng?: number | null;
   createdAt?: Date;
@@ -78,6 +90,8 @@ function serializeTripSummary(trip: RawTrip, role: TripRole): TripSummary {
     name: trip.name,
     description: trip.description ?? "",
     centerName: trip.centerName ?? "",
+    centerPlaceId: trip.centerPlaceId ?? "",
+    centerThumbnail: trip.centerThumbnail ?? "",
     centerLat: trip.centerLat ?? null,
     centerLng: trip.centerLng ?? null,
     createdAt: trip.createdAt ? new Date(trip.createdAt).toISOString() : "",
@@ -93,12 +107,16 @@ async function resolveLocation({
   location,
   locationLat,
   locationLng,
+  locationPlaceId,
+  locationThumbnail,
 }: LocationInput) {
   if (typeof locationLat === "number" && typeof locationLng === "number") {
     return {
       centerLat: locationLat,
       centerLng: locationLng,
       centerName: location?.trim() ?? "",
+      centerPlaceId: locationPlaceId?.trim() ?? "",
+      centerThumbnail: locationThumbnail?.trim() ?? "",
     };
   }
 
@@ -107,6 +125,8 @@ async function resolveLocation({
       centerLat: null,
       centerLng: null,
       centerName: "",
+      centerPlaceId: "",
+      centerThumbnail: "",
     };
   }
 
@@ -128,6 +148,8 @@ async function resolveLocation({
         centerLat: match.geometry.location.lat as number,
         centerLng: match.geometry.location.lng as number,
         centerName: (match.formatted_address as string) ?? location.trim(),
+        centerPlaceId: locationPlaceId?.trim() ?? "",
+        centerThumbnail: locationThumbnail?.trim() ?? "",
       };
     }
   } catch {
@@ -138,6 +160,8 @@ async function resolveLocation({
     centerLat: null,
     centerLng: null,
     centerName: location.trim(),
+    centerPlaceId: locationPlaceId?.trim() ?? "",
+    centerThumbnail: locationThumbnail?.trim() ?? "",
   };
 }
 
@@ -158,6 +182,123 @@ async function getMembershipStatus(userId: string): Promise<MembershipStatus> {
     .select("membershipStatus")
     .lean()) as MembershipRecord | null;
   return user?.membershipStatus ?? "basic";
+}
+
+function buildTripQueryForActor(actor: TripActor) {
+  if (actor.kind === "guest") {
+    return { ownerType: "guest", guestId: actor.guestId, status: { $ne: "deleted" } };
+  }
+
+  return { ownerType: { $ne: "guest" }, userId: actor.userId, status: { $ne: "deleted" } };
+}
+
+async function getTripDetailForActor(
+  tripId: string,
+  actor: TripActor,
+): Promise<{
+  trip: TripDetail;
+  members: TripMember[];
+  totalExpense: number;
+}> {
+  await connectDB();
+
+  const trip = (await Trip.findOne({ _id: tripId }).lean()) as RawTrip | null;
+  if (!trip || !canActorAccessTrip(trip, actor)) {
+    return Promise.reject(new TripServiceError("NOT_FOUND", "Trip not found"));
+  }
+
+  const capabilities = buildTripCapabilities(actor);
+  const isUserOwned = (trip.ownerType ?? "user") !== "guest";
+
+  if (!isUserOwned) {
+    const [transportItems, stayItems] = await Promise.all([
+      getTransportItemsForTrip(tripId),
+      getStayItemsForTrip(tripId),
+    ]);
+
+    return {
+      trip: {
+        _id: String(trip._id),
+        name: trip.name,
+        description: trip.description ?? "",
+        centerName: trip.centerName ?? "",
+        centerPlaceId: trip.centerPlaceId ?? "",
+        centerThumbnail: trip.centerThumbnail ?? "",
+        shareCode: trip.shareCode ?? "",
+        role: "owner",
+        userId: trip.userId ?? "",
+        status: trip.status ?? "active",
+        documents: [],
+        membershipStatus: "basic",
+        transportItems,
+        stayItems,
+        capabilities,
+      },
+      members: [
+        {
+          userId: `guest:${trip.guestId ?? "trial"}`,
+          name: "Guest Trial",
+          email: "",
+          image: "",
+          isOwner: true,
+        },
+      ],
+      totalExpense: 0,
+    };
+  }
+
+  const memberIds = [trip.userId ?? "", ...(trip.editors ?? [])].filter(Boolean);
+  const [users, expenses, membershipStatus, transportItems, stayItems] = await Promise.all([
+    User.find({ userId: { $in: memberIds } }).lean() as Promise<UserRecord[]>,
+    Expense.find({ tripId }).lean() as Promise<Array<{ amount?: number }>>,
+    getMembershipStatus(actor.kind === "user" ? actor.userId : ""),
+    getTransportItemsForTrip(tripId),
+    getStayItemsForTrip(tripId),
+  ]);
+
+  const members = memberIds.map((memberId) => {
+    const user = users.find((candidate) => candidate.userId === memberId);
+    return {
+      userId: memberId,
+      name: user?.name ?? memberId,
+      email: user?.email ?? "",
+      image: user?.image ?? "",
+      isOwner: memberId === trip.userId,
+    };
+  });
+
+  const isOwner = actor.kind === "user" && trip.userId === actor.userId;
+
+  return {
+    trip: {
+      _id: String(trip._id),
+      name: trip.name,
+      description: trip.description ?? "",
+      centerName: trip.centerName ?? "",
+      centerPlaceId: trip.centerPlaceId ?? "",
+      centerThumbnail: trip.centerThumbnail ?? "",
+      shareCode: trip.shareCode ?? "",
+      role: isOwner ? "owner" : "editor",
+      userId: trip.userId ?? "",
+      status: trip.status ?? "active",
+      documents: (trip.documents ?? []).map(
+        (document): TripDocument => ({
+          _id: String(document._id),
+          name: document.name,
+          url: document.url,
+        }),
+      ),
+      membershipStatus,
+      transportItems,
+      stayItems,
+      capabilities,
+    },
+    members,
+    totalExpense: expenses.reduce(
+      (sum, expense) => sum + (expense.amount ?? 0),
+      0,
+    ),
+  };
 }
 
 function collectTrips(
@@ -195,7 +336,7 @@ export async function getTripSummariesForUser(userId: string) {
   await connectDB();
 
   const [ownedTrips, editorTrips, pendingTrips] = (await Promise.all([
-    Trip.find({ userId, status: { $ne: "deleted" } })
+    Trip.find({ userId, ownerType: { $ne: "guest" }, status: { $ne: "deleted" } })
       .sort({ createdAt: -1 })
       .lean(),
     Trip.find({ editors: userId, status: { $ne: "deleted" } })
@@ -210,6 +351,16 @@ export async function getTripSummariesForUser(userId: string) {
   ])) as [RawTrip[], RawTrip[], RawTrip[]];
 
   return collectTrips(ownedTrips, editorTrips, pendingTrips);
+}
+
+export async function getTrialTripSummariesForGuest(guestId: string) {
+  await connectDB();
+
+  const trips = (await Trip.find(buildTripQueryForActor({ kind: "guest", guestId }))
+    .sort({ createdAt: -1 })
+    .lean()) as RawTrip[];
+
+  return trips.map((trip) => serializeTripSummary(trip, "owner"));
 }
 
 export async function getRecentTripSummariesForUser(
@@ -228,67 +379,18 @@ export async function getTripDetailForUser(
   members: TripMember[];
   totalExpense: number;
 }> {
-  await connectDB();
+  return getTripDetailForActor(tripId, { kind: "user", userId });
+}
 
-  const trip = (await Trip.findOne({ _id: tripId }).lean()) as RawTrip | null;
-  if (!trip) {
-    return Promise.reject(new TripServiceError("NOT_FOUND", "Trip not found"));
-  }
-
-  const isOwner = trip.userId === userId;
-  const isEditor = (trip.editors ?? []).includes(userId);
-
-  if (!isOwner && !isEditor) {
-    return Promise.reject(new TripServiceError("FORBIDDEN", "Trip not found"));
-  }
-
-  const memberIds = [trip.userId, ...(trip.editors ?? [])];
-  const [users, expenses, membershipStatus, transportItems, stayItems] = await Promise.all([
-    User.find({ userId: { $in: memberIds } }).lean() as Promise<UserRecord[]>,
-    Expense.find({ tripId }).lean() as Promise<Array<{ amount?: number }>>,
-    getMembershipStatus(userId),
-    getTransportItemsForTrip(tripId),
-    getStayItemsForTrip(tripId),
-  ]);
-
-  const members = memberIds.map((memberId) => {
-    const user = users.find((candidate) => candidate.userId === memberId);
-    return {
-      userId: memberId,
-      name: user?.name ?? memberId,
-      email: user?.email ?? "",
-      image: user?.image ?? "",
-      isOwner: memberId === trip.userId,
-    };
-  });
-
-  return {
-    trip: {
-      _id: String(trip._id),
-      name: trip.name,
-      description: trip.description ?? "",
-      centerName: trip.centerName ?? "",
-      shareCode: trip.shareCode ?? "",
-      role: isOwner ? "owner" : "editor",
-      userId: trip.userId,
-      status: trip.status ?? "active",
-      documents: (trip.documents ?? []).map(
-        (document): TripDocument => ({
-          _id: String(document._id),
-          name: document.name,
-          url: document.url,
-        }),
-      ),
-      membershipStatus,
-      transportItems,
-      stayItems,
-    },
-    members,
-    totalExpense: expenses.reduce(
-      (sum, expense) => sum + (expense.amount ?? 0),
-      0,
-    ),
-  };
+export async function getTripDetailForGuest(
+  tripId: string,
+  guestId: string,
+): Promise<{
+  trip: TripDetail;
+  members: TripMember[];
+  totalExpense: number;
+}> {
+  return getTripDetailForActor(tripId, { kind: "guest", guestId });
 }
 
 export async function createTripForUser(userId: string, input: CreateTripInput) {
@@ -301,11 +403,16 @@ export async function createTripForUser(userId: string, input: CreateTripInput) 
 
   const membershipStatus = await getMembershipStatus(userId);
   if (membershipStatus === "basic") {
-    const activeOwned = await Trip.countDocuments({ userId, status: "active" });
-    if (activeOwned >= 1) {
+    const limits = await getAppLimits();
+    const activeOwned = await Trip.countDocuments({
+      userId,
+      ownerType: { $ne: "guest" },
+      status: "active",
+    });
+    if (activeOwned >= limits.basicActiveTrips) {
       throw new TripServiceError(
         "LIMIT_REACHED",
-        "Your Basic plan includes one active trip. To create a new one, upgrade to Pro or archive/delete an existing trip.",
+        `Your Basic plan includes ${limits.basicActiveTrips} active trip${limits.basicActiveTrips === 1 ? "" : "s"}. To create a new one, upgrade to Pro or archive/delete an existing trip.`,
       );
     }
   }
@@ -316,6 +423,7 @@ export async function createTripForUser(userId: string, input: CreateTripInput) 
   ]);
 
   return Trip.create({
+    ownerType: "user",
     userId,
     name,
     description: input.description?.trim() ?? "",
@@ -324,6 +432,77 @@ export async function createTripForUser(userId: string, input: CreateTripInput) 
     transportMode: input.transportMode ?? "transit",
     ...location,
   });
+}
+
+export async function createTrialTripForGuest(
+  guestId: string,
+  input: CreateTripInput,
+) {
+  const name = input.name.trim();
+  if (!name) {
+    throw new TripServiceError("VALIDATION_ERROR", "Name is required");
+  }
+
+  await connectDB();
+
+  const limits = await getAppLimits();
+  const activeOwned = await Trip.countDocuments({
+    ownerType: "guest",
+    guestId,
+    status: "active",
+  });
+  if (activeOwned >= limits.guestActiveTrips) {
+    throw new TripServiceError(
+      "LIMIT_REACHED",
+      `Guest trial supports ${limits.guestActiveTrips} active trip${limits.guestActiveTrips === 1 ? "" : "s"} at a time. Sign up to keep planning more.`,
+    );
+  }
+
+  const [location, shareCode] = await Promise.all([
+    resolveLocation(input),
+    generateUniqueShareCode(),
+  ]);
+
+  return Trip.create({
+    ownerType: "guest",
+    guestId,
+    userId: "",
+    name,
+    description: input.description?.trim() ?? "",
+    shareCode,
+    travelDates: [],
+    transportMode: input.transportMode ?? "transit",
+    ...location,
+  });
+}
+
+export async function claimGuestTripsForUser(guestId: string, userId: string) {
+  await connectDB();
+
+  const guestTrips = (await Trip.find({
+    ownerType: "guest",
+    guestId,
+    status: { $ne: "deleted" },
+  })) as Array<InstanceType<typeof Trip>>;
+
+  if (guestTrips.length === 0) {
+    return null;
+  }
+
+  let claimedTripId: string | null = null;
+
+  for (const trip of guestTrips) {
+    trip.ownerType = "user";
+    trip.userId = userId;
+    trip.guestId = null;
+    if (!trip.shareCode) {
+      trip.shareCode = await generateUniqueShareCode();
+    }
+    await trip.save();
+    claimedTripId = String(trip._id);
+  }
+
+  return claimedTripId;
 }
 
 export async function joinTripForUser(
@@ -341,6 +520,13 @@ export async function joinTripForUser(
   const trip = await Trip.findOne({ shareCode: normalizedShareCode });
   if (!trip) {
     throw new TripServiceError("NOT_FOUND", "Trip not found");
+  }
+
+  if ((trip.ownerType ?? "user") === "guest") {
+    throw new TripServiceError(
+      "INVALID_STATE",
+      "Guest trial trips cannot be shared with collaborators.",
+    );
   }
 
   if (trip.userId === userId) {
@@ -361,15 +547,16 @@ export async function joinTripForUser(
 
   const user = (await User.findOne({ userId }).lean()) as UserRecord | null;
   if ((user?.membershipStatus ?? "basic") === "basic") {
+    const limits = await getAppLimits();
     const editorTrips = await Trip.countDocuments({
       editors: userId,
       status: { $ne: "deleted" },
     });
 
-    if (editorTrips >= 5) {
+    if (editorTrips >= limits.basicEditorTrips) {
       throw new TripServiceError(
         "LIMIT_REACHED",
-        "Basic plan allows editing 5 trips. Upgrade to Pro for unlimited.",
+        `Basic plan allows editing ${limits.basicEditorTrips} trip${limits.basicEditorTrips === 1 ? "" : "s"}. Upgrade to Pro for more.`,
       );
     }
   }
@@ -400,6 +587,40 @@ export async function updateTripStatusForUser(
   const canAccess = trip.userId === userId || (trip.editors ?? []).includes(userId);
   if (!canAccess) {
     throw new TripServiceError("FORBIDDEN", "Trip not found");
+  }
+
+  const currentStatus = trip.status ?? "active";
+  const membershipStatus = await getMembershipStatus(userId);
+  if (membershipStatus === "basic") {
+    const limits = await getAppLimits();
+
+    if (status === "archived" && currentStatus !== "archived") {
+      const archivedOwned = await Trip.countDocuments({
+        userId,
+        ownerType: { $ne: "guest" },
+        status: "archived",
+      });
+      if (archivedOwned >= limits.basicArchivedTrips) {
+        throw new TripServiceError(
+          "LIMIT_REACHED",
+          `Your Basic plan includes ${limits.basicArchivedTrips} archived trip${limits.basicArchivedTrips === 1 ? "" : "s"}. Delete an archived trip or upgrade to Pro to archive more.`,
+        );
+      }
+    }
+
+    if (status === "active" && currentStatus !== "active") {
+      const activeOwned = await Trip.countDocuments({
+        userId,
+        ownerType: { $ne: "guest" },
+        status: "active",
+      });
+      if (activeOwned >= limits.basicActiveTrips) {
+        throw new TripServiceError(
+          "LIMIT_REACHED",
+          `Your Basic plan includes ${limits.basicActiveTrips} active trip${limits.basicActiveTrips === 1 ? "" : "s"}. Archive or delete another trip, or upgrade to Pro to restore more.`,
+        );
+      }
+    }
   }
 
   return Trip.findByIdAndUpdate(tripId, { status }, { new: true }).lean();
@@ -552,11 +773,14 @@ export async function approveTripRequestForOwner(
   }
 
   const membershipStatus = await getMembershipStatus(ownerId);
-  if (membershipStatus === "basic" && trip.editors.length >= 5) {
-    throw new TripServiceError(
-      "LIMIT_REACHED",
-      "Basic plan allows up to 5 editors per trip. Upgrade to Pro for unlimited collaborators.",
-    );
+  if (membershipStatus === "basic") {
+    const limits = await getAppLimits();
+    if (trip.editors.length >= limits.basicEditorsPerTrip) {
+      throw new TripServiceError(
+        "LIMIT_REACHED",
+        `Basic plan allows up to ${limits.basicEditorsPerTrip} editor${limits.basicEditorsPerTrip === 1 ? "" : "s"} per trip. Upgrade to Pro for more collaborators.`,
+      );
+    }
   }
 
   trip.pendingEditors.splice(pendingIndex, 1);

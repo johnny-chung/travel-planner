@@ -22,6 +22,7 @@ type RawStop = {
   sourceLabel?: unknown;
   displayTime?: unknown;
   editable?: unknown;
+  sequence?: unknown;
 };
 
 function toNumber(value: unknown) {
@@ -73,6 +74,15 @@ export function serializeStop(stop: RawStop, order: number): TripStop {
         .filter((arrival): arrival is StopArrival => arrival !== null)
     : [];
   const firstArrival = arrivals[0] ?? { date: "", time: "" };
+  const fallbackSequence =
+    typeof stop.sequence === "number" && Number.isFinite(stop.sequence)
+      ? stop.sequence
+      : order;
+  const hasScheduledArrival = arrivals.some(
+    (arrival) => typeof arrival.date === "string" && arrival.date.trim().length > 0,
+  );
+  const firstArrivalTime = firstArrival.time ?? "";
+  const displayTime = firstArrivalTime.trim().length > 0;
 
   return {
     _id: String(stop._id),
@@ -83,7 +93,9 @@ export function serializeStop(stop: RawStop, order: number): TripStop {
     lng: toNumber(stop.lng),
     placeId: typeof stop.placeId === "string" ? stop.placeId : "",
     date: firstArrival.date,
-    time: firstArrival.time,
+    time: firstArrivalTime,
+    sequence: fallbackSequence,
+    isScheduled: hasScheduledArrival,
     notes: typeof stop.notes === "string" ? stop.notes : "",
     openingHours: toStringArray(stop.openingHours),
     phone: typeof stop.phone === "string" ? stop.phone : "",
@@ -101,7 +113,7 @@ export function serializeStop(stop: RawStop, order: number): TripStop {
         : "manual",
     sourceId: typeof stop.sourceId === "string" ? stop.sourceId : "",
     sourceLabel: typeof stop.sourceLabel === "string" ? stop.sourceLabel : "",
-    displayTime: toBoolean(stop.displayTime, true),
+    displayTime: toBoolean(stop.displayTime, displayTime),
     editable: toBoolean(stop.editable, true),
   };
 }

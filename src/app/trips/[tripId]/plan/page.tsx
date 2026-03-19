@@ -75,9 +75,10 @@ export default async function TripPlanPage({ params, searchParams }: Props) {
     travelTo: null,
   });
 
+  const visibleStops = [...plannerData.expandedStops, ...plannerData.unscheduledStops];
   const selectedFromVisible = searchState.stopId
     ? findStopBySelection(
-        plannerData.expandedStops,
+        visibleStops,
         searchState.stopId,
         searchState.arrivalIndex,
       )
@@ -86,7 +87,7 @@ export default async function TripPlanPage({ params, searchParams }: Props) {
     selectedFromVisible ??
     (searchState.stopId
       ? findStopBySelection(
-          plannerData.allExpandedStops,
+          [...plannerData.allExpandedStops, ...plannerData.unscheduledStops],
           searchState.stopId,
           searchState.arrivalIndex,
         )
@@ -97,7 +98,7 @@ export default async function TripPlanPage({ params, searchParams }: Props) {
 
   const stopSequence =
     selectedStop && selectedFromVisible
-      ? plannerData.expandedStops
+      ? visibleStops
       : plannerData.allExpandedStops;
   const selectedIndex = selectedStop
     ? stopSequence.findIndex((stop) => isSameStop(stop, selectedStop))
@@ -161,9 +162,10 @@ export default async function TripPlanPage({ params, searchParams }: Props) {
       <PlannerHeader
         pathname={pathname}
         planName={plannerData.plan.name}
-        stopCount={plannerData.expandedStops.length}
+        stopCount={plannerData.expandedStops.length + plannerData.unscheduledStops.length}
         searchState={searchState}
         isArchived={plannerData.isArchived}
+        backHref="/plans"
       />
 
       {searchState.filters ? (
@@ -183,14 +185,18 @@ export default async function TripPlanPage({ params, searchParams }: Props) {
           searchState={searchState}
           isArchived={plannerData.isArchived}
           tripDocs={plannerData.tripDocs}
+          accessMode="user"
         />
       ) : (
         <div className="flex-1 overflow-hidden">
           <StopsList
             pathname={pathname}
+            tripId={tripId}
             searchState={searchState}
             timelineItems={plannerData.timelineItems}
+            unscheduledStops={plannerData.unscheduledStops}
             travelTimes={plannerData.travelTimes}
+            accessMode="user"
           />
           <PlannerListActions
             pathname={pathname}
@@ -199,9 +205,11 @@ export default async function TripPlanPage({ params, searchParams }: Props) {
             shareText={shareText}
             searchState={searchState}
             isArchived={plannerData.isArchived}
+            capabilities={plannerData.capabilities}
             canCalculate={routeSegments.length > 0}
             tripDocs={plannerData.tripDocs}
             googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""}
+            accessMode="user"
           />
         </div>
       )}
@@ -241,6 +249,8 @@ export default async function TripPlanPage({ params, searchParams }: Props) {
               : null
           }
           deleteReturnTo={closeHref}
+          accessMode="user"
+          canVisitAgain={plannerData.capabilities.canVisitAgain}
         />
       ) : null}
 

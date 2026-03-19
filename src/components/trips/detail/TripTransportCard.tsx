@@ -10,6 +10,7 @@ type Props = {
   tripId: string;
   items: TripTransportItem[];
   isArchived: boolean;
+  canManage?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddTransport: () => void;
@@ -19,6 +20,7 @@ export default function TripTransportCard({
   tripId,
   items,
   isArchived,
+  canManage = true,
   open,
   onOpenChange,
   onAddTransport,
@@ -33,7 +35,7 @@ export default function TripTransportCard({
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Plane className="w-4 h-4 text-muted-foreground" /> Transport
           {items.length > 0 ? (
-            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs px-1.5 py-0.5 rounded-full font-medium">
+            <span className="rounded-full bg-[#f1dfc5] px-1.5 py-0.5 text-xs font-medium text-[#9d6030]">
               {items.length}
             </span>
           ) : null}
@@ -55,7 +57,7 @@ export default function TripTransportCard({
               <div className="divide-y divide-border">
                 {items.map((item) => (
                   <div key={item._id} className="flex items-start gap-3 px-4 py-3">
-                    <div className="mt-0.5 rounded-xl bg-blue-50 p-2 text-blue-600">
+                    <div className="mt-0.5 rounded-xl bg-[#f4e5d2] p-2 text-[#a16437]">
                       {item.type === "flight" ? (
                         <Plane className="w-4 h-4" />
                       ) : (
@@ -76,7 +78,7 @@ export default function TripTransportCard({
                         </p>
                       ) : null}
                     </div>
-                    {!isArchived ? (
+                    {!isArchived && canManage ? (
                       <form action={deleteTransportAction}>
                         <input type="hidden" name="tripId" value={tripId} />
                         <input type="hidden" name="transportId" value={item._id} />
@@ -99,7 +101,7 @@ export default function TripTransportCard({
                   type="button"
                   variant="ghost"
                   onClick={onAddTransport}
-                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-500 font-medium transition-colors p-0"
+                  className="flex items-center gap-2 p-0 text-sm font-medium text-[#9d6030] transition-colors hover:text-[#85502a]"
                 >
                   <Plus className="w-4 h-4" /> Add transport
                 </Button>

@@ -6,6 +6,11 @@ import { toast } from "sonner";
 import AddStopModal from "@/components/stops/AddStopModal";
 import MapSearchBox from "@/components/map/MapSearchBox";
 import PoiInfoCard from "@/components/map/plan-map/PoiInfoCard";
+import {
+  PlannerStopsSidebarDesktopPanel,
+  PlannerStopsSidebarDesktopToggle,
+  PlannerStopsSidebarMobile,
+} from "@/components/map/plan-map/PlannerStopsSidebar";
 import { MARKER_STYLE_ID } from "@/components/map/plan-map/constants";
 import type {
   PendingLocation,
@@ -27,6 +32,7 @@ export default function PlanMapClient({
   searchState,
   isArchived = false,
   tripDocs = [],
+  accessMode = "user",
 }: PlanMapProps) {
   const router = useRouter();
   const mapRef = useRef<HTMLDivElement>(null);
@@ -42,6 +48,7 @@ export default function PlanMapClient({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapType, setMapType] = useState<"roadmap" | "hybrid">("roadmap");
   const [poiInfo, setPoiInfo] = useState<PendingLocation | null>(null);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
 
   useEffect(() => {
     isArchivedRef.current = isArchived;
@@ -139,6 +146,8 @@ export default function PlanMapClient({
                   "nationalPhoneNumber",
                   "websiteURI",
                   "photos",
+                  "rating",
+                  "userRatingCount",
                 ],
               });
               if (!place.location) return;
@@ -153,6 +162,8 @@ export default function PlanMapClient({
                 phone: place.nationalPhoneNumber ?? "",
                 website: place.websiteURI ?? "",
                 thumbnail: place.photos?.[0]?.getURI({ maxWidth: 400 }) ?? "",
+                rating: place.rating ?? null,
+                userRatingCount: place.userRatingCount ?? null,
               });
             } catch {
               // ignore POI detail failures
@@ -181,6 +192,8 @@ export default function PlanMapClient({
             phone: "",
             website: "",
             thumbnail: "",
+            rating: null,
+            userRatingCount: null,
           });
         });
 
@@ -272,13 +285,19 @@ export default function PlanMapClient({
     [openStopHref, router, stops],
   );
 
+  const handleSidebarStopSelect = useCallback((stop: (typeof stops)[number]) => {
+    const map = googleMapRef.current;
+    if (!map) {
+      return;
+    }
+
+    map.panTo({ lat: stop.lat, lng: stop.lng });
+    map.setZoom(Math.max(map.getZoom() ?? 13, 15));
+  }, []);
+
   return (
     <div className="flex-1 relative overflow-hidden">
       <div className="absolute inset-0 md:inset-x-4 md:inset-b-4 md:bottom-4 md:rounded-2xl overflow-hidden">
-        {mapLoaded ? (
-          <MapSearchBox map={mapInstance} onSelect={handleSearchSelect} />
-        ) : null}
-
         {mapLoaded ? (
           <div className="absolute bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 z-10 flex rounded-full bg-card shadow-lg border border-border overflow-hidden text-xs font-semibold">
             {(
@@ -327,6 +346,42 @@ export default function PlanMapClient({
         ) : null}
       </div>
 
+      {mapLoaded ? (
+        <>
+          <div className="absolute left-3 right-3 top-3 z-20 md:left-7 md:right-7">
+            <div className="flex items-start gap-2">
+              <PlannerStopsSidebarDesktopToggle
+                open={desktopSidebarOpen}
+                onToggle={() => setDesktopSidebarOpen((value) => !value)}
+              />
+              <PlannerStopsSidebarMobile
+                pathname={pathname}
+                searchState={searchState}
+                stops={stops}
+                onStopSelect={handleSidebarStopSelect}
+              />
+              <MapSearchBox
+                map={mapInstance}
+                onSelect={handleSearchSelect}
+                className="min-w-0 flex-1"
+              />
+            </div>
+          </div>
+
+          <div className="absolute inset-0 z-20 pointer-events-none md:inset-x-4 md:inset-b-4 md:bottom-4">
+            <div className="pointer-events-auto">
+              <PlannerStopsSidebarDesktopPanel
+                pathname={pathname}
+                searchState={searchState}
+                stops={stops}
+                open={desktopSidebarOpen}
+                onStopSelect={handleSidebarStopSelect}
+              />
+            </div>
+          </div>
+        </>
+      ) : null}
+
       {pendingLocation ? (
         <AddStopModal
           tripId={plan._id}
@@ -334,6 +389,7 @@ export default function PlanMapClient({
           tripDocs={tripDocs}
           returnTo={returnTo}
           onCancel={() => setPendingLocation(null)}
+          accessMode={accessMode}
         />
       ) : null}
 

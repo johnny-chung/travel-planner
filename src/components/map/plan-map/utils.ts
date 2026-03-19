@@ -1,19 +1,37 @@
 import { DATE_COLORS, DEFAULT_MAP_CENTER } from "@/components/map/plan-map/constants";
 import type { PlanMapPlan, Stop } from "@/components/map/plan-map/types";
 
+const UNTYPED_STOP_SORT_TIME = "23:58";
+
 export function getStopArrivals(stop: Stop) {
-  return stop.arrivals && stop.arrivals.length > 0
-    ? stop.arrivals
-    : [{ date: stop.date, time: stop.time }];
+  return stop.arrivals && stop.arrivals.length > 0 ? stop.arrivals : [];
+}
+
+export function getStopSortTime(stop: Pick<Stop, "time" | "displayTime">) {
+  return stop.displayTime && stop.time ? stop.time : UNTYPED_STOP_SORT_TIME;
 }
 
 export function sortStopsBySchedule(stops: Stop[]) {
   return [...stops].sort((left, right) => {
+    if (left.isScheduled !== right.isScheduled) {
+      return left.isScheduled ? -1 : 1;
+    }
+
+    if (!left.isScheduled && !right.isScheduled) {
+      return left.sequence - right.sequence;
+    }
+
     if (left.date !== right.date) {
       return left.date.localeCompare(right.date);
     }
 
-    return left.time.localeCompare(right.time);
+    if (left.sequence !== right.sequence) {
+      return left.sequence - right.sequence;
+    }
+
+    const leftSortTime = getStopSortTime(left);
+    const rightSortTime = getStopSortTime(right);
+    return leftSortTime.localeCompare(rightSortTime);
   });
 }
 
@@ -29,8 +47,24 @@ export function expandStops(stops: Stop[]) {
 
   for (const stop of stops) {
     const arrivals = getStopArrivals(stop);
+    if (arrivals.length === 0) {
+      expanded.push({
+        ...stop,
+        date: "",
+        time: "",
+        displayTime: false,
+      });
+      continue;
+    }
+
     if (arrivals.length === 1) {
-      expanded.push({ ...stop, _arrivalIndex: 0 });
+      expanded.push({
+        ...stop,
+        date: arrivals[0].date,
+        time: arrivals[0].time ?? "",
+        displayTime: Boolean(arrivals[0].time),
+        _arrivalIndex: 0,
+      });
       continue;
     }
 
@@ -38,7 +72,8 @@ export function expandStops(stops: Stop[]) {
       expanded.push({
         ...stop,
         date: arrivals[index].date,
-        time: arrivals[index].time,
+        time: arrivals[index].time ?? "",
+        displayTime: Boolean(arrivals[index].time),
         _arrivalIndex: index,
       });
     }
@@ -64,7 +99,9 @@ export function matchesDateRange(stop: Stop, from: string, to: string) {
 }
 
 export function buildFilteredStops(stops: Stop[], from: string, to: string) {
-  return stops.filter((stop) => matchesDateRange(stop, from, to));
+  return stops.filter(
+    (stop) => stop.isScheduled && matchesDateRange(stop, from, to),
+  );
 }
 
 export function buildOrderedStops(stops: Stop[], from: string, to: string) {
@@ -89,7 +126,9 @@ export function buildExpandedStops(orderedStops: Stop[], from: string, to: strin
 }
 
 export function getDateColorMap(stops: Stop[]) {
-  const uniqueDates = [...new Set(stops.map((stop) => stop.date))].sort();
+  const uniqueDates = [
+    ...new Set(stops.map((stop) => stop.date).filter(Boolean)),
+  ].sort();
   const colorMap = new Map<string, string>();
 
   uniqueDates.forEach((date, index) => {
@@ -130,7 +169,7 @@ export function createMarkerElement(stop: Stop, orderNum: number, pinColor: stri
   ];
   const dateLabel = `${months[month - 1]} ${day}`;
 
-  const [hour, minute] = stop.time.split(":").map(Number);
+  const [hour, minute] = (stop.time || "00:00").split(":").map(Number);
   const period = hour >= 12 ? "pm" : "am";
   const hour12 = hour % 12 || 12;
   const timeLabel = `${hour12}:${minute.toString().padStart(2, "0")}${period}`;

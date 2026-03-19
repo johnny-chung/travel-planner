@@ -25,9 +25,9 @@ const StopSchema = new Schema(
     sourceLabel: { type: String, default: "" },
     displayTime: { type: Boolean, default: true },
     editable: { type: Boolean, default: true },
+    sequence: { type: Number, required: true, index: true },
     arrivals: {
-      type: [{ date: { type: String, required: true }, time: { type: String, required: true } }],
-      required: true,
+      type: [{ date: { type: String, required: true }, time: { type: String, default: "" } }],
       default: [],
     },
   },

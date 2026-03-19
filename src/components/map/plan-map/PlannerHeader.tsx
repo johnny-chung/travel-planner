@@ -15,6 +15,7 @@ type Props = {
   stopCount: number;
   searchState: PlannerSearchState;
   isArchived: boolean;
+  backHref?: string;
 };
 
 export default function PlannerHeader({
@@ -23,6 +24,7 @@ export default function PlannerHeader({
   stopCount,
   searchState,
   isArchived,
+  backHref = "/plans",
 }: Props) {
   const mapHref = buildPlannerHref(pathname, searchState, {
     view: "map",
@@ -49,7 +51,7 @@ export default function PlannerHeader({
       <div className="bg-card border-b border-border px-4 py-3 flex items-center gap-3 z-10 shadow-sm flex-shrink-0">
         <div className="w-full max-w-3xl mx-auto flex items-center gap-3">
           <Link
-            href="/plans"
+            href={backHref}
             className="p-1.5 rounded-xl hover:bg-muted transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-muted-foreground" />

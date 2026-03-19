@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/mongodb";
+import { getAppLimits, getRouteCallLimitForMembership } from "@/features/settings/service";
 import { TravelTime } from "@/lib/models/TravelTime";
 import { ApiUsage } from "@/lib/models/ApiUsage";
 import { UserMonthlyUsage } from "@/lib/models/UserMonthlyUsage";
@@ -28,22 +29,24 @@ export async function POST(req: NextRequest) {
 
   const yearMonth = getYearMonth();
   const userId = session.user.id;
+  const limits = await getAppLimits();
 
   // Check global API limit
   const apiUsage = await ApiUsage.findOne({ yearMonth, apiType: "routes" }).lean() as { count?: number } | null;
-  if ((apiUsage?.count ?? 0) >= 10000) {
+  if ((apiUsage?.count ?? 0) >= limits.globalRouteCallsPerMonth) {
     return NextResponse.json({ error: "GLOBAL_LIMIT", message: "Monthly API limit reached" }, { status: 400 });
   }
 
   // Get user membership
   const user = await User.findOne({ userId }).lean() as { membershipStatus?: string } | null;
-  const isPro = user?.membershipStatus === "pro";
 
   // Check user monthly limit
   const userUsage = await UserMonthlyUsage.findOne({ userId, yearMonth }).lean() as { commuteCount?: number } | null;
-  const commuteLimit = isPro ? 100 : 10;
+  const commuteLimit = await getRouteCallLimitForMembership(
+    user?.membershipStatus === "pro" ? "pro" : "basic",
+  );
   if ((userUsage?.commuteCount ?? 0) >= commuteLimit) {
-    return NextResponse.json({ error: "USER_LIMIT", message: "Monthly calculation limit reached. Upgrade to Pro for more." }, { status: 429 });
+    return NextResponse.json({ error: "USER_LIMIT", message: `Monthly calculation limit reached (${commuteLimit}/month). Upgrade to Pro for more.` }, { status: 429 });
   }
 
   const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY ?? process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";

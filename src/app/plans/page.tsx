@@ -29,6 +29,7 @@ export default async function PlansPage({ searchParams }: Props) {
       showCreate={false}
       collectionPath="/plans"
       cardTarget="plan"
+      decorationImage="/material/Scroll.png"
     />
   );
 }

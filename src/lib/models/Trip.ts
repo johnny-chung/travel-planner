@@ -12,10 +12,19 @@ export function generateShareCode(): string {
 
 const TripSchema = new Schema(
   {
-    userId: { type: String, required: true, index: true },
+    ownerType: {
+      type: String,
+      enum: ["user", "guest"],
+      default: "user",
+      index: true,
+    },
+    userId: { type: String, default: "", index: true },
+    guestId: { type: String, default: null, index: true },
     name: { type: String, required: true },
     description: { type: String, default: "" },
     centerName: { type: String, default: "" },
+    centerPlaceId: { type: String, default: "" },
+    centerThumbnail: { type: String, default: "" },
     centerLat: { type: Number, default: null },
     centerLng: { type: Number, default: null },
     shareCode: { type: String, unique: true, sparse: true, index: true },

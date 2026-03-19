@@ -3,11 +3,13 @@
 import { useActionState, useState } from "react";
 import { MapPin, X, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { createStopAction, type StopFormActionState } from "@/features/stops/actions";
+import { createGuestStopAction } from "@/features/guest/actions";
 import SubmitButton from "@/components/shared/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import TimePicker from "@/components/ui/TimePicker";
 import type { TripDoc } from "@/components/map/plan-map/types";
 
@@ -29,6 +31,7 @@ type Props = {
   tripDocs?: TripDoc[];
   returnTo: string;
   onCancel: () => void;
+  accessMode?: "user" | "guest";
 };
 
 const initialState: StopFormActionState = {};
@@ -39,15 +42,17 @@ export default function AddStopModal({
   tripDocs = [],
   returnTo,
   onCancel,
+  accessMode = "user",
 }: Props) {
-  const [state, formAction] = useActionState(createStopAction, initialState);
+  const createAction =
+    accessMode === "guest" ? createGuestStopAction : createStopAction;
+  const [state, formAction] = useActionState(createAction, initialState);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [notes, setNotes] = useState("");
   const [linkedDocIds, setLinkedDocIds] = useState<string[]>([]);
   const [docsOpen, setDocsOpen] = useState(false);
-
-  const isValid = date && time;
+  const [saveForLater, setSaveForLater] = useState(false);
 
   function toggleDoc(id: string) {
     setLinkedDocIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -99,24 +104,58 @@ export default function AddStopModal({
 
         <div className="flex-1 overflow-y-auto px-6 pb-2 space-y-4">
           <div className="grid grid-cols-1 gap-3">
+            <div className="flex items-center justify-between rounded-2xl border border-border bg-muted/30 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-foreground">Save for later</p>
+                <p className="text-xs text-muted-foreground">
+                  Keep this stop unscheduled for now.
+                </p>
+              </div>
+              <Switch
+                checked={saveForLater}
+                onCheckedChange={(checked) => {
+                  setSaveForLater(checked);
+                  if (checked) {
+                    setDate("");
+                    setTime("");
+                  }
+                }}
+                aria-label="Save stop for later"
+              />
+            </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium">
-                Date <span className="text-red-500">*</span>
+                Date
               </Label>
               <Input
                 type="date"
                 name="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => {
+                  const nextDate = e.target.value;
+                  setDate(nextDate);
+                  if (!nextDate) {
+                    setTime("");
+                  }
+                }}
                 className="rounded-xl h-11"
+                disabled={saveForLater}
               />
+              <p className="text-xs text-muted-foreground">
+                Required unless you save this stop for later.
+              </p>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                Time <span className="text-red-500">*</span>
-              </Label>
-              <TimePicker value={time} onChange={setTime} />
+              <Label className="text-sm font-medium">Time</Label>
+              <TimePicker
+                value={time}
+                onChange={setTime}
+                className={saveForLater ? "pointer-events-none opacity-50" : ""}
+              />
               <input type="hidden" name="time" value={time} />
+              <p className="text-xs text-muted-foreground">
+                Optional even when a date is selected.
+              </p>
             </div>
           </div>
 
@@ -184,7 +223,6 @@ export default function AddStopModal({
           </Button>
           <SubmitButton
             className="flex-1 rounded-xl h-12 bg-blue-600 hover:bg-blue-700 font-semibold"
-            disabled={!isValid}
             pendingLabel="Saving..."
           >
             Save Stop

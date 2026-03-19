@@ -1,10 +1,15 @@
 import HomeClient from "@/components/home/HomeClient";
-import { requireSession } from "@/features/auth/session";
+import PublicLandingPage from "@/components/home/PublicLandingPage";
+import { getSession } from "@/features/auth/session";
 import { getNavigationSummary } from "@/features/navigation/service";
 import { getRecentTripSummariesForUser } from "@/features/trips/service";
 
 export default async function Home() {
-  const session = await requireSession();
+  const session = await getSession();
+  if (!session?.user?.id) {
+    return <PublicLandingPage />;
+  }
+
   const [plans, navigation] = await Promise.all([
     getRecentTripSummariesForUser(session.user.id),
     getNavigationSummary(session.user.id),

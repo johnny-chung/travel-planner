@@ -21,7 +21,9 @@ export default function UpgradeClient({ currentStatus }: Props) {
       if (!res.ok) throw new Error(data.error ?? "Failed to start checkout");
       if (data.url) window.location.href = data.url;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to start checkout");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to start checkout",
+      );
     } finally {
       setLoading(false);
     }
@@ -40,17 +42,29 @@ export default function UpgradeClient({ currentStatus }: Props) {
           <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
             <Zap className="w-8 h-8 text-blue-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Roamer&apos;s Ledger Pro</h1>
-          <p className="text-gray-500 mt-1 text-sm">Unlock the full Roamer&apos;s Ledger experience</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Roamer&apos;s Ledger Pro
+          </h1>
+          <p className="text-gray-500 mt-1 text-sm">
+            This is jsut a personal project and API call ain&apos;t free. You
+            subscription help me pay the bill.
+          </p>
+          <p className="text-gray-500 mt-1 text-sm">
+            Unlock the full Roamer&apos;s Ledger experience
+          </p>
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-4">
           <div className="flex items-baseline gap-2 mb-1">
             <span className="text-3xl font-bold text-gray-900">$5</span>
             <span className="text-gray-400 text-sm">/year</span>
-            <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-xs ml-1">50% off</Badge>
+            <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-xs ml-1">
+              50% off
+            </Badge>
           </div>
-          <p className="text-gray-400 text-xs mb-5 line-through">Regular price $10/year</p>
+          <p className="text-gray-400 text-xs mb-5 line-through">
+            Regular price $10/year
+          </p>
 
           <ul className="space-y-3 mb-6">
             {[
@@ -59,7 +73,10 @@ export default function UpgradeClient({ currentStatus }: Props) {
               "Unlimited navigation uses",
               "Priority support",
             ].map((feature) => (
-              <li key={feature} className="flex items-center gap-2.5 text-sm text-gray-700">
+              <li
+                key={feature}
+                className="flex items-center gap-2.5 text-sm text-gray-700"
+              >
                 <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                   <Check className="w-3 h-3 text-blue-600" />
                 </div>

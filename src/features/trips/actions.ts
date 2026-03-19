@@ -60,25 +60,29 @@ export async function createTripAction(
   formData: FormData,
 ): Promise<FormActionState> {
   const userId = await requireUserId();
+  let tripId = "";
 
   try {
-    await createTripForUser(userId, {
+    const trip = await createTripForUser(userId, {
       name: String(formData.get("name") ?? ""),
       description: String(formData.get("description") ?? ""),
       location: String(formData.get("location") ?? ""),
       locationLat: parseNumber(formData.get("locationLat")),
       locationLng: parseNumber(formData.get("locationLng")),
+      locationPlaceId: String(formData.get("locationPlaceId") ?? ""),
+      locationThumbnail: String(formData.get("locationThumbnail") ?? ""),
       transportMode:
         String(formData.get("transportMode") ?? "transit") === "drive"
           ? ("drive" as TransportMode)
           : "transit",
     });
+    tripId = String(trip._id);
   } catch (error) {
     return { error: getErrorMessage(error, "Failed to create trip") };
   }
 
-  revalidateTripPaths();
-  redirect("/trips");
+  revalidateTripPaths(tripId);
+  redirect(`/trips/${tripId}`);
 }
 
 export async function joinTripAction(

@@ -43,6 +43,8 @@ export async function POST(request: NextRequest) {
       location: payload.location ?? "",
       locationLat: payload.locationLat ?? null,
       locationLng: payload.locationLng ?? null,
+      locationPlaceId: payload.locationPlaceId ?? "",
+      locationThumbnail: payload.locationThumbnail ?? "",
       transportMode: payload.transportMode ?? "transit",
     });
 

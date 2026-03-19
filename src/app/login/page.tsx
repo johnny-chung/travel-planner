@@ -1,6 +1,6 @@
-import { signIn } from "@/auth";
 import BrandLogo from "@/components/branding/BrandLogo";
 import { Button } from "@/components/ui/button";
+import { signInWithAuth0Action } from "@/features/auth/actions";
 
 export default function LoginPage() {
   return (
@@ -25,12 +25,8 @@ export default function LoginPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
           <p className="text-gray-500 text-sm mb-8">Sign in to continue planning your adventures</p>
 
-          <form
-            action={async () => {
-              "use server";
-              await signIn("auth0", { redirectTo: "/trips" });
-            }}
-          >
+          <form action={signInWithAuth0Action}>
+            <input type="hidden" name="redirectTo" value="/auth/post-login" />
             <Button type="submit" className="w-full h-12 text-base rounded-xl font-semibold bg-blue-600 hover:bg-blue-700">
               Continue with Auth0
             </Button>

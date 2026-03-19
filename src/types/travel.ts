@@ -8,11 +8,24 @@ export type TransportMode = "transit" | "drive";
 
 export type TripStatus = "active" | "archived" | "deleted";
 
+export type TripCapabilities = {
+  isGuest: boolean;
+  canManageTransport: boolean;
+  canManageStay: boolean;
+  canManageDocuments: boolean;
+  canUseExpenses: boolean;
+  canCollaborate: boolean;
+  canCalculateRoutes: boolean;
+  canVisitAgain: boolean;
+};
+
 export type TripSummary = {
   _id: string;
   name: string;
   description: string;
   centerName: string;
+  centerPlaceId: string;
+  centerThumbnail: string;
   centerLat: number | null;
   centerLng: number | null;
   createdAt: string;
@@ -42,6 +55,8 @@ export type TripDetail = {
   name: string;
   description: string;
   centerName: string;
+  centerPlaceId: string;
+  centerThumbnail: string;
   shareCode: string;
   role: "owner" | "editor";
   userId: string;
@@ -50,6 +65,7 @@ export type TripDetail = {
   membershipStatus: MembershipStatus;
   transportItems: TripTransportItem[];
   stayItems: TripStayItem[];
+  capabilities: TripCapabilities;
 };
 
 export type NotificationItem = {

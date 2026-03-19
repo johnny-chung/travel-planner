@@ -7,6 +7,7 @@ import type {
   TripStayItem,
   TripTransportItem,
 } from "@/types/trip-logistics";
+import { getStopSortTime } from "@/components/map/plan-map/utils";
 
 export function buildStopRouteNodeId(stopId: string, arrivalIndex = 0) {
   return `${stopId}:${arrivalIndex}`;
@@ -175,13 +176,15 @@ export function buildTimelineItems(
   stays: TripStayItem[],
 ) {
   const items: PlannerTimelineItem[] = [
-    ...stops.map((stop) => ({
-      kind: "stop" as const,
-      id: buildStopRouteNodeId(stop._id, stop._arrivalIndex ?? 0),
-      date: stop.date,
-      time: stop.time,
-      stop,
-    })),
+    ...stops
+      .filter((stop) => stop.isScheduled && stop.date)
+      .map((stop) => ({
+        kind: "stop" as const,
+        id: buildStopRouteNodeId(stop._id, stop._arrivalIndex ?? 0),
+        date: stop.date,
+        time: getStopSortTime(stop),
+        stop,
+      })),
     ...transports.flatMap((transport) =>
       expandTransportTimelineItems(transport, from, to),
     ),
@@ -190,7 +193,8 @@ export function buildTimelineItems(
 
   return items.sort(
     (left, right) =>
-      left.date.localeCompare(right.date) || left.time.localeCompare(right.time),
+      left.date.localeCompare(right.date) ||
+      left.time.localeCompare(right.time),
   );
 }
 

@@ -6,6 +6,7 @@ import {
   calculateAllTravelTimesAction,
   type TravelTimeActionState,
 } from "@/features/travel-times/actions";
+import SignupGateDialog from "@/components/auth/SignupGateDialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +22,7 @@ type Props = {
   tripId: string;
   returnTo: string;
   disabled?: boolean;
+  restricted?: boolean;
   triggerClassName?: string;
   iconOnly?: boolean;
 };
@@ -29,6 +31,7 @@ export default function CalculateTravelTimesDialog({
   tripId,
   returnTo,
   disabled = false,
+  restricted = false,
   triggerClassName,
   iconOnly = false,
 }: Props) {
@@ -42,7 +45,13 @@ export default function CalculateTravelTimesDialog({
     <>
       <Button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          if (restricted) {
+            setOpen(true);
+            return;
+          }
+          setOpen(true);
+        }}
         variant="outline"
         size={iconOnly ? "icon-lg" : "default"}
         className={triggerClassName}
@@ -52,6 +61,14 @@ export default function CalculateTravelTimesDialog({
         <Route className="w-5 h-5" />
         {iconOnly ? null : <span>Calculate</span>}
       </Button>
+      {restricted ? (
+        <SignupGateDialog
+          open={open}
+          onOpenChange={setOpen}
+          title="Sign up to calculate routes"
+          description="Create an account to unlock route and travel-time calculation for your trip."
+        />
+      ) : (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-3xl mx-4 max-w-sm">
           <DialogHeader>
@@ -95,6 +112,7 @@ export default function CalculateTravelTimesDialog({
           </form>
         </DialogContent>
       </Dialog>
+      )}
     </>
   );
 }

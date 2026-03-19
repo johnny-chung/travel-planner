@@ -29,7 +29,12 @@ export default function BrandLogo({
         priority={priority}
       />
       {showLabel ? (
-        <span className={cn("font-bold", labelClassName)}>
+        <span
+          className={cn(
+            "font-brand text-[1.4rem] leading-none tracking-[0.01em] whitespace-nowrap",
+            labelClassName,
+          )}
+        >
           Roamer&apos;s Ledger
         </span>
       ) : null}

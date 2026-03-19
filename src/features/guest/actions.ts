@@ -1,0 +1,266 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { getOrCreateGuestId } from "@/features/guest/session";
+import {
+  createTrialTripForGuest,
+  TripServiceError,
+} from "@/features/trips/service";
+import {
+  applyStopSchedulesForGuest,
+  addArrivalToStopForGuest,
+  createStopForGuest,
+  deleteStopForGuest,
+  reorderStopsForGuest,
+  removeArrivalFromStopForGuest,
+  StopServiceError,
+  updateStopForGuest,
+} from "@/features/stops/service";
+import type { TransportMode } from "@/types/travel";
+
+export type GuestFormActionState = {
+  error?: string;
+};
+
+function parseNumber(value: FormDataEntryValue | null) {
+  if (typeof value !== "string" || value.trim() === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof TripServiceError || error instanceof StopServiceError) {
+    return error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
+function parseTrialReturnTo(formData: FormData, tripId: string) {
+  const fallback = `/try/${tripId}/plan`;
+  const returnTo = String(formData.get("returnTo") ?? "");
+  return returnTo.startsWith(fallback) ? returnTo : fallback;
+}
+
+function parseStringList(formData: FormData, key: string) {
+  return formData
+    .getAll(key)
+    .map((entry) => String(entry).trim())
+    .filter(Boolean);
+}
+
+function parseArrivals(formData: FormData) {
+  const date = String(formData.get("date") ?? "").trim();
+  const time = String(formData.get("time") ?? "").trim();
+
+  if (!date) {
+    return [];
+  }
+
+  return [{ date, time }];
+}
+
+function parseSchedulePayload(formData: FormData) {
+  const raw = String(formData.get("payload") ?? "");
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Array<{
+      stopId?: unknown;
+      date?: unknown;
+      time?: unknown;
+      sequence?: unknown;
+    }>;
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((entry) => ({
+        stopId: typeof entry.stopId === "string" ? entry.stopId : "",
+        date: typeof entry.date === "string" ? entry.date : "",
+        time: typeof entry.time === "string" ? entry.time : "",
+        sequence:
+          typeof entry.sequence === "number" && Number.isFinite(entry.sequence)
+            ? entry.sequence
+            : 0,
+      }))
+      .filter((entry) => entry.stopId);
+  } catch {
+    return [];
+  }
+}
+
+function revalidateTrialPaths(tripId?: string) {
+  revalidatePath("/");
+  revalidatePath("/try");
+  if (tripId) {
+    revalidatePath(`/try/${tripId}`);
+    revalidatePath(`/try/${tripId}/plan`);
+  }
+}
+
+export async function createTrialTripAction(
+  _previousState: GuestFormActionState,
+  formData: FormData,
+): Promise<GuestFormActionState> {
+  const guestId = await getOrCreateGuestId();
+
+  try {
+    const trip = await createTrialTripForGuest(guestId, {
+      name: String(formData.get("name") ?? ""),
+      description: String(formData.get("description") ?? ""),
+      location: String(formData.get("location") ?? ""),
+      locationLat: parseNumber(formData.get("locationLat")),
+      locationLng: parseNumber(formData.get("locationLng")),
+      locationPlaceId: String(formData.get("locationPlaceId") ?? ""),
+      locationThumbnail: String(formData.get("locationThumbnail") ?? ""),
+      transportMode:
+        String(formData.get("transportMode") ?? "transit") === "drive"
+          ? ("drive" as TransportMode)
+          : "transit",
+    });
+
+    revalidateTrialPaths(String(trip._id));
+    redirect(`/try/${String(trip._id)}`);
+  } catch (error) {
+    return { error: getErrorMessage(error, "Failed to create trip") };
+  }
+}
+
+export async function createGuestStopAction(
+  _previousState: GuestFormActionState,
+  formData: FormData,
+): Promise<GuestFormActionState> {
+  const guestId = await getOrCreateGuestId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const returnTo = parseTrialReturnTo(formData, tripId);
+
+  try {
+    await createStopForGuest(tripId, guestId, {
+      name: String(formData.get("name") ?? ""),
+      address: String(formData.get("address") ?? ""),
+      lat: Number(formData.get("lat") ?? 0),
+      lng: Number(formData.get("lng") ?? 0),
+      placeId: String(formData.get("placeId") ?? ""),
+      notes: String(formData.get("notes") ?? ""),
+      openingHours: parseStringList(formData, "openingHours"),
+      phone: String(formData.get("phone") ?? ""),
+      website: String(formData.get("website") ?? ""),
+      thumbnail: String(formData.get("thumbnail") ?? ""),
+      linkedDocIds: [],
+      arrivals: parseArrivals(formData),
+    });
+  } catch (error) {
+    return { error: getErrorMessage(error, "Failed to create stop") };
+  }
+
+  revalidateTrialPaths(tripId);
+  redirect(returnTo);
+}
+
+export async function updateGuestStopAction(
+  _previousState: GuestFormActionState,
+  formData: FormData,
+): Promise<GuestFormActionState> {
+  const guestId = await getOrCreateGuestId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const stopId = String(formData.get("stopId") ?? "");
+  const returnTo = parseTrialReturnTo(formData, tripId);
+
+  const arrivals = parseStringList(formData, "arrivals").map((entry) => {
+    const [date = "", time = ""] = entry.split("|");
+    return { date, time };
+  });
+
+  try {
+    await updateStopForGuest(tripId, stopId, guestId, {
+      notes: String(formData.get("notes") ?? ""),
+      linkedDocIds: [],
+      arrivals,
+    });
+  } catch (error) {
+    return { error: getErrorMessage(error, "Failed to update stop") };
+  }
+
+  revalidateTrialPaths(tripId);
+  redirect(returnTo);
+}
+
+export async function deleteGuestStopAction(formData: FormData) {
+  const guestId = await getOrCreateGuestId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const stopId = String(formData.get("stopId") ?? "");
+  const returnTo = parseTrialReturnTo(formData, tripId);
+
+  await deleteStopForGuest(tripId, stopId, guestId);
+  revalidateTrialPaths(tripId);
+  redirect(returnTo);
+}
+
+export async function addGuestStopArrivalAction(
+  _previousState: GuestFormActionState,
+  formData: FormData,
+): Promise<GuestFormActionState> {
+  const guestId = await getOrCreateGuestId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const stopId = String(formData.get("stopId") ?? "");
+  const returnTo = parseTrialReturnTo(formData, tripId);
+
+  try {
+    await addArrivalToStopForGuest(tripId, stopId, guestId, {
+      date: String(formData.get("date") ?? ""),
+      time: String(formData.get("time") ?? ""),
+    });
+  } catch (error) {
+    return { error: getErrorMessage(error, "Failed to add arrival") };
+  }
+
+  revalidateTrialPaths(tripId);
+  redirect(returnTo);
+}
+
+export async function removeGuestStopArrivalAction(formData: FormData) {
+  const guestId = await getOrCreateGuestId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const stopId = String(formData.get("stopId") ?? "");
+  const arrivalIndex = Number(formData.get("arrivalIndex") ?? -1);
+  const returnTo = parseTrialReturnTo(formData, tripId);
+
+  await removeArrivalFromStopForGuest(tripId, stopId, guestId, arrivalIndex);
+  revalidateTrialPaths(tripId);
+  redirect(returnTo);
+}
+
+export async function reorderGuestStopsAction(formData: FormData) {
+  const guestId = await getOrCreateGuestId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const returnTo = parseTrialReturnTo(formData, tripId);
+  const stopIds = parseStringList(formData, "stopIds");
+
+  await reorderStopsForGuest(tripId, guestId, stopIds);
+  revalidateTrialPaths(tripId);
+  redirect(returnTo);
+}
+
+export async function applyGuestStopSchedulesAction(formData: FormData) {
+  const guestId = await getOrCreateGuestId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const returnTo = parseTrialReturnTo(formData, tripId);
+  const schedules = parseSchedulePayload(formData);
+
+  await applyStopSchedulesForGuest(tripId, guestId, schedules);
+  revalidateTrialPaths(tripId);
+  redirect(returnTo);
+}

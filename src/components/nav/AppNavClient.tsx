@@ -11,9 +11,10 @@ import {
   Moon,
   Sun,
   User,
+  UserPlus,
   Wallet,
 } from "lucide-react";
-import { signOutAction } from "@/features/auth/actions";
+import { signInWithAuth0Action, signOutAction } from "@/features/auth/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -42,6 +43,11 @@ function getTripIdFromPath(pathname: string): string | null {
     return tripRouteMatch[1];
   }
 
+  const guestRouteMatch = pathname.match(/^\/try\/([^/]+)(?:\/plan)?/);
+  if (guestRouteMatch) {
+    return guestRouteMatch[1];
+  }
+
   const legacyRouteMatch = pathname.match(/^\/(plan|expense)\/([^/]+)/);
   return legacyRouteMatch ? legacyRouteMatch[2] : null;
 }
@@ -54,17 +60,33 @@ export default function AppNavClient({
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
+  const isGuestNav = !user && pathname.startsWith("/try");
+  const currentUser = user ?? { name: "", email: "", image: "" };
 
-  if (!user || pathname === "/login") {
+  if ((!user && !isGuestNav) || pathname === "/login") {
     return null;
   }
 
   const initials =
-    user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? "U";
+    currentUser.name?.[0]?.toUpperCase() ??
+    currentUser.email?.[0]?.toUpperCase() ??
+    "U";
   const isDark = (resolvedTheme ?? "light") === "dark";
   const currentTripId = getTripIdFromPath(pathname);
 
   function navHref(tab: "trips" | "plan" | "expense"): string {
+    if (isGuestNav) {
+      if (tab === "trips") {
+        return "/try";
+      }
+
+      if (tab === "plan" && currentTripId) {
+        return `/try/${currentTripId}/plan`;
+      }
+
+      return "/try";
+    }
+
     if (tab === "trips") {
       return "/trips";
     }
@@ -77,6 +99,22 @@ export default function AppNavClient({
   }
 
   function isActive(tab: "trips" | "plan" | "expense" | "/"): boolean {
+    if (isGuestNav) {
+      if (tab === "/") {
+        return pathname === "/";
+      }
+
+      if (tab === "trips") {
+        return pathname === "/try" || /^\/try\/[^/]+$/.test(pathname);
+      }
+
+      if (tab === "plan") {
+        return /^\/try\/[^/]+\/plan$/.test(pathname);
+      }
+
+      return false;
+    }
+
     if (tab === "/") {
       return pathname === "/";
     }
@@ -100,6 +138,10 @@ export default function AppNavClient({
     { tab: "/" as const, label: "Home", icon: Home, href: "/" },
     { tab: "trips" as const, label: "Trips", icon: MapPin, href: navHref("trips") },
     { tab: "plan" as const, label: "Plans", icon: Map, href: navHref("plan") },
+  ];
+
+  const userNavItems = [
+    ...navItems,
     {
       tab: "expense" as const,
       label: "Expenses",
@@ -107,6 +149,8 @@ export default function AppNavClient({
       href: navHref("expense"),
     },
   ];
+
+  const renderedNavItems = isGuestNav ? navItems : userNavItems;
 
   return (
     <>
@@ -123,7 +167,7 @@ export default function AppNavClient({
           />
         </Link>
         <nav className="flex-1 flex items-center justify-center gap-1">
-          {navItems.map(({ tab, label, href }) => (
+          {renderedNavItems.map(({ tab, label, href }) => (
             <Link
               key={tab}
               href={href}
@@ -139,6 +183,19 @@ export default function AppNavClient({
           ))}
         </nav>
         <div className="shrink-0 flex items-center gap-2">
+          {isGuestNav ? (
+            <form action={signInWithAuth0Action}>
+              <input type="hidden" name="redirectTo" value="/auth/post-login" />
+              <button
+                type="submit"
+                className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <UserPlus className="w-4 h-4" />
+                Sign Up
+              </button>
+            </form>
+          ) : null}
+          {!isGuestNav ? (
           <Link
             href="/notifications"
             className="relative p-2 rounded-lg hover:bg-muted transition-colors"
@@ -150,10 +207,12 @@ export default function AppNavClient({
               </span>
             ) : null}
           </Link>
+          ) : null}
+          {!isGuestNav ? (
           <DropdownMenu>
             <DropdownMenuTrigger className="outline-none rounded-full ring-offset-2 focus-visible:ring-2 focus-visible:ring-blue-500">
               <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:opacity-80 transition">
-                <AvatarImage src={user.image} />
+                <AvatarImage src={currentUser.image} />
                 <AvatarFallback className="bg-blue-600 text-white text-sm font-semibold">
                   {initials}
                 </AvatarFallback>
@@ -162,7 +221,7 @@ export default function AppNavClient({
             <DropdownMenuContent align="end" className="w-52">
               <div className="flex items-center justify-between gap-2 px-2 py-2 border-b mb-1">
                 <span className="text-sm font-semibold text-foreground truncate">
-                  {user.name || user.email}
+                  {currentUser.name || currentUser.email}
                 </span>
                 <span
                   className={cn(
@@ -199,6 +258,7 @@ export default function AppNavClient({
               </form>
             </DropdownMenuContent>
           </DropdownMenu>
+          ) : null}
         </div>
       </header>
 
@@ -207,7 +267,7 @@ export default function AppNavClient({
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex h-16">
-          {navItems.map(({ tab, label, icon: Icon, href }) => {
+          {renderedNavItems.map(({ tab, label, icon: Icon, href }) => {
             const active = isActive(tab);
             return (
               <Link
@@ -215,7 +275,7 @@ export default function AppNavClient({
                 href={href}
                 className={cn(
                   "flex-1 flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors",
-                  active ? "text-blue-600" : "text-gray-400",
+                  active ? "text-primary" : "text-muted-foreground",
                 )}
               >
                 <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
@@ -223,6 +283,18 @@ export default function AppNavClient({
               </Link>
             );
           })}
+          {isGuestNav ? (
+            <form action={signInWithAuth0Action} className="flex-1">
+              <input type="hidden" name="redirectTo" value="/auth/post-login" />
+              <button
+                type="submit"
+                className="flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-medium text-primary"
+              >
+                <UserPlus className="w-5 h-5" />
+                Sign Up
+              </button>
+            </form>
+          ) : null}
         </div>
       </nav>
     </>

@@ -568,9 +568,13 @@ function buildManualLocationPoint(input: {
 }
 
 export function isArrivalWithinTransportRange(
-  arrival: { date: string; time: string },
+  arrival: { date: string; time?: string },
   transports: TripTransportItem[],
 ) {
+  if (!arrival.date || !arrival.time) {
+    return null;
+  }
+
   const arrivalStamp = `${arrival.date}T${arrival.time}`;
 
   return transports.find((transport) => {
@@ -584,7 +588,18 @@ function compareArrivals(left: StopArrival, right: StopArrival) {
   if (left.date !== right.date) {
     return left.date.localeCompare(right.date);
   }
-  return left.time.localeCompare(right.time);
+  const leftTime = left.time ?? "";
+  const rightTime = right.time ?? "";
+  if (!leftTime && !rightTime) {
+    return 0;
+  }
+  if (!leftTime) {
+    return 1;
+  }
+  if (!rightTime) {
+    return -1;
+  }
+  return leftTime.localeCompare(rightTime);
 }
 
 function addMinutesToArrival(arrival: StopArrival, minutes: number): StopArrival {

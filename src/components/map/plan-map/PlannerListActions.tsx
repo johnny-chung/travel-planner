@@ -3,6 +3,7 @@ import CalculateTravelTimesDialog from "@/components/map/plan-map/CalculateTrave
 import PlannerAddStopDialog from "@/components/map/plan-map/PlannerAddStopDialog";
 import SharePlanButton from "@/components/map/plan-map/SharePlanButton";
 import type { TripDoc } from "@/components/map/plan-map/types";
+import type { TripCapabilities } from "@/types/travel";
 
 type Props = {
   pathname: string;
@@ -11,9 +12,11 @@ type Props = {
   shareText: string;
   searchState: PlannerSearchState;
   isArchived: boolean;
+  capabilities: TripCapabilities;
   canCalculate: boolean;
   tripDocs: TripDoc[];
   googleMapsApiKey: string;
+  accessMode?: "user" | "guest";
 };
 
 export default function PlannerListActions({
@@ -23,9 +26,11 @@ export default function PlannerListActions({
   shareText,
   searchState,
   isArchived,
+  capabilities,
   canCalculate,
   tripDocs,
   googleMapsApiKey,
+  accessMode = "user",
 }: Props) {
   const returnTo = buildPlannerHref(pathname, searchState, {
     stopId: null,
@@ -48,6 +53,7 @@ export default function PlannerListActions({
           tripId={tripId}
           returnTo={returnTo}
           disabled={!canCalculate || isArchived}
+          restricted={!capabilities.canCalculateRoutes}
           triggerClassName="rounded-full border bg-card px-4 shadow-lg"
         />
         <PlannerAddStopDialog
@@ -55,6 +61,7 @@ export default function PlannerListActions({
           tripDocs={tripDocs}
           returnTo={returnTo}
           apiKey={googleMapsApiKey}
+          accessMode={accessMode}
           disabled={isArchived || !googleMapsApiKey}
           iconOnly={false}
           triggerClassName="rounded-full bg-primary px-4 text-primary-foreground shadow-lg hover:bg-primary/90"
@@ -73,6 +80,7 @@ export default function PlannerListActions({
           tripId={tripId}
           returnTo={returnTo}
           disabled={!canCalculate || isArchived}
+          restricted={!capabilities.canCalculateRoutes}
           iconOnly
           triggerClassName="size-12 rounded-full border bg-card shadow-lg"
         />
@@ -81,6 +89,7 @@ export default function PlannerListActions({
           tripDocs={tripDocs}
           returnTo={returnTo}
           apiKey={googleMapsApiKey}
+          accessMode={accessMode}
           disabled={isArchived || !googleMapsApiKey}
           triggerClassName="size-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
         />

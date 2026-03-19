@@ -10,6 +10,7 @@ type Props = {
   tripId: string;
   documents: TripDocument[];
   isArchived: boolean;
+  canManage?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddDocument: () => void;
@@ -19,6 +20,7 @@ export default function TripDocumentsCard({
   tripId,
   documents,
   isArchived,
+  canManage = true,
   open,
   onOpenChange,
   onAddDocument,
@@ -33,7 +35,7 @@ export default function TripDocumentsCard({
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <FileText className="w-4 h-4 text-muted-foreground" /> Documents
           {documents.length > 0 ? (
-            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs px-1.5 py-0.5 rounded-full font-medium">
+            <span className="rounded-full bg-[#f1dfc5] px-1.5 py-0.5 text-xs font-medium text-[#9d6030]">
               {documents.length}
             </span>
           ) : null}
@@ -55,14 +57,14 @@ export default function TripDocumentsCard({
               <div className="divide-y divide-border">
                 {documents.map((document) => (
                   <div key={document._id} className="flex items-center gap-3 px-4 py-3">
-                    <FileText className="w-4 h-4 text-blue-400 shrink-0" />
+                    <FileText className="w-4 h-4 shrink-0 text-[#c38d5f]" />
                     <a
                       href={document.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1 min-w-0 group"
                     >
-                      <p className="text-sm font-medium text-foreground group-hover:text-blue-500 truncate transition-colors">
+                      <p className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-[#9d6030]">
                         {document.name}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
@@ -73,11 +75,11 @@ export default function TripDocumentsCard({
                       href={document.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 text-muted-foreground/60 hover:text-blue-500 transition-colors shrink-0"
+                      className="shrink-0 p-1.5 text-muted-foreground/60 transition-colors hover:text-[#9d6030]"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
-                    {!isArchived ? (
+                    {!isArchived && canManage ? (
                       <form action={removeTripDocumentAction}>
                         <input type="hidden" name="tripId" value={tripId} />
                         <input type="hidden" name="documentId" value={document._id} />
@@ -100,7 +102,7 @@ export default function TripDocumentsCard({
                   type="button"
                   variant="ghost"
                   onClick={onAddDocument}
-                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-500 font-medium transition-colors p-0"
+                  className="flex items-center gap-2 p-0 text-sm font-medium text-[#9d6030] transition-colors hover:text-[#85502a]"
                 >
                   <Plus className="w-4 h-4" /> Add document
                 </Button>

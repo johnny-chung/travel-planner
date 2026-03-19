@@ -18,6 +18,9 @@ export type RouteCalculationResult = {
   details: TravelStepDetail[];
 };
 
+const DEFAULT_LOCAL_ARRIVAL_TIME = "09:00";
+const timeZoneCache = new Map<string, string>();
+
 /** Maps requested mode → ordered fallback chain */
 export function getFallbackChain(mode: TravelMode): TravelMode[] {
   if (mode === "TRANSIT") return ["TRANSIT", "DRIVE", "WALK"];
@@ -25,19 +28,187 @@ export function getFallbackChain(mode: TravelMode): TravelMode[] {
   return ["WALK"];
 }
 
+function normalizeLocalTime(time: string): string {
+  return time?.trim() ? time : DEFAULT_LOCAL_ARRIVAL_TIME;
+}
+
+function getDateParts(date: string) {
+  const [year, month, day] = date.split("-").map((value) => parseInt(value, 10));
+  return { year, month, day };
+}
+
+function getTimeParts(time: string) {
+  const normalized = normalizeLocalTime(time);
+  const [hour, minute] = normalized.split(":").map((value) => parseInt(value, 10));
+  return { hour, minute };
+}
+
+function isValidDateParts(year: number, month: number, day: number) {
+  return (
+    Number.isFinite(year) &&
+    Number.isFinite(month) &&
+    Number.isFinite(day) &&
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= 31
+  );
+}
+
+function isValidTimeParts(hour: number, minute: number) {
+  return (
+    Number.isFinite(hour) &&
+    Number.isFinite(minute) &&
+    hour >= 0 &&
+    hour <= 23 &&
+    minute >= 0 &&
+    minute <= 59
+  );
+}
+
+function getUtcPartsInTimeZone(date: Date, timeZone: string) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(date);
+  const read = (type: string) =>
+    parseInt(parts.find((part) => part.type === type)?.value ?? "0", 10);
+
+  return {
+    year: read("year"),
+    month: read("month"),
+    day: read("day"),
+    hour: read("hour"),
+    minute: read("minute"),
+    second: read("second"),
+  };
+}
+
+function getOffsetForTimeZone(date: Date, timeZone: string) {
+  const zoned = getUtcPartsInTimeZone(date, timeZone);
+  return (
+    Date.UTC(
+      zoned.year,
+      zoned.month - 1,
+      zoned.day,
+      zoned.hour,
+      zoned.minute,
+      zoned.second,
+    ) - date.getTime()
+  );
+}
+
+function convertLocalDateTimeToIso(date: string, time: string, timeZone: string) {
+  const { year, month, day } = getDateParts(date);
+  const { hour, minute } = getTimeParts(time);
+
+  if (!isValidDateParts(year, month, day) || !isValidTimeParts(hour, minute)) {
+    return null;
+  }
+
+  const utcGuess = Date.UTC(year, month - 1, day, hour, minute, 0);
+  let offset = getOffsetForTimeZone(new Date(utcGuess), timeZone);
+  let exactUtc = utcGuess - offset;
+  const refinedOffset = getOffsetForTimeZone(new Date(exactUtc), timeZone);
+
+  if (refinedOffset !== offset) {
+    offset = refinedOffset;
+    exactUtc = utcGuess - offset;
+  }
+
+  return new Date(exactUtc).toISOString();
+}
+
+async function getTimeZoneId(
+  lat: number,
+  lng: number,
+  date: string,
+  time: string,
+  apiKey: string,
+) {
+  const normalizedTime = normalizeLocalTime(time);
+  const cacheKey = `${lat.toFixed(4)}:${lng.toFixed(4)}:${date}`;
+  const cached = timeZoneCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const { year, month, day } = getDateParts(date);
+  const { hour, minute } = getTimeParts(normalizedTime);
+  if (!isValidDateParts(year, month, day) || !isValidTimeParts(hour, minute)) {
+    return null;
+  }
+
+  const timestamp = Math.floor(Date.UTC(year, month - 1, day, hour, minute, 0) / 1000);
+  const response = await fetch(
+    `https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${apiKey}`,
+    { cache: "no-store" },
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = (await response.json()) as { status?: string; timeZoneId?: string };
+  if (data.status !== "OK" || !data.timeZoneId) {
+    return null;
+  }
+
+  timeZoneCache.set(cacheKey, data.timeZoneId);
+  return data.timeZoneId;
+}
+
 /**
- * Returns a future ISO timestamp for the given date+time.
- * - If the date is in the past → use today's date with the same time.
- * - If the date is more than 99 days in the future → use today's date with the same time
- *   (Routes API rejects very far-future times for transit).
+ * Returns a future ISO timestamp for the given local date+time at the destination.
+ * - If the local date is in the past → use today's date in that same timezone with the same local time.
+ * - If the local date is more than 99 days in the future → use today's date in that same timezone
+ *   with the same local time (Routes API rejects very far-future times for transit).
  */
-function buildTimestamp(date: string, time: string): string {
-  const target = new Date(date + "T" + time + ":00");
+async function buildTimestamp(
+  date: string,
+  time: string,
+  lat: number,
+  lng: number,
+  apiKey: string,
+): Promise<string> {
+  const timeZone = await getTimeZoneId(lat, lng, date, time, apiKey);
+  if (timeZone) {
+    const localIso = convertLocalDateTimeToIso(date, time, timeZone);
+    if (localIso) {
+      const target = new Date(localIso);
+      const now = Date.now();
+      const limit99Days = 99 * 24 * 60 * 60 * 1000;
+
+      if (target.getTime() >= now && target.getTime() - now <= limit99Days) {
+        return target.toISOString();
+      }
+
+      const zonedNow = getUtcPartsInTimeZone(new Date(), timeZone);
+      const todayInZone = `${zonedNow.year.toString().padStart(4, "0")}-${zonedNow.month
+        .toString()
+        .padStart(2, "0")}-${zonedNow.day.toString().padStart(2, "0")}`;
+      const fallbackIso = convertLocalDateTimeToIso(todayInZone, time, timeZone);
+      if (fallbackIso) {
+        return fallbackIso;
+      }
+    }
+  }
+
+  const fallbackTime = normalizeLocalTime(time);
+  const target = new Date(`${date}T${fallbackTime}:00`);
   const now = Date.now();
   const limit99Days = 99 * 24 * 60 * 60 * 1000;
   const today = new Date().toISOString().slice(0, 10);
   if (target.getTime() < now || target.getTime() - now > limit99Days) {
-    return new Date(today + "T" + time + ":00").toISOString();
+    return new Date(`${today}T${fallbackTime}:00`).toISOString();
   }
   return target.toISOString();
 }
@@ -46,15 +217,15 @@ function buildRequestBody(
   fromLat: number, fromLng: number,
   toLat: number, toLng: number,
   mode: TravelMode,
-  toDate: string, toTime: string
+  arrivalTime?: string,
 ): Record<string, unknown> {
   const body: Record<string, unknown> = {
     origin: { location: { latLng: { latitude: fromLat, longitude: fromLng } } },
     destination: { location: { latLng: { latitude: toLat, longitude: toLng } } },
     travelMode: mode,
   };
-  if (mode === "TRANSIT") {
-    body.arrivalTime = buildTimestamp(toDate, toTime);
+  if (mode === "TRANSIT" && arrivalTime) {
+    body.arrivalTime = arrivalTime;
   } else if (mode === "DRIVE") {
     body.routingPreference = "TRAFFIC_UNAWARE";
   }
@@ -195,6 +366,10 @@ async function calculateRoute(
   apiKey: string
 ): Promise<Omit<RouteCalculationResult, "mode"> | null> {
   try {
+    const arrivalTime =
+      mode === "TRANSIT"
+        ? await buildTimestamp(toDate, toTime, toLat, toLng, apiKey)
+        : undefined;
     const res = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
       method: "POST",
       headers: {
@@ -216,7 +391,9 @@ async function calculateRoute(
         ].join(","),
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(buildRequestBody(fromLat, fromLng, toLat, toLng, mode, toDate, toTime)),
+      body: JSON.stringify(
+        buildRequestBody(fromLat, fromLng, toLat, toLng, mode, arrivalTime),
+      ),
     });
     if (!res.ok) {
       console.error("[Routes API] computeRoutes failed", {
