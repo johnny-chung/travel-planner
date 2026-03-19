@@ -1,11 +1,14 @@
 import { buildPlannerHref, type PlannerSearchState } from "@/features/planner/search-params";
 import CalculateTravelTimesDialog from "@/components/map/plan-map/CalculateTravelTimesDialog";
 import PlannerAddStopDialog from "@/components/map/plan-map/PlannerAddStopDialog";
+import SharePlanButton from "@/components/map/plan-map/SharePlanButton";
 import type { TripDoc } from "@/components/map/plan-map/types";
 
 type Props = {
   pathname: string;
   tripId: string;
+  planName: string;
+  shareText: string;
   searchState: PlannerSearchState;
   isArchived: boolean;
   canCalculate: boolean;
@@ -16,6 +19,8 @@ type Props = {
 export default function PlannerListActions({
   pathname,
   tripId,
+  planName,
+  shareText,
   searchState,
   isArchived,
   canCalculate,
@@ -33,6 +38,12 @@ export default function PlannerListActions({
   return (
     <>
       <div className="hidden md:flex fixed bottom-6 right-6 z-30 items-center gap-3">
+        <SharePlanButton
+          title={`${planName} itinerary`}
+          text={shareText}
+          disabled={!shareText}
+          triggerClassName="rounded-full border bg-card px-4 shadow-lg"
+        />
         <CalculateTravelTimesDialog
           tripId={tripId}
           returnTo={returnTo}
@@ -51,6 +62,13 @@ export default function PlannerListActions({
       </div>
 
       <div className="md:hidden fixed bottom-20 right-4 z-30 flex items-center gap-2">
+        <SharePlanButton
+          title={`${planName} itinerary`}
+          text={shareText}
+          disabled={!shareText}
+          iconOnly
+          triggerClassName="size-12 rounded-full border bg-card shadow-lg"
+        />
         <CalculateTravelTimesDialog
           tripId={tripId}
           returnTo={returnTo}

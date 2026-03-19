@@ -56,7 +56,7 @@ export async function POST() {
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: config.priceId, quantity: 1 }],
-    success_url: `${config.appUrl}/upgrade?success=true`,
+    success_url: `${config.appUrl}/?upgraded=true`,
     cancel_url: `${config.appUrl}/upgrade?canceled=true`,
     subscription_data: {
       metadata: { userId: session.user.id },

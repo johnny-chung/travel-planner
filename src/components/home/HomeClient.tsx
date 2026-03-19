@@ -36,9 +36,9 @@ type Props = {
 
 export default function HomeClient({ user, plans, membershipStatus }: Props) {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const isDark = theme === "dark";
+  const isDark = (resolvedTheme ?? "light") === "dark";
   const firstName = user.name?.split(" ")[0] ?? "there";
   const recentPlans = plans.slice(0, 3);
   const initials =

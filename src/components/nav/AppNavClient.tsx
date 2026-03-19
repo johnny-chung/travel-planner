@@ -53,7 +53,7 @@ export default function AppNavClient({
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
 
   if (!user || pathname === "/login") {
     return null;
@@ -61,7 +61,7 @@ export default function AppNavClient({
 
   const initials =
     user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? "U";
-  const isDark = theme === "dark";
+  const isDark = (resolvedTheme ?? "light") === "dark";
   const currentTripId = getTripIdFromPath(pathname);
 
   function navHref(tab: "trips" | "plan" | "expense"): string {

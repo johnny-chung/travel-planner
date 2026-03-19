@@ -16,6 +16,7 @@ import {
   buildRouteNodes,
   buildRouteSegments,
 } from "@/features/planner/timeline";
+import { buildPlannerShareText } from "@/features/planner/share";
 import { getTripPlannerDataForUser } from "@/features/planner/service";
 import type { Stop } from "@/components/map/plan-map/types";
 
@@ -61,6 +62,10 @@ export default async function TripPlanPage({ params, searchParams }: Props) {
   const pathname = `/trips/${tripId}/plan`;
   const routeNodes = buildRouteNodes(plannerData.timelineItems);
   const routeSegments = buildRouteSegments(plannerData.timelineItems);
+  const shareText = buildPlannerShareText(
+    plannerData.plan.name,
+    plannerData.timelineItems,
+  );
   const closeHref = buildPlannerHref(pathname, searchState, {
     stopId: null,
     stayId: null,
@@ -190,6 +195,8 @@ export default async function TripPlanPage({ params, searchParams }: Props) {
           <PlannerListActions
             pathname={pathname}
             tripId={tripId}
+            planName={plannerData.plan.name}
+            shareText={shareText}
             searchState={searchState}
             isArchived={plannerData.isArchived}
             canCalculate={routeSegments.length > 0}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Check, Zap, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,6 @@ import { toast } from "sonner";
 type Props = { currentStatus: string };
 
 export default function UpgradeClient({ currentStatus }: Props) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const isPro = currentStatus === "pro";
 
@@ -31,12 +30,12 @@ export default function UpgradeClient({ currentStatus }: Props) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
-        <button
-          onClick={() => router.back()}
+        <Link
+          href="/"
           className="flex items-center gap-1.5 text-gray-400 hover:text-gray-600 text-sm mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back
-        </button>
+        </Link>
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
             <Zap className="w-8 h-8 text-blue-600" />
