@@ -9,6 +9,13 @@ import { Toaster } from "@/components/ui/sonner";
 import ThemeProvider from "@/components/layout/ThemeProvider";
 import AppNav from "@/components/layout/AppNav";
 import { Analytics } from "@vercel/analytics/next";
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+  buildAbsoluteUrl,
+  getSiteUrl,
+} from "@/features/seo/metadata";
 
 const instrumentSans = Instrument_Sans({
   variable: "--font-sans",
@@ -32,18 +39,52 @@ const shadowsIntoLight = Shadows_Into_Light({
 });
 
 export const metadata: Metadata = {
-  title: "Roamer's Ledger — Travel Planner",
-  description: "Plan your travels with ease",
+  metadataBase: getSiteUrl(),
+  applicationName: SITE_NAME,
+  title: {
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: [
+    "travel planner",
+    "trip itinerary",
+    "trip planner",
+    "travel itinerary app",
+    "route planner",
+    "travel expense tracker",
+  ],
   manifest: "/manifest.json",
   icons: {
     icon: "/material/Logo.png",
     shortcut: "/material/Logo.png",
     apple: "/material/Logo.png",
   },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: buildAbsoluteUrl("/"),
+    images: [
+      {
+        url: "/material/Logo.png",
+        width: 512,
+        height: 512,
+        alt: `${SITE_NAME} logo`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/material/Logo.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Roamer's Ledger",
+    title: SITE_NAME,
   },
 };
 
@@ -52,7 +93,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#2563eb",
+  themeColor: "#6d4323",
 };
 
 export default function RootLayout({
