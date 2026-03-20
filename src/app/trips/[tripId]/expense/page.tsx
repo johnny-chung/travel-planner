@@ -1,51 +1,63 @@
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
-import { connectDB } from "@/lib/mongodb";
-import { Trip } from "@/lib/models/Trip";
-import { User } from "@/lib/models/User";
-import ExpenseDetailClient from "@/components/expense/ExpenseDetailClient";
+import ExpenseDetailClient from "@/features/expense/components/ExpenseDetailClient";
+import {
+  getExpensePageDataForUser,
+  ExpenseServiceError,
+} from "@/features/expense/service";
+import type { ExpenseTab } from "@/features/expense/types";
 
-type Props = { params: Promise<{ tripId: string }> };
+type Props = {
+  params: Promise<{ tripId: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    from?: string;
+    to?: string;
+  }>;
+};
 
-export default async function TripExpensePage({ params }: Props) {
+function parseTab(tab: string | undefined): ExpenseTab {
+  if (tab === "all" || tab === "summary") {
+    return tab;
+  }
+  return "add";
+}
+
+export default async function TripExpensePage({ params, searchParams }: Props) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
-  const { tripId } = await params;
-  await connectDB();
+  const [{ tripId }, query] = await Promise.all([params, searchParams]);
 
-  const trip = (await Trip.findOne({ _id: tripId }).lean()) as
-    | { _id: unknown; userId: string; name: string; editors?: string[] }
-    | null;
-  if (!trip) notFound();
-
-  const isOwner = trip.userId === session.user.id;
-  const isEditor = (trip.editors ?? []).includes(session.user.id);
-  if (!isOwner && !isEditor) notFound();
-
-  const memberIds = [trip.userId, ...(trip.editors ?? [])];
-  const users = (await User.find({ userId: { $in: memberIds } }).lean()) as Array<{
-    userId: string;
-    name: string;
-    email: string;
-    image: string;
-  }>;
-
-  const members = memberIds.map((userId) => {
-    const user = users.find((candidate) => candidate.userId === userId);
-    return {
-      userId,
-      name: user?.name ?? userId,
-      email: user?.email ?? "",
-      image: user?.image ?? "",
-    };
-  });
+  let pageData;
+  try {
+    // Keep expense reads in the server page so the client only handles interaction.
+    pageData = await getExpensePageDataForUser({
+      tripId,
+      userId: session.user.id,
+      from: query.from,
+      to: query.to,
+    });
+  } catch (error) {
+    if (
+      error instanceof ExpenseServiceError &&
+      error.code === "NOT_FOUND"
+    ) {
+      notFound();
+    }
+    throw error;
+  }
 
   return (
     <ExpenseDetailClient
-      tripId={String(trip._id)}
-      tripName={trip.name}
+      tripId={pageData.tripId}
+      tripName={pageData.tripName}
       currentUserId={session.user.id}
-      members={members}
+      members={pageData.members}
+      expenses={pageData.expenses}
+      currentTab={parseTab(query.tab)}
+      filterFrom={query.from ?? ""}
+      filterTo={query.to ?? ""}
+      currentDate={new Date().toISOString().slice(0, 10)}
     />
   );
 }

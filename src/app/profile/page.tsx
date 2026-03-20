@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import ProfileClient from "@/components/profile/ProfileClient";
+import ProfileClient from "@/features/profile/components/ProfileClient";
 import { getRouteCallLimitForMembership } from "@/features/settings/service";
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";

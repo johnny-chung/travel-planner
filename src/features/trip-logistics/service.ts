@@ -10,7 +10,6 @@ import { Stop } from "@/lib/models/Stop";
 import { TravelTime } from "@/lib/models/TravelTime";
 import { AirportCache } from "@/lib/models/AirportCache";
 import { syncTripTravelDates } from "@/features/trips/travel-dates";
-import type { StopArrival } from "@/types/stop";
 import type {
   CachedAirport,
   FlightRouteSuggestion,
@@ -567,15 +566,108 @@ function buildManualLocationPoint(input: {
   };
 }
 
-export function isArrivalWithinTransportRange(
-  arrival: { date: string; time?: string },
+function buildTransportItem(input: AddTransportInput): Omit<TripTransportItem, "_id"> {
+  if (input.type === "flight") {
+    const flightNumber = ensureText(input.flightNumber, "Flight number");
+    const departureDate = ensureDate(input.departureDate, "Departure date");
+    return {
+      type: "flight",
+      title: `Flight ${normalizeFlightNumber(flightNumber)}`,
+      flightNumber: normalizeFlightNumber(flightNumber),
+      departureDate,
+      departureTime: ensureTime(input.departureTime ?? "", "Departure time"),
+      arrivalDate: ensureDate(input.arrivalDate ?? "", "Arrival date"),
+      arrivalTime: ensureTime(input.arrivalTime ?? "", "Arrival time"),
+      departure: buildManualLocationPoint(
+        {
+          name: input.departureName,
+          address: input.departureAddress,
+          placeId: input.departurePlaceId,
+          lat: input.departureLat,
+          lng: input.departureLng,
+        },
+        "Departure airport",
+      ),
+      arrival: buildManualLocationPoint(
+        {
+          name: input.arrivalName,
+          address: input.arrivalAddress,
+          placeId: input.arrivalPlaceId,
+          lat: input.arrivalLat,
+          lng: input.arrivalLng,
+        },
+        "Arrival airport",
+      ),
+      sourceMode: "airlabs",
+    };
+  }
+
+  return {
+    type: "custom",
+    title: ensureText(input.title, "Transport title"),
+    flightNumber: "",
+    departureDate: ensureDate(input.departureDate, "Departure date"),
+    departureTime: ensureTime(input.departureTime ?? "", "Departure time"),
+    arrivalDate: ensureDate(input.arrivalDate ?? "", "Arrival date"),
+    arrivalTime: ensureTime(input.arrivalTime ?? "", "Arrival time"),
+    departure: buildManualLocationPoint(
+      {
+        name: input.departureName,
+        address: input.departureAddress,
+        placeId: input.departurePlaceId,
+        lat: input.departureLat,
+        lng: input.departureLng,
+      },
+      "Departure",
+    ),
+    arrival: buildManualLocationPoint(
+      {
+        name: input.arrivalName,
+        address: input.arrivalAddress,
+        placeId: input.arrivalPlaceId,
+        lat: input.arrivalLat,
+        lng: input.arrivalLng,
+      },
+      "Arrival",
+    ),
+    sourceMode: "manual",
+  };
+}
+
+function buildStayItem(input: AddStayInput) {
+  const checkInDate = ensureDate(input.checkInDate, "Check-in date");
+  const checkOutDate = ensureDate(input.checkOutDate, "Check-out date");
+
+  if (checkOutDate < checkInDate) {
+    throw new TripServiceError(
+      "VALIDATION_ERROR",
+      "Check-out date must be on or after check-in",
+    );
+  }
+
+  return {
+    name: ensureText(input.name, "Stay name"),
+    address: ensureText(input.address, "Stay address"),
+    placeId: input.placeId?.trim() ?? "",
+    lat: input.lat,
+    lng: input.lng,
+    checkInDate,
+    checkOutDate,
+    thumbnail: input.thumbnail?.trim() ?? "",
+    phone: input.phone?.trim() ?? "",
+    website: input.website?.trim() ?? "",
+  };
+}
+
+export function isVisitWithinTransportRange(
+  visit: { date: string; time?: string },
   transports: TripTransportItem[],
 ) {
-  if (!arrival.date || !arrival.time) {
+  if (!visit.date || !visit.time) {
     return null;
   }
 
-  const arrivalStamp = `${arrival.date}T${arrival.time}`;
+  const arrivalStamp = `${visit.date}T${visit.time}`;
 
   return transports.find((transport) => {
     const departureStamp = `${transport.departureDate}T${transport.departureTime}`;
@@ -584,26 +676,11 @@ export function isArrivalWithinTransportRange(
   }) ?? null;
 }
 
-function compareArrivals(left: StopArrival, right: StopArrival) {
-  if (left.date !== right.date) {
-    return left.date.localeCompare(right.date);
-  }
-  const leftTime = left.time ?? "";
-  const rightTime = right.time ?? "";
-  if (!leftTime && !rightTime) {
-    return 0;
-  }
-  if (!leftTime) {
-    return 1;
-  }
-  if (!rightTime) {
-    return -1;
-  }
-  return leftTime.localeCompare(rightTime);
-}
-
-function addMinutesToArrival(arrival: StopArrival, minutes: number): StopArrival {
-  const value = new Date(`${arrival.date}T${arrival.time}:00Z`);
+function addMinutesToVisit(
+  visit: { date: string; time?: string },
+  minutes: number,
+) {
+  const value = new Date(`${visit.date}T${visit.time}:00Z`);
   value.setUTCMinutes(value.getUTCMinutes() + minutes);
   return {
     date: value.toISOString().slice(0, 10),
@@ -616,61 +693,47 @@ async function shiftStopsAfterTransportConflict(
   transport: Omit<TripTransportItem, "_id">,
 ) {
   const stops = (await Stop.find({ planId: tripId })
-    .select("_id arrivals")
-    .lean()) as Array<{ _id: unknown; arrivals?: StopArrival[] }>;
+    .select("_id status date time")
+    .lean()) as Array<{ _id: unknown; status?: string; date?: string; time?: string }>;
 
   const conflictingStops = stops
-    .map((stop) => {
-      const conflictingArrivals = (stop.arrivals ?? [])
-        .filter(
-          (arrival) =>
-            isArrivalWithinTransportRange(arrival, [
-              { _id: "", ...transport },
-            ]) !== null,
-        )
-        .sort(compareArrivals);
-
-      return {
-        stopId: String(stop._id),
-        arrivals: stop.arrivals ?? [],
-        conflictingArrivals,
-      };
-    })
-    .filter((stop) => stop.conflictingArrivals.length > 0)
-    .sort((left, right) =>
-      compareArrivals(left.conflictingArrivals[0], right.conflictingArrivals[0]),
+    .filter(
+      (stop) =>
+        stop.status === "scheduled" &&
+        typeof stop.date === "string" &&
+        typeof stop.time === "string" &&
+        isVisitWithinTransportRange(
+          { date: stop.date, time: stop.time },
+          [{ _id: "", ...transport }],
+        ) !== null,
+    )
+    .sort(
+      (left, right) =>
+        `${left.date}T${left.time}`.localeCompare(`${right.date}T${right.time}`),
     );
 
   if (conflictingStops.length === 0) {
     return;
   }
 
-  let cursor: StopArrival = {
+  let cursor = {
     date: transport.arrivalDate,
     time: transport.arrivalTime,
   };
 
   for (const stop of conflictingStops) {
-    const updatedArrivals = [...stop.arrivals];
-    for (const conflictingArrival of stop.conflictingArrivals) {
-      cursor = addMinutesToArrival(cursor, 1);
-      const index = updatedArrivals.findIndex(
-        (arrival) =>
-          arrival.date === conflictingArrival.date &&
-          arrival.time === conflictingArrival.time,
-      );
-      if (index >= 0) {
-        updatedArrivals[index] = cursor;
-      }
-    }
-
-    updatedArrivals.sort(compareArrivals);
+    cursor = addMinutesToVisit(cursor, 1);
     await Stop.findOneAndUpdate(
-      { _id: stop.stopId, planId: tripId },
-      { arrivals: updatedArrivals },
+      { _id: stop._id, planId: tripId },
+      {
+        status: "scheduled",
+        date: cursor.date,
+        time: cursor.time,
+        displayTime: true,
+      },
     );
 
-    const endpointPattern = buildEndpointPrefixPattern(stop.stopId);
+    const endpointPattern = buildEndpointPrefixPattern(String(stop._id));
     await TravelTime.deleteMany({
       $or: [{ fromStopId: endpointPattern }, { toStopId: endpointPattern }],
     });
@@ -700,83 +763,37 @@ export async function addTransportForUser(
 ) {
   await connectDB();
   await getEditableTripForUser(tripId, userId);
-
-  let nextItem: Omit<TripTransportItem, "_id">;
-
-  if (input.type === "flight") {
-    const flightNumber = ensureText(input.flightNumber, "Flight number");
-    const departureDate = ensureDate(input.departureDate, "Departure date");
-    nextItem = {
-      type: "flight",
-      title: `Flight ${normalizeFlightNumber(flightNumber)}`,
-      flightNumber: normalizeFlightNumber(flightNumber),
-      departureDate,
-      departureTime: ensureTime(
-        input.departureTime ?? "",
-        "Departure time",
-      ),
-      arrivalDate: ensureDate(input.arrivalDate ?? "", "Arrival date"),
-      arrivalTime: ensureTime(input.arrivalTime ?? "", "Arrival time"),
-      departure: buildManualLocationPoint(
-        {
-          name: input.departureName,
-          address: input.departureAddress,
-          placeId: input.departurePlaceId,
-          lat: input.departureLat,
-          lng: input.departureLng,
-        },
-        "Departure airport",
-      ),
-      arrival: buildManualLocationPoint(
-        {
-          name: input.arrivalName,
-          address: input.arrivalAddress,
-          placeId: input.arrivalPlaceId,
-          lat: input.arrivalLat,
-          lng: input.arrivalLng,
-        },
-        "Arrival airport",
-      ),
-      sourceMode: "airlabs",
-    };
-  } else {
-    nextItem = {
-      type: "custom",
-      title: ensureText(input.title, "Transport title"),
-      flightNumber: "",
-      departureDate: ensureDate(input.departureDate, "Departure date"),
-      departureTime: ensureTime(input.departureTime ?? "", "Departure time"),
-      arrivalDate: ensureDate(input.arrivalDate ?? "", "Arrival date"),
-      arrivalTime: ensureTime(input.arrivalTime ?? "", "Arrival time"),
-      departure: buildManualLocationPoint(
-        {
-          name: input.departureName,
-          address: input.departureAddress,
-          placeId: input.departurePlaceId,
-          lat: input.departureLat,
-          lng: input.departureLng,
-        },
-        "Departure",
-      ),
-      arrival: buildManualLocationPoint(
-        {
-          name: input.arrivalName,
-          address: input.arrivalAddress,
-          placeId: input.arrivalPlaceId,
-          lat: input.arrivalLat,
-          lng: input.arrivalLng,
-        },
-        "Arrival",
-      ),
-      sourceMode: "manual",
-    };
-  }
+  const nextItem = buildTransportItem(input);
 
   await TripTransport.create({
     tripId,
     userId,
     ...nextItem,
   });
+
+  await shiftStopsAfterTransportConflict(tripId, nextItem);
+  await syncTripTravelDates(tripId);
+}
+
+export async function updateTransportForUser(
+  tripId: string,
+  userId: string,
+  transportId: string,
+  input: AddTransportInput,
+) {
+  await connectDB();
+  await getEditableTripForUser(tripId, userId);
+  const nextItem = buildTransportItem(input);
+
+  const updated = await TripTransport.findOneAndUpdate(
+    { _id: transportId, tripId },
+    nextItem,
+    { new: true },
+  ).lean();
+
+  if (!updated) {
+    throw new TripServiceError("NOT_FOUND", "Transport item not found");
+  }
 
   await shiftStopsAfterTransportConflict(tripId, nextItem);
   await syncTripTravelDates(tripId);
@@ -809,31 +826,36 @@ export async function addStayForUser(
 ) {
   await connectDB();
   await getEditableTripForUser(tripId, userId);
-
-  const checkInDate = ensureDate(input.checkInDate, "Check-in date");
-  const checkOutDate = ensureDate(input.checkOutDate, "Check-out date");
-
-  if (checkOutDate < checkInDate) {
-    throw new TripServiceError(
-      "VALIDATION_ERROR",
-      "Check-out date must be on or after check-in",
-    );
-  }
+  const nextItem = buildStayItem(input);
 
   await TripStay.create({
     tripId,
     userId,
-    name: ensureText(input.name, "Stay name"),
-    address: ensureText(input.address, "Stay address"),
-    placeId: input.placeId?.trim() ?? "",
-    lat: input.lat,
-    lng: input.lng,
-    checkInDate,
-    checkOutDate,
-    thumbnail: input.thumbnail?.trim() ?? "",
-    phone: input.phone?.trim() ?? "",
-    website: input.website?.trim() ?? "",
+    ...nextItem,
   });
+
+  await syncTripTravelDates(tripId);
+}
+
+export async function updateStayForUser(
+  tripId: string,
+  userId: string,
+  stayId: string,
+  input: AddStayInput,
+) {
+  await connectDB();
+  await getEditableTripForUser(tripId, userId);
+  const nextItem = buildStayItem(input);
+
+  const updated = await TripStay.findOneAndUpdate(
+    { _id: stayId, tripId },
+    nextItem,
+    { new: true },
+  ).lean();
+
+  if (!updated) {
+    throw new TripServiceError("NOT_FOUND", "Stay not found");
+  }
 
   await syncTripTravelDates(tripId);
 }

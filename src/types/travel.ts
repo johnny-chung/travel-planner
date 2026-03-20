@@ -25,6 +25,7 @@ export type TripSummary = {
   description: string;
   centerName: string;
   centerPlaceId: string;
+  centerCountryCode: string;
   centerThumbnail: string;
   centerLat: number | null;
   centerLng: number | null;
@@ -56,6 +57,7 @@ export type TripDetail = {
   description: string;
   centerName: string;
   centerPlaceId: string;
+  centerCountryCode: string;
   centerThumbnail: string;
   shareCode: string;
   role: "owner" | "editor";

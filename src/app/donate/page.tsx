@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import DonateClient from "./DonateClient";
+import DonateClient from "@/features/donate/components/DonateClient";
 
 type Props = { searchParams: Promise<{ success?: string; canceled?: string }> };
 

@@ -5,10 +5,12 @@ import { ArchivedExpense } from "@/lib/models/ArchivedExpense";
 import { ArchivedStop } from "@/lib/models/ArchivedStop";
 import { ArchivedTripStay } from "@/lib/models/ArchivedTripStay";
 import { ArchivedTripTransport } from "@/lib/models/ArchivedTripTransport";
+import { ArchivedTripChecklistItem } from "@/lib/models/ArchivedTripChecklistItem";
 import { ArchivedTrip } from "@/lib/models/ArchivedTrip";
 import { Expense } from "@/lib/models/Expense";
 import { Stop } from "@/lib/models/Stop";
 import { TravelTime } from "@/lib/models/TravelTime";
+import { TripChecklistItem } from "@/lib/models/TripChecklistItem";
 import { TripStay } from "@/lib/models/TripStay";
 import { TripTransport } from "@/lib/models/TripTransport";
 import { Trip } from "@/lib/models/Trip";
@@ -32,6 +34,18 @@ function toArchiveDocument(record: ArchiveSource, archivedBy: string) {
   };
 }
 
+async function deleteTripRelatedData(tripId: string, ownerId: string) {
+  await Promise.all([
+    Trip.deleteOne({ _id: tripId, userId: ownerId }),
+    Stop.deleteMany({ planId: tripId }),
+    Expense.deleteMany({ tripId }),
+    TripTransport.deleteMany({ tripId }),
+    TripStay.deleteMany({ tripId }),
+    TripChecklistItem.deleteMany({ tripId }),
+    TravelTime.deleteMany({ planId: tripId }),
+  ]);
+}
+
 export async function archiveTripAndDelete(tripId: string, ownerId: string) {
   await connectDB();
 
@@ -42,14 +56,29 @@ export async function archiveTripAndDelete(tripId: string, ownerId: string) {
     return false;
   }
 
-  const [stops, expenses, transports, stays] = (await Promise.all([
+  const [stops, expenses, transports, stays, checklistItems] = (await Promise.all([
     Stop.find({ planId: tripId }).lean(),
     Expense.find({ tripId }).lean(),
     TripTransport.find({ tripId }).lean(),
     TripStay.find({ tripId }).lean(),
-  ])) as [ArchiveSource[], ArchiveSource[], ArchiveSource[], ArchiveSource[]];
+    TripChecklistItem.find({ tripId }).lean(),
+  ])) as [
+    ArchiveSource[],
+    ArchiveSource[],
+    ArchiveSource[],
+    ArchiveSource[],
+    ArchiveSource[],
+  ];
 
-  await ArchivedTrip.create(toArchiveDocument(trip, ownerId));
+  if (stops.length < 5) {
+    await deleteTripRelatedData(tripId, ownerId);
+    return true;
+  }
+
+  await ArchivedTrip.create({
+    ...toArchiveDocument(trip, ownerId),
+    status: "deleted",
+  });
 
   if (stops.length > 0) {
     await ArchivedStop.insertMany(
@@ -75,14 +104,13 @@ export async function archiveTripAndDelete(tripId: string, ownerId: string) {
     );
   }
 
-  await Promise.all([
-    Trip.deleteOne({ _id: tripId, userId: ownerId }),
-    Stop.deleteMany({ planId: tripId }),
-    Expense.deleteMany({ tripId }),
-    TripTransport.deleteMany({ tripId }),
-    TripStay.deleteMany({ tripId }),
-    TravelTime.deleteMany({ planId: tripId }),
-  ]);
+  if (checklistItems.length > 0) {
+    await ArchivedTripChecklistItem.insertMany(
+      checklistItems.map((item) => toArchiveDocument(item, ownerId)),
+    );
+  }
+
+  await deleteTripRelatedData(tripId, ownerId);
 
   return true;
 }

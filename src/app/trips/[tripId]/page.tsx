@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireUserId } from "@/features/auth/session";
 import { TripServiceError, getTripDetailForUser } from "@/features/trips/service";
-import TripDetailClient from "@/components/trips/TripDetailClient";
+import TripDetailClient from "@/features/trips/components/TripDetailClient";
 
 type Props = { params: Promise<{ tripId: string }> };
 

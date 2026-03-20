@@ -14,8 +14,8 @@ import {
 } from "@/features/trip-logistics/service";
 import { buildRouteSegments, buildTimelineItems } from "@/features/planner/timeline";
 import { calculateWithFallback, type TravelMode } from "@/lib/routes-api";
-import type { TravelTimeEntry } from "@/components/map/plan-map/types";
-import { applyStopOrder, buildExpandedStops } from "@/components/map/plan-map/utils";
+import type { TravelTimeEntry } from "@/features/planner/components/plan-map/types";
+import { applyStopOrder, buildExpandedStops } from "@/features/planner/components/plan-map/utils";
 
 export class TravelTimeServiceError extends Error {
   constructor(
@@ -34,13 +34,44 @@ type TripAccessRecord = {
 
 type StopRecord = {
   _id: unknown;
+  name?: string;
+  address?: string;
+  placeId?: string;
   lat: number;
   lng: number;
+  date?: string;
+  time?: string;
+  status?: string;
+  displayTime?: boolean;
   sequence?: number;
-  arrivals?: Array<{ date: string; time?: string }>;
 };
 
 type TravelTimeRecord = Record<string, unknown>;
+
+function serializeTravelDetail(detail: unknown) {
+  if (!detail || typeof detail !== "object") {
+    return null;
+  }
+
+  const entry = detail as Record<string, unknown>;
+  return {
+    type:
+      entry.type === "DRIVE" || entry.type === "WALK" || entry.type === "TRANSIT"
+        ? entry.type
+        : "TRANSIT",
+    label: typeof entry.label === "string" ? entry.label : "",
+    durationMinutes: Number(entry.durationMinutes ?? 0),
+    distanceMeters:
+      entry.distanceMeters === null || entry.distanceMeters === undefined
+        ? null
+        : Number(entry.distanceMeters),
+    departureStop:
+      typeof entry.departureStop === "string" ? entry.departureStop : "",
+    arrivalStop: typeof entry.arrivalStop === "string" ? entry.arrivalStop : "",
+    lineName: typeof entry.lineName === "string" ? entry.lineName : "",
+    headsign: typeof entry.headsign === "string" ? entry.headsign : "",
+  } as NonNullable<TravelTimeEntry["details"]>[number];
+}
 
 function getYearMonth() {
   return new Date().toISOString().slice(0, 7);
@@ -64,7 +95,14 @@ function serializeTravelTime(travelTime: TravelTimeRecord): TravelTimeEntry {
     summary:
       typeof travelTime.summary === "string" ? travelTime.summary : undefined,
     details: Array.isArray(travelTime.details)
-      ? (travelTime.details as TravelTimeEntry["details"])
+      ? travelTime.details
+          .map(serializeTravelDetail)
+          .filter(
+            (
+              detail,
+            ): detail is NonNullable<TravelTimeEntry["details"]>[number] =>
+              detail !== null,
+          )
       : undefined,
   };
 }
@@ -236,18 +274,19 @@ export async function calculateAllTravelTimesForUser(
       stops.map((stop, index) => ({
         _id: String(stop._id),
         planId,
-        name: "",
-        address: "",
+        name: stop.name ?? "",
+        address: stop.address ?? "",
         lat: stop.lat,
         lng: stop.lng,
-        placeId: "",
-        date: stop.arrivals?.[0]?.date ?? "",
-        time: stop.arrivals?.[0]?.time ?? "",
+        placeId: stop.placeId ?? "",
+        date: stop.date ?? "",
+        time: stop.time ?? "",
+        status: stop.status === "scheduled" ? "scheduled" : "unscheduled",
         sequence:
           typeof stop.sequence === "number" && Number.isFinite(stop.sequence)
             ? stop.sequence
             : index + 1,
-        isScheduled: Array.isArray(stop.arrivals) && stop.arrivals.length > 0,
+        isScheduled: stop.status === "scheduled" && Boolean(stop.date),
         notes: "",
         openingHours: [],
         phone: "",
@@ -255,11 +294,10 @@ export async function calculateAllTravelTimesForUser(
         thumbnail: "",
         order: 0,
         linkedDocIds: [],
-        arrivals: stop.arrivals ?? [],
         sourceType: "manual" as const,
         sourceId: "",
         sourceLabel: "",
-        displayTime: Boolean(stop.arrivals?.[0]?.time),
+        displayTime: Boolean(stop.displayTime ?? stop.time),
         editable: true,
       })),
     ),

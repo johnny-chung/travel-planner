@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import TripDetailClient from "@/components/trips/TripDetailClient";
+import TripDetailClient from "@/features/trips/components/TripDetailClient";
 import { getGuestId } from "@/features/guest/session";
 import { getTripDetailForGuest } from "@/features/trips/service";
 import { notFound, redirect } from "next/navigation";
@@ -36,6 +36,7 @@ export default async function TrialTripDetailPage({ params }: Props) {
       googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""}
       backHref="/try"
       planHref={`/try/${tripId}/plan`}
+      checklistHref={`/try/${tripId}/checklist`}
     />
   );
 }

@@ -1,5 +1,5 @@
-import HomeClient from "@/components/home/HomeClient";
-import PublicLandingPage from "@/components/home/PublicLandingPage";
+import HomeClient from "@/features/home/components/HomeClient";
+import PublicLandingPage from "@/features/home/components/PublicLandingPage";
 import { getSession } from "@/features/auth/session";
 import { getNavigationSummary } from "@/features/navigation/service";
 import { getRecentTripSummariesForUser } from "@/features/trips/service";

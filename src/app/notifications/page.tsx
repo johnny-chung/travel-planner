@@ -1,6 +1,6 @@
 import { requireUserId } from "@/features/auth/session";
 import { getTripNotificationsForOwner } from "@/features/trips/service";
-import NotificationsList from "@/components/notifications/list/NotificationsList";
+import NotificationsList from "@/features/notifications/components/list/NotificationsList";
 
 export default async function NotificationsPage() {
   const userId = await requireUserId();

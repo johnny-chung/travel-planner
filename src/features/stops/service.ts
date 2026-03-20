@@ -4,7 +4,7 @@ import { connectDB } from "@/lib/mongodb";
 import { getAppLimits } from "@/features/settings/service";
 import {
   getTransportItemsForTrip,
-  isArrivalWithinTransportRange,
+  isVisitWithinTransportRange,
 } from "@/features/trip-logistics/service";
 import {
   canActorAccessTrip,
@@ -14,8 +14,9 @@ import { Stop } from "@/lib/models/Stop";
 import { TravelTime } from "@/lib/models/TravelTime";
 import { Trip } from "@/lib/models/Trip";
 import { syncTripTravelDates } from "@/features/trips/travel-dates";
-import { serializeStop } from "@/features/stops/serialization";
-import type { StopArrival } from "@/types/stop";
+import { serializeStop, serializeStops } from "@/features/stops/serialization";
+import type { TripStop } from "@/types/stop";
+import { orderStopsForDay } from "@/features/planner/components/plan-map/utils";
 
 export class StopServiceError extends Error {
   constructor(
@@ -46,14 +47,20 @@ type CreateStopInput = {
   website?: string;
   thumbnail?: string;
   linkedDocIds?: string[];
-  arrivals?: StopArrival[];
+  date?: string;
+  time?: string;
 };
 
 type UpdateStopInput = {
   notes?: string;
   linkedDocIds?: string[];
-  arrivals?: StopArrival[];
-  sequence?: number;
+  date?: string;
+  time?: string;
+};
+
+type DuplicateStopInput = {
+  date?: string;
+  time?: string;
 };
 
 type AppliedStopSchedule = {
@@ -62,6 +69,62 @@ type AppliedStopSchedule = {
   time: string;
   sequence: number;
 };
+
+type RawStopRecord = {
+  _id: unknown;
+  planId?: unknown;
+  name?: unknown;
+  address?: unknown;
+  lat?: unknown;
+  lng?: unknown;
+  placeId?: unknown;
+  date?: unknown;
+  time?: unknown;
+  status?: unknown;
+  sequence?: unknown;
+  notes?: unknown;
+  openingHours?: unknown;
+  phone?: unknown;
+  website?: unknown;
+  thumbnail?: unknown;
+  linkedDocIds?: unknown;
+  sourceType?: unknown;
+  sourceId?: unknown;
+  sourceLabel?: unknown;
+  displayTime?: unknown;
+  editable?: unknown;
+};
+
+function normalizeStringArray(value: string[] | undefined) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function normalizeSchedule(date: string | undefined, time: string | undefined) {
+  const nextDate = date?.trim() ?? "";
+  const nextTime = time?.trim() ?? "";
+
+  if (!nextDate) {
+    return {
+      status: "unscheduled" as const,
+      date: "",
+      time: "",
+      displayTime: false,
+    };
+  }
+
+  return {
+    status: "scheduled" as const,
+    date: nextDate,
+    time: nextTime,
+    displayTime: Boolean(nextTime),
+  };
+}
 
 async function getTripForActor(
   tripId: string,
@@ -98,70 +161,62 @@ async function assertGuestStopLimit(actor: TripActor, tripId: string, nextStops 
   }
 }
 
-function normalizeArrivals(arrivals: StopArrival[] | undefined) {
-  if (!Array.isArray(arrivals) || arrivals.length === 0) {
-    return [];
-  }
+async function getSerializedStopsForTrip(tripId: string) {
+  const rawStops = (await Stop.find({ planId: tripId })
+    .sort({ sequence: 1, createdAt: 1 })
+    .lean()) as RawStopRecord[];
 
-  const normalized = arrivals
-    .map((arrival) => ({
-      date: typeof arrival.date === "string" ? arrival.date.trim() : "",
-      time: typeof arrival.time === "string" ? arrival.time.trim() : "",
-    }))
-    .filter((arrival) => {
-      if (!arrival.date) {
-        return false;
-      }
-
-      return true;
-    })
-    .map((arrival) => ({
-      date: arrival.date,
-      time: arrival.time,
-    }))
-    .sort((left, right) => {
-      if (left.date !== right.date) {
-        return left.date.localeCompare(right.date);
-      }
-      if (!left.time && !right.time) {
-        return 0;
-      }
-      if (!left.time) {
-        return 1;
-      }
-      if (!right.time) {
-        return -1;
-      }
-      return left.time.localeCompare(right.time);
-    });
-
-  return normalized;
+  return serializeStops(rawStops);
 }
 
-function normalizeStringArray(value: string[] | undefined) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
+function buildOrderedTripStops(stops: TripStop[]) {
+  const scheduled = stops.filter((stop) => stop.isScheduled && stop.date);
+  const unscheduled = stops
+    .filter((stop) => !stop.isScheduled || !stop.date)
+    .sort((left, right) => left.sequence - right.sequence || left._id.localeCompare(right._id));
 
-  return value
-    .map((entry) => entry.trim())
-    .filter(Boolean);
+  const dates = [...new Set(scheduled.map((stop) => stop.date))].sort();
+  return [
+    ...dates.flatMap((date) =>
+      orderStopsForDay(scheduled.filter((stop) => stop.date === date)),
+    ),
+    ...unscheduled,
+  ];
 }
 
-async function assertArrivalsOutsideTransportRanges(
+async function resequenceTripStops(tripId: string) {
+  const serializedStops = await getSerializedStopsForTrip(tripId);
+  const orderedStops = buildOrderedTripStops(serializedStops);
+
+  await Promise.all(
+    orderedStops.map((stop, index) =>
+      Stop.updateOne(
+        { _id: stop._id, planId: tripId },
+        { $set: { sequence: index + 1 } },
+      ),
+    ),
+  );
+}
+
+async function assertStopOutsideTransportRanges(
   tripId: string,
-  arrivals: StopArrival[],
+  stop: { date: string; time: string; displayTime: boolean; isScheduled?: boolean },
 ) {
-  const transports = await getTransportItemsForTrip(tripId);
+  if (!stop.date || !stop.time || !stop.displayTime) {
+    return;
+  }
 
-  for (const arrival of arrivals) {
-    const overlappingTransport = isArrivalWithinTransportRange(arrival, transports);
-    if (overlappingTransport) {
-      throw new StopServiceError(
-        "TRANSPORT_CONFLICT",
-        `This stop overlaps with ${overlappingTransport.title} (${overlappingTransport.departureDate} ${overlappingTransport.departureTime} to ${overlappingTransport.arrivalDate} ${overlappingTransport.arrivalTime})`,
-      );
-    }
+  const transports = await getTransportItemsForTrip(tripId);
+  const overlappingTransport = isVisitWithinTransportRange(
+    { date: stop.date, time: stop.time },
+    transports,
+  );
+
+  if (overlappingTransport) {
+    throw new StopServiceError(
+      "TRANSPORT_CONFLICT",
+      `This stop overlaps with ${overlappingTransport.title} (${overlappingTransport.departureDate} ${overlappingTransport.departureTime} to ${overlappingTransport.arrivalDate} ${overlappingTransport.arrivalTime})`,
+    );
   }
 }
 
@@ -174,9 +229,42 @@ async function getNextStopSequence(tripId: string) {
   return (lastStop?.sequence ?? 0) + 1;
 }
 
+async function getInsertSequenceForScheduledUntimedStop(tripId: string, date: string) {
+  const firstStop = (await Stop.findOne({
+    planId: tripId,
+    status: "scheduled",
+    date,
+  })
+    .sort({ sequence: 1, createdAt: 1 })
+    .select("sequence")
+    .lean()) as { sequence?: number } | null;
+
+  if (typeof firstStop?.sequence === "number" && Number.isFinite(firstStop.sequence)) {
+    return firstStop.sequence + 0.5;
+  }
+
+  return getNextStopSequence(tripId);
+}
+
 function buildStopEndpointPattern(stopId: string) {
   const escaped = stopId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`^${escaped}(?::|$)`);
+}
+
+async function clearTravelTimesForStops(stopIds: string[]) {
+  const uniqueStopIds = [...new Set(stopIds.filter(Boolean))];
+  if (uniqueStopIds.length === 0) {
+    return;
+  }
+
+  const endpointPatterns = uniqueStopIds.map((stopId) => buildStopEndpointPattern(stopId));
+  await TravelTime.deleteMany({
+    $or: [{ fromStopId: { $in: endpointPatterns } }, { toStopId: { $in: endpointPatterns } }],
+  });
+}
+
+function buildStopUpdateSchedule(input: { date?: string; time?: string }) {
+  return normalizeSchedule(input.date, input.time);
 }
 
 export async function createStopForUser(
@@ -203,9 +291,17 @@ async function createStopForActor(
   await connectDB();
   await getTripForActor(tripId, actor);
   await assertGuestStopLimit(actor, tripId);
-  const normalizedArrivals = normalizeArrivals(input.arrivals);
-  await assertArrivalsOutsideTransportRanges(tripId, normalizedArrivals);
-  const sequence = await getNextStopSequence(tripId);
+
+  const schedule = buildStopUpdateSchedule(input);
+  await assertStopOutsideTransportRanges(tripId, {
+    ...schedule,
+    isScheduled: schedule.status === "scheduled",
+  });
+
+  const sequence =
+    schedule.status === "scheduled" && !schedule.time
+      ? await getInsertSequenceForScheduledUntimedStop(tripId, schedule.date)
+      : await getNextStopSequence(tripId);
 
   const stop = await Stop.create({
     planId: tripId,
@@ -221,13 +317,17 @@ async function createStopForActor(
     website: input.website ?? "",
     thumbnail: input.thumbnail ?? "",
     linkedDocIds: normalizeStringArray(input.linkedDocIds),
-    arrivals: normalizedArrivals,
+    status: schedule.status,
+    date: schedule.date,
+    time: schedule.time,
+    displayTime: schedule.displayTime,
     sequence,
-    displayTime: normalizedArrivals[0]?.time ? true : false,
   });
 
+  await resequenceTripStops(tripId);
   await syncTripTravelDates(tripId);
-  return serializeStop(stop.toObject(), 1);
+  const refreshedStop = await Stop.findById(stop._id).lean();
+  return serializeStop(refreshedStop ?? stop.toObject(), 1);
 }
 
 export async function updateStopForUser(
@@ -256,30 +356,45 @@ async function updateStopForActor(
 ) {
   await connectDB();
   await getTripForActor(tripId, actor);
-  const existingStop = await Stop.findOne({ _id: stopId, planId: tripId }).lean();
+
+  const existingStop = (await Stop.findOne({ _id: stopId, planId: tripId }).lean()) as RawStopRecord | null;
   if (!existingStop) {
     throw new StopServiceError("NOT_FOUND", "Stop not found");
   }
 
-  const update: Record<string, unknown> = {};
+  const nextSchedule = buildStopUpdateSchedule({
+    date: input.date ?? (typeof existingStop.date === "string" ? existingStop.date : ""),
+    time: input.time ?? (typeof existingStop.time === "string" ? existingStop.time : ""),
+  });
+
+  await assertStopOutsideTransportRanges(tripId, {
+    ...nextSchedule,
+    isScheduled: nextSchedule.status === "scheduled",
+  });
+
+  const update: Record<string, unknown> = {
+    status: nextSchedule.status,
+    date: nextSchedule.date,
+    time: nextSchedule.time,
+    displayTime: nextSchedule.displayTime,
+  };
+
   if (input.notes !== undefined) {
     update.notes = input.notes;
   }
+
   if (input.linkedDocIds !== undefined) {
     update.linkedDocIds = normalizeStringArray(input.linkedDocIds);
   }
-  if (input.arrivals !== undefined) {
-    const normalizedArrivals = normalizeArrivals(input.arrivals);
-    await assertArrivalsOutsideTransportRanges(tripId, normalizedArrivals);
-    update.arrivals = normalizedArrivals;
-    update.displayTime = normalizedArrivals[0]?.time ? true : false;
-    const endpointPattern = buildStopEndpointPattern(stopId);
-    await TravelTime.deleteMany({
-      $or: [{ fromStopId: endpointPattern }, { toStopId: endpointPattern }],
-    });
-  }
-  if (input.sequence !== undefined && Number.isFinite(input.sequence)) {
-    update.sequence = input.sequence;
+
+  const existingWasScheduled =
+    existingStop.status === "scheduled" && typeof existingStop.date === "string" && existingStop.date;
+  const movedToDifferentBucket =
+    !existingWasScheduled ||
+    nextSchedule.date !== (typeof existingStop.date === "string" ? existingStop.date : "");
+
+  if (nextSchedule.status === "scheduled" && !nextSchedule.time && movedToDifferentBucket) {
+    update.sequence = await getInsertSequenceForScheduledUntimedStop(tripId, nextSchedule.date);
   }
 
   const stop = await Stop.findOneAndUpdate({ _id: stopId, planId: tripId }, update, {
@@ -290,8 +405,11 @@ async function updateStopForActor(
     throw new StopServiceError("NOT_FOUND", "Stop not found");
   }
 
+  await clearTravelTimesForStops([stopId]);
+  await resequenceTripStops(tripId);
   await syncTripTravelDates(tripId);
-  return serializeStop(stop, 1);
+  const refreshedStop = await Stop.findById(stopId).lean();
+  return serializeStop(refreshedStop ?? stop, 1);
 }
 
 export async function deleteStopForUser(
@@ -319,11 +437,84 @@ async function deleteStopForActor(
   await getTripForActor(tripId, actor);
 
   await Stop.findOneAndDelete({ _id: stopId, planId: tripId });
-  const endpointPattern = buildStopEndpointPattern(stopId);
-  await TravelTime.deleteMany({
-    $or: [{ fromStopId: endpointPattern }, { toStopId: endpointPattern }],
-  });
+  await clearTravelTimesForStops([stopId]);
+  await resequenceTripStops(tripId);
   await syncTripTravelDates(tripId);
+}
+
+export async function duplicateStopForUser(
+  tripId: string,
+  stopId: string,
+  userId: string,
+  input: DuplicateStopInput,
+) {
+  return duplicateStopForActor(tripId, stopId, { kind: "user", userId }, input);
+}
+
+export async function duplicateStopForGuest(
+  tripId: string,
+  stopId: string,
+  guestId: string,
+  input: DuplicateStopInput,
+) {
+  return duplicateStopForActor(tripId, stopId, { kind: "guest", guestId }, input);
+}
+
+async function duplicateStopForActor(
+  tripId: string,
+  stopId: string,
+  actor: TripActor,
+  input: DuplicateStopInput,
+) {
+  await connectDB();
+  await getTripForActor(tripId, actor);
+  await assertGuestStopLimit(actor, tripId);
+
+  const existingStop = (await Stop.findOne({ _id: stopId, planId: tripId }).lean()) as RawStopRecord | null;
+  if (!existingStop) {
+    throw new StopServiceError("NOT_FOUND", "Stop not found");
+  }
+
+  const schedule = buildStopUpdateSchedule(input);
+  await assertStopOutsideTransportRanges(tripId, {
+    ...schedule,
+    isScheduled: schedule.status === "scheduled",
+  });
+
+  const sequence =
+    schedule.status === "scheduled" && !schedule.time
+      ? await getInsertSequenceForScheduledUntimedStop(tripId, schedule.date)
+      : await getNextStopSequence(tripId);
+
+  const duplicatedStop = await Stop.create({
+    planId: tripId,
+    userId: actor.kind === "user" ? actor.userId : `guest:${actor.guestId}`,
+    name: existingStop.name ?? "",
+    address: existingStop.address ?? "",
+    lat: existingStop.lat ?? 0,
+    lng: existingStop.lng ?? 0,
+    placeId: existingStop.placeId ?? "",
+    notes: existingStop.notes ?? "",
+    openingHours: Array.isArray(existingStop.openingHours) ? existingStop.openingHours : [],
+    phone: existingStop.phone ?? "",
+    website: existingStop.website ?? "",
+    thumbnail: existingStop.thumbnail ?? "",
+    linkedDocIds: Array.isArray(existingStop.linkedDocIds) ? existingStop.linkedDocIds : [],
+    sourceType: existingStop.sourceType ?? "manual",
+    sourceId: existingStop.sourceId ?? "",
+    sourceLabel: existingStop.sourceLabel ?? "",
+    editable: existingStop.editable !== false,
+    status: schedule.status,
+    date: schedule.date,
+    time: schedule.time,
+    displayTime: schedule.displayTime,
+    sequence,
+  });
+
+  await resequenceTripStops(tripId);
+  await syncTripTravelDates(tripId);
+  const refreshedStop = await Stop.findById(duplicatedStop._id).lean();
+  return serializeStop(refreshedStop ?? duplicatedStop.toObject(), 1);
 }
 
 async function reorderStopsForActor(
@@ -343,26 +534,23 @@ async function reorderStopsForActor(
     _id: { $in: uniqueStopIds },
     planId: tripId,
   })
-    .select("_id sequence")
-    .lean()) as Array<{ _id: unknown; sequence?: number }>;
+    .select("_id")
+    .lean()) as Array<{ _id: unknown }>;
 
   if (stops.length !== uniqueStopIds.length) {
     throw new StopServiceError("NOT_FOUND", "Some stops were not found");
   }
 
-  const sequenceById = new Map(
-    stops.map((stop) => [String(stop._id), stop.sequence ?? 0]),
-  );
-  const sortedSequences = [...sequenceById.values()].sort((left, right) => left - right);
-
   await Promise.all(
     uniqueStopIds.map((stopId, index) =>
       Stop.updateOne(
         { _id: stopId, planId: tripId },
-        { $set: { sequence: sortedSequences[index] ?? index + 1 } },
+        { $set: { sequence: index + 1 } },
       ),
     ),
   );
+
+  await resequenceTripStops(tripId);
 }
 
 export async function reorderStopsForUser(
@@ -403,50 +591,40 @@ async function applyStopSchedulesForActor(
     _id: { $in: uniqueSchedules.map((schedule) => schedule.stopId) },
     planId: tripId,
   })
-    .select("_id arrivals")
-    .lean()) as Array<{ _id: unknown; arrivals?: StopArrival[] }>;
+    .select("_id")
+    .lean()) as Array<{ _id: unknown }>;
 
   if (stops.length !== uniqueSchedules.length) {
     throw new StopServiceError("NOT_FOUND", "Some stops were not found");
   }
 
-  for (const stop of stops) {
-    if ((stop.arrivals ?? []).length > 1) {
-      throw new StopServiceError(
-        "INVALID",
-        "Stops with multiple arrivals cannot be reordered yet",
-      );
-    }
-  }
-
   for (const schedule of uniqueSchedules) {
-    const arrivals = schedule.date
-      ? [{ date: schedule.date, time: schedule.time }]
-      : [];
-    await assertArrivalsOutsideTransportRanges(tripId, arrivals);
+    const nextSchedule = buildStopUpdateSchedule({
+      date: schedule.date,
+      time: schedule.time,
+    });
+
+    await assertStopOutsideTransportRanges(tripId, {
+      ...nextSchedule,
+      isScheduled: nextSchedule.status === "scheduled",
+    });
 
     await Stop.updateOne(
       { _id: schedule.stopId, planId: tripId },
       {
         $set: {
-          arrivals,
-          displayTime: Boolean(schedule.date && schedule.time),
+          status: nextSchedule.status,
+          date: nextSchedule.date,
+          time: nextSchedule.time,
+          displayTime: nextSchedule.displayTime,
           sequence: schedule.sequence,
         },
       },
     );
   }
 
-  const endpointPatterns = uniqueSchedules.map((schedule) =>
-    buildStopEndpointPattern(schedule.stopId),
-  );
-  await TravelTime.deleteMany({
-    $or: [
-      { fromStopId: { $in: endpointPatterns } },
-      { toStopId: { $in: endpointPatterns } },
-    ],
-  });
-
+  await clearTravelTimesForStops(uniqueSchedules.map((schedule) => schedule.stopId));
+  await resequenceTripStops(tripId);
   await syncTripTravelDates(tripId);
 }
 
@@ -464,99 +642,4 @@ export async function applyStopSchedulesForGuest(
   schedules: AppliedStopSchedule[],
 ) {
   return applyStopSchedulesForActor(tripId, { kind: "guest", guestId }, schedules);
-}
-
-export async function addArrivalToStopForUser(
-  tripId: string,
-  stopId: string,
-  userId: string,
-  arrival: StopArrival,
-) {
-  return addArrivalToStopForActor(tripId, stopId, { kind: "user", userId }, arrival);
-}
-
-export async function addArrivalToStopForGuest(
-  tripId: string,
-  stopId: string,
-  guestId: string,
-  arrival: StopArrival,
-) {
-  return addArrivalToStopForActor(tripId, stopId, { kind: "guest", guestId }, arrival);
-}
-
-async function addArrivalToStopForActor(
-  tripId: string,
-  stopId: string,
-  actor: TripActor,
-  arrival: StopArrival,
-) {
-  await connectDB();
-  await getTripForActor(tripId, actor);
-
-  const stop = (await Stop.findOne({ _id: stopId, planId: tripId }).lean()) as
-    | { arrivals?: StopArrival[] }
-    | null;
-  if (!stop) {
-    throw new StopServiceError("NOT_FOUND", "Stop not found");
-  }
-
-  const arrivals = [...(stop.arrivals ?? []), arrival];
-  return updateStopForActor(tripId, stopId, actor, { arrivals });
-}
-
-export async function removeArrivalFromStopForUser(
-  tripId: string,
-  stopId: string,
-  userId: string,
-  arrivalIndex: number,
-) {
-  return removeArrivalFromStopForActor(
-    tripId,
-    stopId,
-    { kind: "user", userId },
-    arrivalIndex,
-  );
-}
-
-export async function removeArrivalFromStopForGuest(
-  tripId: string,
-  stopId: string,
-  guestId: string,
-  arrivalIndex: number,
-) {
-  return removeArrivalFromStopForActor(
-    tripId,
-    stopId,
-    { kind: "guest", guestId },
-    arrivalIndex,
-  );
-}
-
-async function removeArrivalFromStopForActor(
-  tripId: string,
-  stopId: string,
-  actor: TripActor,
-  arrivalIndex: number,
-) {
-  await connectDB();
-  await getTripForActor(tripId, actor);
-
-  const stop = (await Stop.findOne({ _id: stopId, planId: tripId }).lean()) as
-    | { arrivals?: StopArrival[] }
-    | null;
-  if (!stop) {
-    throw new StopServiceError("NOT_FOUND", "Stop not found");
-  }
-
-  const arrivals = stop.arrivals ?? [];
-  if (arrivals.length <= 1) {
-    throw new StopServiceError("INVALID", "Cannot remove the only arrival");
-  }
-
-  if (arrivalIndex < 0 || arrivalIndex >= arrivals.length) {
-    throw new StopServiceError("INVALID", "Arrival not found");
-  }
-
-  const nextArrivals = arrivals.filter((_, index) => index !== arrivalIndex);
-  return updateStopForActor(tripId, stopId, actor, { arrivals: nextArrivals });
 }

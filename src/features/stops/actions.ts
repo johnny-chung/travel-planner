@@ -6,10 +6,9 @@ import { requireUserId } from "@/features/auth/session";
 import {
   applyStopSchedulesForUser,
   StopServiceError,
-  addArrivalToStopForUser,
   createStopForUser,
   deleteStopForUser,
-  removeArrivalFromStopForUser,
+  duplicateStopForUser,
   reorderStopsForUser,
   updateStopForUser,
 } from "@/features/stops/service";
@@ -43,15 +42,11 @@ function parseStringList(formData: FormData, key: string) {
     .filter(Boolean);
 }
 
-function parseArrivals(formData: FormData) {
-  const date = String(formData.get("date") ?? "").trim();
-  const time = String(formData.get("time") ?? "").trim();
-
-  if (!date) {
-    return [];
-  }
-
-  return [{ date, time }];
+function parseScheduleFields(formData: FormData) {
+  return {
+    date: String(formData.get("date") ?? "").trim(),
+    time: String(formData.get("time") ?? "").trim(),
+  };
 }
 
 function parseSchedulePayload(formData: FormData) {
@@ -114,7 +109,7 @@ export async function createStopAction(
       website: String(formData.get("website") ?? ""),
       thumbnail: String(formData.get("thumbnail") ?? ""),
       linkedDocIds: parseStringList(formData, "linkedDocIds"),
-      arrivals: parseArrivals(formData),
+      ...parseScheduleFields(formData),
     });
   } catch (error) {
     return {
@@ -135,16 +130,15 @@ export async function updateStopAction(
   const stopId = String(formData.get("stopId") ?? "");
   const returnTo = parseReturnTo(formData, tripId);
 
-  const arrivals = parseStringList(formData, "arrivals").map((entry) => {
-    const [date = "", time = ""] = entry.split("|");
-    return { date, time };
-  });
+  const [rawSchedule = "|"] = parseStringList(formData, "arrivals");
+  const [date = "", time = ""] = rawSchedule.split("|");
 
   try {
     await updateStopForUser(tripId, stopId, userId, {
       notes: String(formData.get("notes") ?? ""),
       linkedDocIds: parseStringList(formData, "linkedDocIds"),
-      arrivals,
+      date,
+      time,
     });
   } catch (error) {
     return {
@@ -167,7 +161,7 @@ export async function deleteStopAction(formData: FormData) {
   redirect(returnTo);
 }
 
-export async function addStopArrivalAction(
+export async function duplicateStopAction(
   _previousState: StopFormActionState,
   formData: FormData,
 ): Promise<StopFormActionState> {
@@ -177,28 +171,13 @@ export async function addStopArrivalAction(
   const returnTo = parseReturnTo(formData, tripId);
 
   try {
-    await addArrivalToStopForUser(tripId, stopId, userId, {
-      date: String(formData.get("date") ?? ""),
-      time: String(formData.get("time") ?? ""),
-    });
+    await duplicateStopForUser(tripId, stopId, userId, parseScheduleFields(formData));
   } catch (error) {
     return {
-      error: getActionError(error, "Failed to add arrival"),
+      error: getActionError(error, "Failed to add another visit"),
     };
   }
 
-  revalidateTripPlan(tripId);
-  redirect(returnTo);
-}
-
-export async function removeStopArrivalAction(formData: FormData) {
-  const userId = await requireUserId();
-  const tripId = String(formData.get("tripId") ?? "");
-  const stopId = String(formData.get("stopId") ?? "");
-  const arrivalIndex = Number(formData.get("arrivalIndex") ?? -1);
-  const returnTo = parseReturnTo(formData, tripId);
-
-  await removeArrivalFromStopForUser(tripId, stopId, userId, arrivalIndex);
   revalidateTripPlan(tripId);
   redirect(returnTo);
 }

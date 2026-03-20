@@ -20,6 +20,7 @@ export type RouteCalculationResult = {
 
 const DEFAULT_LOCAL_ARRIVAL_TIME = "09:00";
 const timeZoneCache = new Map<string, string>();
+const TRANSIT_UNSUPPORTED_TIME_ZONES = new Set(["Asia/Tokyo"]);
 
 /** Maps requested mode → ordered fallback chain */
 export function getFallbackChain(mode: TravelMode): TravelMode[] {
@@ -127,6 +128,43 @@ function convertLocalDateTimeToIso(date: string, time: string, timeZone: string)
   return new Date(exactUtc).toISOString();
 }
 
+function padTimePart(value: number) {
+  return value.toString().padStart(2, "0");
+}
+
+function getLocalDateString(date: Date, timeZone: string) {
+  const zoned = getUtcPartsInTimeZone(date, timeZone);
+  return `${zoned.year.toString().padStart(4, "0")}-${padTimePart(zoned.month)}-${padTimePart(zoned.day)}`;
+}
+
+function addDaysToDateString(date: string, days: number) {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
+function findNextFutureLocalIso(
+  timeZone: string,
+  localTime: string,
+  now = new Date(),
+) {
+  const todayInZone = getLocalDateString(now, timeZone);
+
+  for (let dayOffset = 0; dayOffset <= 100; dayOffset += 1) {
+    const candidateDate = addDaysToDateString(todayInZone, dayOffset);
+    const candidateIso = convertLocalDateTimeToIso(candidateDate, localTime, timeZone);
+    if (!candidateIso) {
+      continue;
+    }
+
+    if (new Date(candidateIso).getTime() > now.getTime()) {
+      return candidateIso;
+    }
+  }
+
+  return null;
+}
+
 async function getTimeZoneId(
   lat: number,
   lng: number,
@@ -178,10 +216,13 @@ async function buildTimestamp(
   lat: number,
   lng: number,
   apiKey: string,
+  knownTimeZone?: string | null,
 ): Promise<string> {
-  const timeZone = await getTimeZoneId(lat, lng, date, time, apiKey);
+  const normalizedTime = normalizeLocalTime(time);
+  const timeZone =
+    knownTimeZone ?? (await getTimeZoneId(lat, lng, date, time, apiKey));
   if (timeZone) {
-    const localIso = convertLocalDateTimeToIso(date, time, timeZone);
+    const localIso = convertLocalDateTimeToIso(date, normalizedTime, timeZone);
     if (localIso) {
       const target = new Date(localIso);
       const now = Date.now();
@@ -191,26 +232,30 @@ async function buildTimestamp(
         return target.toISOString();
       }
 
-      const zonedNow = getUtcPartsInTimeZone(new Date(), timeZone);
-      const todayInZone = `${zonedNow.year.toString().padStart(4, "0")}-${zonedNow.month
-        .toString()
-        .padStart(2, "0")}-${zonedNow.day.toString().padStart(2, "0")}`;
-      const fallbackIso = convertLocalDateTimeToIso(todayInZone, time, timeZone);
+      const fallbackIso = findNextFutureLocalIso(timeZone, normalizedTime);
       if (fallbackIso) {
         return fallbackIso;
       }
     }
   }
 
-  const fallbackTime = normalizeLocalTime(time);
-  const target = new Date(`${date}T${fallbackTime}:00`);
+  const target = new Date(`${date}T${normalizedTime}:00`);
   const now = Date.now();
   const limit99Days = 99 * 24 * 60 * 60 * 1000;
-  const today = new Date().toISOString().slice(0, 10);
   if (target.getTime() < now || target.getTime() - now > limit99Days) {
-    return new Date(`${today}T${fallbackTime}:00`).toISOString();
+    const fallback = new Date();
+    fallback.setMinutes(0, 0, 0);
+    fallback.setHours(parseInt(normalizedTime.slice(0, 2), 10), parseInt(normalizedTime.slice(3, 5), 10), 0, 0);
+    if (fallback.getTime() <= now) {
+      fallback.setDate(fallback.getDate() + 1);
+    }
+    return fallback.toISOString();
   }
   return target.toISOString();
+}
+
+function isTransitUnsupportedTimeZone(timeZone?: string | null) {
+  return Boolean(timeZone && TRANSIT_UNSUPPORTED_TIME_ZONES.has(timeZone));
 }
 
 function buildRequestBody(
@@ -366,10 +411,35 @@ async function calculateRoute(
   apiKey: string
 ): Promise<Omit<RouteCalculationResult, "mode"> | null> {
   try {
-    const arrivalTime =
-      mode === "TRANSIT"
-        ? await buildTimestamp(toDate, toTime, toLat, toLng, apiKey)
-        : undefined;
+    let arrivalTime: string | undefined;
+    if (mode === "TRANSIT") {
+      const destinationTimeZone = await getTimeZoneId(
+        toLat,
+        toLng,
+        toDate,
+        toTime,
+        apiKey,
+      );
+
+      // Google states that Routes API transit directions are not supported in Japan.
+      if (isTransitUnsupportedTimeZone(destinationTimeZone)) {
+        console.warn("[Routes API] skipping transit calculation in unsupported region", {
+          destinationTimeZone,
+          mode,
+        });
+        return null;
+      }
+
+      arrivalTime = await buildTimestamp(
+        toDate,
+        toTime,
+        toLat,
+        toLng,
+        apiKey,
+        destinationTimeZone,
+      );
+    }
+
     const res = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
       method: "POST",
       headers: {

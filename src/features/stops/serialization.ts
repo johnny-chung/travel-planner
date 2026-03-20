@@ -1,4 +1,4 @@
-import type { StopArrival, TripStop } from "@/types/stop";
+import type { TripStop } from "@/types/stop";
 import type { TripStopSourceType } from "@/types/trip-logistics";
 
 type RawStop = {
@@ -9,13 +9,15 @@ type RawStop = {
   lat?: unknown;
   lng?: unknown;
   placeId?: unknown;
+  date?: unknown;
+  time?: unknown;
+  status?: unknown;
   notes?: unknown;
   openingHours?: unknown;
   phone?: unknown;
   website?: unknown;
   thumbnail?: unknown;
   linkedDocIds?: unknown;
-  arrivals?: unknown;
   order?: unknown;
   sourceType?: unknown;
   sourceId?: unknown;
@@ -48,41 +50,26 @@ function toBoolean(value: unknown, fallback: boolean) {
   }
 
   if (typeof value === "string") {
-    if (value === "true") return true;
-    if (value === "false") return false;
+    if (value === "true") {
+      return true;
+    }
+
+    if (value === "false") {
+      return false;
+    }
   }
 
   return fallback;
 }
 
-function serializeArrival(value: unknown): StopArrival | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const arrival = value as { date?: unknown; time?: unknown };
-  return {
-    date: typeof arrival.date === "string" ? arrival.date : "",
-    time: typeof arrival.time === "string" ? arrival.time : "",
-  };
-}
-
 export function serializeStop(stop: RawStop, order: number): TripStop {
-  const arrivals = Array.isArray(stop.arrivals)
-    ? stop.arrivals
-        .map(serializeArrival)
-        .filter((arrival): arrival is StopArrival => arrival !== null)
-    : [];
-  const firstArrival = arrivals[0] ?? { date: "", time: "" };
-  const fallbackSequence =
-    typeof stop.sequence === "number" && Number.isFinite(stop.sequence)
-      ? stop.sequence
-      : order;
-  const hasScheduledArrival = arrivals.some(
-    (arrival) => typeof arrival.date === "string" && arrival.date.trim().length > 0,
-  );
-  const firstArrivalTime = firstArrival.time ?? "";
-  const displayTime = firstArrivalTime.trim().length > 0;
+  const date = typeof stop.date === "string" ? stop.date : "";
+  const time = typeof stop.time === "string" ? stop.time : "";
+  const status =
+    stop.status === "scheduled" && date
+      ? "scheduled"
+      : "unscheduled";
+  const displayTime = Boolean(time.trim());
 
   return {
     _id: String(stop._id),
@@ -92,10 +79,14 @@ export function serializeStop(stop: RawStop, order: number): TripStop {
     lat: toNumber(stop.lat),
     lng: toNumber(stop.lng),
     placeId: typeof stop.placeId === "string" ? stop.placeId : "",
-    date: firstArrival.date,
-    time: firstArrivalTime,
-    sequence: fallbackSequence,
-    isScheduled: hasScheduledArrival,
+    date,
+    time,
+    status,
+    sequence:
+      typeof stop.sequence === "number" && Number.isFinite(stop.sequence)
+        ? stop.sequence
+        : order,
+    isScheduled: status === "scheduled",
     notes: typeof stop.notes === "string" ? stop.notes : "",
     openingHours: toStringArray(stop.openingHours),
     phone: typeof stop.phone === "string" ? stop.phone : "",
@@ -106,7 +97,6 @@ export function serializeStop(stop: RawStop, order: number): TripStop {
         ? stop.order
         : order,
     linkedDocIds: toStringArray(stop.linkedDocIds),
-    arrivals,
     sourceType:
       typeof stop.sourceType === "string"
         ? (stop.sourceType as TripStopSourceType)

@@ -70,6 +70,7 @@ export async function createTripAction(
       locationLat: parseNumber(formData.get("locationLat")),
       locationLng: parseNumber(formData.get("locationLng")),
       locationPlaceId: String(formData.get("locationPlaceId") ?? ""),
+      locationCountryCode: String(formData.get("locationCountryCode") ?? ""),
       locationThumbnail: String(formData.get("locationThumbnail") ?? ""),
       transportMode:
         String(formData.get("transportMode") ?? "transit") === "drive"

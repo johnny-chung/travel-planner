@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import TripsPageClient from "@/components/trips/TripsPageClient";
+import TripsPageClient from "@/features/trips/components/TripsPageClient";
 import { getGuestId } from "@/features/guest/session";
 import { getTrialTripSummariesForGuest } from "@/features/trips/service";
 

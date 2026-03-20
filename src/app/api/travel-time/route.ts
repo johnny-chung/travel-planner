@@ -4,12 +4,45 @@ import { connectDB } from "@/lib/mongodb";
 import { TravelTime } from "@/lib/models/TravelTime";
 
 function serializeTravelTime(travelTime: Record<string, unknown>) {
+  const details = Array.isArray(travelTime.details)
+    ? travelTime.details
+        .map((detail) => {
+          if (!detail || typeof detail !== "object") {
+            return null;
+          }
+
+          const entry = detail as Record<string, unknown>;
+          return {
+            type:
+              entry.type === "DRIVE" ||
+              entry.type === "WALK" ||
+              entry.type === "TRANSIT"
+                ? entry.type
+                : "TRANSIT",
+            label: typeof entry.label === "string" ? entry.label : "",
+            durationMinutes: Number(entry.durationMinutes ?? 0),
+            distanceMeters:
+              entry.distanceMeters === null || entry.distanceMeters === undefined
+                ? null
+                : Number(entry.distanceMeters),
+            departureStop:
+              typeof entry.departureStop === "string" ? entry.departureStop : "",
+            arrivalStop:
+              typeof entry.arrivalStop === "string" ? entry.arrivalStop : "",
+            lineName: typeof entry.lineName === "string" ? entry.lineName : "",
+            headsign: typeof entry.headsign === "string" ? entry.headsign : "",
+          };
+        })
+        .filter(Boolean)
+    : [];
+
   return {
     ...travelTime,
     _id: String(travelTime._id ?? ""),
     planId: String(travelTime.planId ?? ""),
     fromStopId: String(travelTime.fromStopId ?? ""),
     toStopId: String(travelTime.toStopId ?? ""),
+    details,
   };
 }
 

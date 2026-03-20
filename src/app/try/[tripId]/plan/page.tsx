@@ -1,22 +1,20 @@
 import { auth } from "@/auth";
 import { notFound, redirect } from "next/navigation";
-import PlanMapClient from "@/components/map/PlanMapClient";
-import PlannerFiltersForm from "@/components/map/plan-map/PlannerFiltersForm";
-import PlannerHeader from "@/components/map/plan-map/PlannerHeader";
-import PlannerListActions from "@/components/map/plan-map/PlannerListActions";
-import StopDetailModal from "@/components/stops/StopDetailModal";
-import StopsList from "@/components/stops/StopsList";
+import PlanMapClient from "@/features/planner/components/PlanMapClient";
+import PlannerFiltersForm from "@/features/planner/components/plan-map/PlannerFiltersForm";
+import PlannerHeader from "@/features/planner/components/plan-map/PlannerHeader";
+import PlannerListActions from "@/features/planner/components/plan-map/PlannerListActions";
+import StopsList from "@/features/planner/components/stops/StopsList";
 import {
-  buildPlannerHref,
   parsePlannerSearchParams,
 } from "@/features/planner/search-params";
 import {
   buildRouteSegments,
 } from "@/features/planner/timeline";
 import { buildPlannerShareText } from "@/features/planner/share";
+import { getGeoapifyPlaceSuggestions } from "@/features/planner/geoapify";
 import { getTripPlannerDataForGuest } from "@/features/planner/service";
 import { getGuestId } from "@/features/guest/session";
-import type { Stop } from "@/components/map/plan-map/types";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type Props = {
@@ -24,22 +22,9 @@ type Props = {
   searchParams: Promise<SearchParams>;
 };
 
-function isSameStop(left: Stop, right: Stop) {
-  return (
-    left._id === right._id &&
-    (left._arrivalIndex ?? 0) === (right._arrivalIndex ?? 0)
-  );
-}
-
-function findStopBySelection(stops: Stop[], stopId: string, arrivalIndex: number) {
-  return (
-    stops.find(
-      (stop) =>
-        stop._id === stopId && (stop._arrivalIndex ?? 0) === arrivalIndex,
-    ) ??
-    stops.find((stop) => stop._id === stopId) ??
-    null
-  );
+function parseFocusCoordinate(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 export default async function TrialPlanPage({ params, searchParams }: Props) {
@@ -71,64 +56,27 @@ export default async function TrialPlanPage({ params, searchParams }: Props) {
     plannerData.plan.name,
     plannerData.timelineItems,
   );
-  const closeHref = buildPlannerHref(pathname, searchState, {
-    stopId: null,
-    stayId: null,
-    arrivalIndex: 0,
-    edit: false,
-    travelFrom: null,
-    travelTo: null,
-  });
-
-  const visibleStops = [...plannerData.expandedStops, ...plannerData.unscheduledStops];
-  const selectedFromVisible = searchState.stopId
-    ? findStopBySelection(
-        visibleStops,
-        searchState.stopId,
-        searchState.arrivalIndex,
-      )
-    : null;
-  const selectedStop =
-    selectedFromVisible ??
-    (searchState.stopId
-      ? findStopBySelection(
-          [...plannerData.allExpandedStops, ...plannerData.unscheduledStops],
-          searchState.stopId,
-          searchState.arrivalIndex,
-        )
-      : null);
-
-  const stopSequence =
-    selectedStop && selectedFromVisible
-      ? visibleStops
-      : plannerData.allExpandedStops;
-  const selectedIndex = selectedStop
-    ? stopSequence.findIndex((stop) => isSameStop(stop, selectedStop))
-    : -1;
-  const previousStop = selectedIndex > 0 ? stopSequence[selectedIndex - 1] : null;
-  const nextStop =
-    selectedIndex >= 0 && selectedIndex < stopSequence.length - 1
-      ? stopSequence[selectedIndex + 1]
+  const defaultSuggestionCenter =
+    plannerData.plan.centerLat !== null && plannerData.plan.centerLng !== null
+      ? {
+          lat: plannerData.plan.centerLat,
+          lng: plannerData.plan.centerLng,
+        }
       : null;
-
-  const selectedViewHref = selectedStop
-    ? buildPlannerHref(pathname, searchState, {
-        stopId: selectedStop._id,
-        arrivalIndex: selectedStop._arrivalIndex ?? 0,
-        edit: false,
-        travelFrom: null,
-        travelTo: null,
+  const suggestLat = parseFocusCoordinate(searchState.suggestLat);
+  const suggestLng = parseFocusCoordinate(searchState.suggestLng);
+  const activeSuggestionCenter =
+    suggestLat !== null && suggestLng !== null
+      ? { lat: suggestLat, lng: suggestLng }
+      : defaultSuggestionCenter;
+  const suggestions =
+    searchState.suggestLookup && activeSuggestionCenter
+    ? await getGeoapifyPlaceSuggestions({
+        lat: activeSuggestionCenter.lat,
+        lng: activeSuggestionCenter.lng,
+        category: searchState.suggestCategory,
       })
-    : closeHref;
-  const selectedEditHref = selectedStop
-    ? buildPlannerHref(pathname, searchState, {
-        stopId: selectedStop._id,
-        arrivalIndex: selectedStop._arrivalIndex ?? 0,
-        edit: true,
-        travelFrom: null,
-        travelTo: null,
-      })
-    : closeHref;
+    : [];
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background relative md:pt-16">
@@ -152,7 +100,13 @@ export default async function TrialPlanPage({ params, searchParams }: Props) {
       {searchState.view === "map" ? (
         <PlanMapClient
           plan={plannerData.plan}
+          tripDates={plannerData.travelDates}
           stops={plannerData.orderedStops}
+          unscheduledStops={plannerData.unscheduledStops}
+          stays={plannerData.stayItems}
+          suggestions={suggestions}
+          suggestionCategory={searchState.suggestCategory}
+          defaultSuggestionCenter={defaultSuggestionCenter}
           googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""}
           pathname={pathname}
           searchState={searchState}
@@ -175,6 +129,7 @@ export default async function TrialPlanPage({ params, searchParams }: Props) {
             pathname={pathname}
             tripId={tripId}
             planName={plannerData.plan.name}
+            tripDates={plannerData.travelDates}
             shareText={shareText}
             searchState={searchState}
             isArchived={plannerData.isArchived}
@@ -187,45 +142,6 @@ export default async function TrialPlanPage({ params, searchParams }: Props) {
         </div>
       )}
 
-      {selectedStop ? (
-        <StopDetailModal
-          key={`${selectedStop._id}-${selectedStop._arrivalIndex ?? 0}-${searchState.edit && selectedStop.editable !== false ? "edit" : "view"}`}
-          tripId={tripId}
-          stop={selectedStop}
-          isEdit={searchState.edit && selectedStop.editable !== false}
-          tripDocs={plannerData.tripDocs}
-          closeHref={closeHref}
-          viewHref={selectedViewHref}
-          editHref={selectedEditHref}
-          prevHref={
-            previousStop
-              ? buildPlannerHref(pathname, searchState, {
-                  stopId: previousStop._id,
-                  stayId: null,
-                  arrivalIndex: previousStop._arrivalIndex ?? 0,
-                  edit: false,
-                  travelFrom: null,
-                  travelTo: null,
-                })
-              : null
-          }
-          nextHref={
-            nextStop
-              ? buildPlannerHref(pathname, searchState, {
-                  stopId: nextStop._id,
-                  stayId: null,
-                  arrivalIndex: nextStop._arrivalIndex ?? 0,
-                  edit: false,
-                  travelFrom: null,
-                  travelTo: null,
-                })
-              : null
-          }
-          deleteReturnTo={closeHref}
-          accessMode="guest"
-          canVisitAgain={false}
-        />
-      ) : null}
     </div>
   );
 }

@@ -8,6 +8,8 @@ import {
   addTransportForUser,
   deleteStayForUser,
   deleteTransportForUser,
+  updateStayForUser,
+  updateTransportForUser,
 } from "@/features/trip-logistics/service";
 
 export type TripLogisticsActionState = {
@@ -84,6 +86,45 @@ export async function addTransportAction(
   return { success: true };
 }
 
+export async function updateTransportAction(
+  _previousState: TripLogisticsActionState,
+  formData: FormData,
+): Promise<TripLogisticsActionState> {
+  const userId = await requireUserId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const transportId = String(formData.get("transportId") ?? "");
+
+  try {
+    await updateTransportForUser(tripId, userId, transportId, {
+      type:
+        String(formData.get("type") ?? "flight") === "custom"
+          ? "custom"
+          : "flight",
+      title: String(formData.get("title") ?? ""),
+      flightNumber: String(formData.get("flightNumber") ?? ""),
+      departureDate: String(formData.get("departureDate") ?? ""),
+      departureTime: String(formData.get("departureTime") ?? ""),
+      arrivalDate: String(formData.get("arrivalDate") ?? ""),
+      arrivalTime: String(formData.get("arrivalTime") ?? ""),
+      departureName: String(formData.get("departureName") ?? ""),
+      departureAddress: String(formData.get("departureAddress") ?? ""),
+      departureLat: parseNumber(formData.get("departureLat")),
+      departureLng: parseNumber(formData.get("departureLng")),
+      departurePlaceId: String(formData.get("departurePlaceId") ?? ""),
+      arrivalName: String(formData.get("arrivalName") ?? ""),
+      arrivalAddress: String(formData.get("arrivalAddress") ?? ""),
+      arrivalLat: parseNumber(formData.get("arrivalLat")),
+      arrivalLng: parseNumber(formData.get("arrivalLng")),
+      arrivalPlaceId: String(formData.get("arrivalPlaceId") ?? ""),
+    });
+  } catch (error) {
+    return { error: getErrorMessage(error, "Failed to update transport") };
+  }
+
+  revalidateTripPaths(tripId);
+  return { success: true };
+}
+
 export async function deleteTransportAction(formData: FormData) {
   const userId = await requireUserId();
   const tripId = String(formData.get("tripId") ?? "");
@@ -115,6 +156,35 @@ export async function addStayAction(
     });
   } catch (error) {
     return { error: getErrorMessage(error, "Failed to add stay") };
+  }
+
+  revalidateTripPaths(tripId);
+  return { success: true };
+}
+
+export async function updateStayAction(
+  _previousState: TripLogisticsActionState,
+  formData: FormData,
+): Promise<TripLogisticsActionState> {
+  const userId = await requireUserId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const stayId = String(formData.get("stayId") ?? "");
+
+  try {
+    await updateStayForUser(tripId, userId, stayId, {
+      name: String(formData.get("name") ?? ""),
+      address: String(formData.get("address") ?? ""),
+      placeId: String(formData.get("placeId") ?? ""),
+      lat: Number(formData.get("lat") ?? 0),
+      lng: Number(formData.get("lng") ?? 0),
+      checkInDate: String(formData.get("checkInDate") ?? ""),
+      checkOutDate: String(formData.get("checkOutDate") ?? ""),
+      thumbnail: String(formData.get("thumbnail") ?? ""),
+      phone: String(formData.get("phone") ?? ""),
+      website: String(formData.get("website") ?? ""),
+    });
+  } catch (error) {
+    return { error: getErrorMessage(error, "Failed to update stay") };
   }
 
   revalidateTripPaths(tripId);

@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import type { PlannerTimelineItem } from "@/components/map/plan-map/types";
+import type { PlannerTimelineItem } from "@/features/planner/components/plan-map/types";
 
 function formatDayLabel(date: string) {
   try {

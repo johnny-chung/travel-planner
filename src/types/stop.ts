@@ -1,10 +1,5 @@
 import type { TripStopSourceType } from "@/types/trip-logistics";
 
-export type StopArrival = {
-  date: string;
-  time?: string;
-};
-
 export type TripStop = {
   _id: string;
   planId: string;
@@ -15,6 +10,7 @@ export type TripStop = {
   placeId: string;
   date: string;
   time: string;
+  status: "scheduled" | "unscheduled";
   sequence: number;
   isScheduled: boolean;
   notes: string;
@@ -24,8 +20,6 @@ export type TripStop = {
   thumbnail: string;
   order: number;
   linkedDocIds: string[];
-  arrivals: StopArrival[];
-  _arrivalIndex?: number;
   sourceType: TripStopSourceType;
   sourceId: string;
   sourceLabel: string;

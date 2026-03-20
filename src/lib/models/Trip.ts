@@ -24,6 +24,7 @@ const TripSchema = new Schema(
     description: { type: String, default: "" },
     centerName: { type: String, default: "" },
     centerPlaceId: { type: String, default: "" },
+    centerCountryCode: { type: String, default: "" },
     centerThumbnail: { type: String, default: "" },
     centerLat: { type: Number, default: null },
     centerLng: { type: Number, default: null },

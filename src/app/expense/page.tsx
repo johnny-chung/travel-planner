@@ -1,6 +1,6 @@
 import { requireUserId } from "@/features/auth/session";
 import { getTripSummariesForUser } from "@/features/trips/service";
-import TripsPageClient from "@/components/trips/TripsPageClient";
+import TripsPageClient from "@/features/trips/components/TripsPageClient";
 
 type Props = {
   searchParams: Promise<{ view?: string }>;

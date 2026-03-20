@@ -92,5 +92,27 @@ export async function POST(req: NextRequest) {
     planId: String(travelTime.planId),
     fromStopId: String(travelTime.fromStopId),
     toStopId: String(travelTime.toStopId),
+    details: Array.isArray(travelTime.details)
+      ? travelTime.details.map((detail: Record<string, unknown>) => ({
+          type:
+            detail.type === "DRIVE" ||
+            detail.type === "WALK" ||
+            detail.type === "TRANSIT"
+              ? detail.type
+              : "TRANSIT",
+          label: typeof detail.label === "string" ? detail.label : "",
+          durationMinutes: Number(detail.durationMinutes ?? 0),
+          distanceMeters:
+            detail.distanceMeters === null || detail.distanceMeters === undefined
+              ? null
+              : Number(detail.distanceMeters),
+          departureStop:
+            typeof detail.departureStop === "string" ? detail.departureStop : "",
+          arrivalStop:
+            typeof detail.arrivalStop === "string" ? detail.arrivalStop : "",
+          lineName: typeof detail.lineName === "string" ? detail.lineName : "",
+          headsign: typeof detail.headsign === "string" ? detail.headsign : "",
+        }))
+      : [],
   });
 }

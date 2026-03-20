@@ -1,4 +1,4 @@
-import BrandLogo from "@/components/branding/BrandLogo";
+import BrandLogo from "@/components/layout/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { signInWithAuth0Action } from "@/features/auth/actions";
 

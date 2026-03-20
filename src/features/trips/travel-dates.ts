@@ -6,10 +6,6 @@ import { TripStay } from "@/lib/models/TripStay";
 import { TripTransport } from "@/lib/models/TripTransport";
 import { Trip } from "@/lib/models/Trip";
 
-type ArrivalEntry = {
-  date?: unknown;
-};
-
 function isDateString(value: unknown): value is string {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
@@ -17,19 +13,6 @@ function isDateString(value: unknown): value is string {
 export function normalizeTravelDates(dates: string[]) {
   return [...new Set(dates.filter(isDateString))].sort((left, right) =>
     left.localeCompare(right),
-  );
-}
-
-export function collectTravelDatesFromArrivals(arrivals: unknown) {
-  if (!Array.isArray(arrivals)) {
-    return [];
-  }
-
-  return normalizeTravelDates(
-    arrivals.flatMap((arrival) => {
-      const date = (arrival as ArrivalEntry | null)?.date;
-      return isDateString(date) ? [date] : [];
-    }),
   );
 }
 
@@ -54,18 +37,20 @@ export async function syncTripTravelDates(tripId: string) {
   await connectDB();
 
   const [stops, transports, stays] = (await Promise.all([
-    Stop.find({ planId: tripId }).select("arrivals").lean(),
+    Stop.find({ planId: tripId }).select("status date").lean(),
     TripTransport.find({ tripId }).select("departureDate arrivalDate").lean(),
     TripStay.find({ tripId }).select("checkInDate checkOutDate").lean(),
   ])) as [
-    Array<{ arrivals?: unknown }>,
+    Array<{ status?: string; date?: string }>,
     Array<{ departureDate?: string; arrivalDate?: string }>,
     Array<{ checkInDate?: string; checkOutDate?: string }>,
   ];
 
   const travelDates = normalizeTravelDates(
     [
-      ...stops.flatMap((stop) => collectTravelDatesFromArrivals(stop.arrivals)),
+      ...stops.flatMap((stop) =>
+        stop.status === "scheduled" && isDateString(stop.date) ? [stop.date] : [],
+      ),
       ...transports.flatMap((transport) => [
         transport.departureDate,
         transport.arrivalDate,

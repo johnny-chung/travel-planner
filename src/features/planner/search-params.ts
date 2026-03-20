@@ -2,12 +2,20 @@ export type PlannerView = "map" | "list";
 
 export type PlannerSearchState = {
   view: PlannerView;
+  sidebarTab: "itinerary" | "suggestions";
   from: string;
   to: string;
   filters: boolean;
+  hideUnscheduledMap: boolean;
+  hideStaysMap: boolean;
+  suggestLookup: boolean;
+  focusLat: string;
+  focusLng: string;
+  suggestLat: string;
+  suggestLng: string;
+  suggestCategory: "tourism" | "catering";
   stopId: string;
   stayId: string;
-  arrivalIndex: number;
   edit: boolean;
   travelFrom: string;
   travelTo: string;
@@ -19,12 +27,20 @@ type RawSearchParams =
 
 type PlannerSearchOverrides = Partial<{
   view: PlannerView | null;
+  sidebarTab: "itinerary" | "suggestions" | null;
   from: string | null;
   to: string | null;
   filters: boolean | null;
+  hideUnscheduledMap: boolean | null;
+  hideStaysMap: boolean | null;
+  suggestLookup: boolean | null;
+  focusLat: string | null;
+  focusLng: string | null;
+  suggestLat: string | null;
+  suggestLng: string | null;
+  suggestCategory: "tourism" | "catering" | null;
   stopId: string | null;
   stayId: string | null;
-  arrivalIndex: number | null;
   edit: boolean | null;
   travelFrom: string | null;
   travelTo: string | null;
@@ -49,7 +65,8 @@ export function parsePlannerSearchParams(
   source: RawSearchParams,
 ): PlannerSearchState {
   const rawView = readValue(source, "view");
-  const rawArrivalIndex = Number(readValue(source, "arrival"));
+  const rawSidebarTab = readValue(source, "sidebarTab");
+  const rawSuggestCategory = readValue(source, "suggestCategory");
   const stopId = readValue(source, "stop")?.trim() ?? "";
   const stayId = readValue(source, "stay")?.trim() ?? "";
   const travelFrom = readValue(source, "travelFrom")?.trim() ?? "";
@@ -57,15 +74,23 @@ export function parsePlannerSearchParams(
 
   const state: PlannerSearchState = {
     view: rawView === "list" ? "list" : "map",
+    sidebarTab: rawSidebarTab === "suggestions" ? "suggestions" : "itinerary",
     from: readValue(source, "from")?.trim() ?? "",
     to: readValue(source, "to")?.trim() ?? "",
     filters: readValue(source, "filters") === "1",
+    hideUnscheduledMap: readValue(source, "hideUnscheduled") === "1",
+    hideStaysMap: readValue(source, "hideStays") === "1",
+    suggestLookup: readValue(source, "suggest") === "1",
+    focusLat: readValue(source, "focusLat")?.trim() ?? "",
+    focusLng: readValue(source, "focusLng")?.trim() ?? "",
+    suggestLat: readValue(source, "suggestLat")?.trim() ?? "",
+    suggestLng: readValue(source, "suggestLng")?.trim() ?? "",
+    suggestCategory:
+      rawSuggestCategory === "catering"
+        ? "catering"
+        : "tourism",
     stopId,
     stayId,
-    arrivalIndex:
-      Number.isInteger(rawArrivalIndex) && rawArrivalIndex >= 0
-        ? rawArrivalIndex
-        : 0,
     edit: readValue(source, "edit") === "1",
     travelFrom,
     travelTo,
@@ -73,13 +98,11 @@ export function parsePlannerSearchParams(
 
   if (!state.stopId) {
     state.edit = false;
-    state.arrivalIndex = 0;
   }
 
   if (state.stayId) {
     state.stopId = "";
     state.edit = false;
-    state.arrivalIndex = 0;
     state.travelFrom = "";
     state.travelTo = "";
   }
@@ -103,6 +126,10 @@ export function buildPlannerHref(
       overrides.view === null || overrides.view === undefined
         ? current.view
         : overrides.view,
+    sidebarTab:
+      overrides.sidebarTab === null || overrides.sidebarTab === undefined
+        ? current.sidebarTab
+        : overrides.sidebarTab,
     from:
       overrides.from === null
         ? ""
@@ -119,6 +146,48 @@ export function buildPlannerHref(
       overrides.filters === null || overrides.filters === undefined
         ? current.filters
         : overrides.filters,
+    hideUnscheduledMap:
+      overrides.hideUnscheduledMap === null ||
+      overrides.hideUnscheduledMap === undefined
+        ? current.hideUnscheduledMap
+        : overrides.hideUnscheduledMap,
+    hideStaysMap:
+      overrides.hideStaysMap === null ||
+      overrides.hideStaysMap === undefined
+        ? current.hideStaysMap
+        : overrides.hideStaysMap,
+    suggestLookup:
+      overrides.suggestLookup === null || overrides.suggestLookup === undefined
+        ? current.suggestLookup
+        : overrides.suggestLookup,
+    focusLat:
+      overrides.focusLat === null
+        ? ""
+        : overrides.focusLat === undefined
+          ? current.focusLat
+          : overrides.focusLat,
+    focusLng:
+      overrides.focusLng === null
+        ? ""
+        : overrides.focusLng === undefined
+          ? current.focusLng
+          : overrides.focusLng,
+    suggestLat:
+      overrides.suggestLat === null
+        ? ""
+        : overrides.suggestLat === undefined
+          ? current.suggestLat
+          : overrides.suggestLat,
+    suggestLng:
+      overrides.suggestLng === null
+        ? ""
+        : overrides.suggestLng === undefined
+          ? current.suggestLng
+          : overrides.suggestLng,
+    suggestCategory:
+      overrides.suggestCategory === null || overrides.suggestCategory === undefined
+        ? current.suggestCategory
+        : overrides.suggestCategory,
     stopId:
       overrides.stopId === null
         ? ""
@@ -131,10 +200,6 @@ export function buildPlannerHref(
         : overrides.stayId === undefined
           ? current.stayId
           : overrides.stayId,
-    arrivalIndex:
-      overrides.arrivalIndex === null || overrides.arrivalIndex === undefined
-        ? current.arrivalIndex
-        : overrides.arrivalIndex,
     edit:
       overrides.edit === null || overrides.edit === undefined
         ? current.edit
@@ -155,13 +220,11 @@ export function buildPlannerHref(
 
   if (!next.stopId) {
     next.edit = false;
-    next.arrivalIndex = 0;
   }
 
   if (next.stayId) {
     next.stopId = "";
     next.edit = false;
-    next.arrivalIndex = 0;
     next.travelFrom = "";
     next.travelTo = "";
   }
@@ -173,14 +236,26 @@ export function buildPlannerHref(
 
   const query = new URLSearchParams();
   if (next.view !== "map") query.set("view", next.view);
+  if (next.sidebarTab !== "itinerary") query.set("sidebarTab", next.sidebarTab);
   if (next.from) query.set("from", next.from);
   if (next.to) query.set("to", next.to);
   if (next.filters) query.set("filters", "1");
+  if (next.hideUnscheduledMap) query.set("hideUnscheduled", "1");
+  if (next.hideStaysMap) query.set("hideStays", "1");
+  if (next.suggestLookup) query.set("suggest", "1");
+  if (next.focusLat && next.focusLng) {
+    query.set("focusLat", next.focusLat);
+    query.set("focusLng", next.focusLng);
+  }
+  if (next.suggestLat && next.suggestLng) {
+    query.set("suggestLat", next.suggestLat);
+    query.set("suggestLng", next.suggestLng);
+  }
+  if (next.suggestCategory !== "tourism") {
+    query.set("suggestCategory", next.suggestCategory);
+  }
   if (next.stopId) {
     query.set("stop", next.stopId);
-    if (next.arrivalIndex > 0) {
-      query.set("arrival", String(next.arrivalIndex));
-    }
     if (next.edit) {
       query.set("edit", "1");
     }

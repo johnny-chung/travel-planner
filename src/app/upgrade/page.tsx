@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import UpgradeClient from "@/components/upgrade/UpgradeClient";
+import UpgradeClient from "@/features/upgrade/components/UpgradeClient";
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
 

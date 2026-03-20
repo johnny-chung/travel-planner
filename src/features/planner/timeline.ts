@@ -1,16 +1,16 @@
 import type {
   PlannerRouteNode,
   PlannerTimelineItem,
-} from "@/components/map/plan-map/types";
-import type { Stop } from "@/components/map/plan-map/types";
+} from "@/features/planner/components/plan-map/types";
+import type { Stop } from "@/features/planner/components/plan-map/types";
 import type {
   TripStayItem,
   TripTransportItem,
 } from "@/types/trip-logistics";
-import { getStopSortTime } from "@/components/map/plan-map/utils";
+import { getStopSortTime, orderStopsForDay } from "@/features/planner/components/plan-map/utils";
 
-export function buildStopRouteNodeId(stopId: string, arrivalIndex = 0) {
-  return `${stopId}:${arrivalIndex}`;
+export function buildStopRouteNodeId(stopId: string) {
+  return stopId;
 }
 
 export function buildStayRouteNodeId(
@@ -154,15 +154,20 @@ function expandTransportTimelineItems(
     });
   }
 
-  if (!to || transport.arrivalDate <= to) {
-    items.push({
-      kind: "transport",
-      id: `${transport._id}:${transport.arrivalDate}:arrival`,
-      date: transport.arrivalDate,
-      time: transport.arrivalTime,
-      boundary: "arrival",
-      transport,
-    });
+  if (
+    transport.arrivalDate !== transport.departureDate ||
+    transport.arrivalTime !== transport.departureTime
+  ) {
+    if (!to || transport.arrivalDate <= to) {
+      items.push({
+        kind: "transport",
+        id: `${transport._id}:${transport.arrivalDate}:arrival`,
+        date: transport.arrivalDate,
+        time: transport.arrivalTime,
+        boundary: "arrival",
+        transport,
+      });
+    }
   }
 
   return items;
@@ -175,27 +180,81 @@ export function buildTimelineItems(
   transports: TripTransportItem[],
   stays: TripStayItem[],
 ) {
-  const items: PlannerTimelineItem[] = [
-    ...stops
-      .filter((stop) => stop.isScheduled && stop.date)
-      .map((stop) => ({
-        kind: "stop" as const,
-        id: buildStopRouteNodeId(stop._id, stop._arrivalIndex ?? 0),
-        date: stop.date,
-        time: getStopSortTime(stop),
-        stop,
-      })),
+  const stopItems = stops
+    .filter((stop) => stop.isScheduled && stop.date)
+    .map((stop) => ({
+      kind: "stop" as const,
+      id: buildStopRouteNodeId(stop._id),
+      date: stop.date,
+      time: getStopSortTime(stop),
+      stop,
+    }));
+
+  const fixedItems: PlannerTimelineItem[] = [
     ...transports.flatMap((transport) =>
       expandTransportTimelineItems(transport, from, to),
     ),
     ...stays.flatMap((stay) => expandStayTimelineItems(stay, from, to)),
   ];
 
-  return items.sort(
-    (left, right) =>
-      left.date.localeCompare(right.date) ||
-      left.time.localeCompare(right.time),
-  );
+  const dates = [
+    ...new Set([...stopItems, ...fixedItems].map((item) => item.date)),
+  ].sort();
+
+  return dates.flatMap((date) => {
+    const dayStops = orderStopsForDay(
+      stopItems
+        .filter((item) => item.date === date)
+        .map((item) => item.stop),
+    ).map((stop) => ({
+      kind: "stop" as const,
+      id: buildStopRouteNodeId(stop._id),
+      date: stop.date,
+      time: getStopSortTime(stop),
+      stop,
+    }));
+
+    const dayFixed = fixedItems
+      .filter((item) => item.date === date)
+      .sort((left, right) => left.time.localeCompare(right.time));
+
+    const merged: PlannerTimelineItem[] = [...dayStops];
+
+    for (const item of dayFixed) {
+      if (item.kind === "stay" && item.boundary === "start") {
+        merged.unshift(item);
+        continue;
+      }
+
+      if (item.kind === "stay" && item.boundary === "end") {
+        merged.push(item);
+        continue;
+      }
+
+      let insertIndex = merged.length;
+      for (let index = 0; index < merged.length; index += 1) {
+        const current = merged[index];
+        if (current.kind === "stay" && current.boundary === "end") {
+          insertIndex = index;
+          break;
+        }
+
+        if (
+          current.kind === "stop" &&
+          current.stop.displayTime &&
+          current.stop.time &&
+          current.stop.time >= item.time
+        ) {
+          insertIndex = index;
+          break;
+        }
+      }
+
+      merged.splice(insertIndex, 0, item);
+    }
+
+    return merged;
+  });
 }
 
 export function isRouteTimelineItem(
@@ -257,6 +316,33 @@ export function toRouteNode(item: Extract<PlannerTimelineItem, { kind: "stop" | 
   };
 }
 
+function toSegmentRouteNode(
+  item: Extract<PlannerTimelineItem, { kind: "stop" | "stay" | "transport" }>,
+  role: "from" | "to",
+): PlannerRouteNode {
+  if (item.kind !== "transport") {
+    return toRouteNode(item);
+  }
+
+  const location =
+    role === "from" ? item.transport.arrival : item.transport.departure;
+
+  return {
+    id: item.id,
+    kind: "transport",
+    date: item.date,
+    time: item.time,
+    name: location.name || item.transport.title,
+    address: location.address,
+    lat: location.lat ?? 0,
+    lng: location.lng ?? 0,
+    placeId: location.placeId,
+    displayTime: true,
+    transport: item.transport,
+    boundary: item.boundary,
+  };
+}
+
 function isSameStayBoundaryPair(left: PlannerRouteNode, right: PlannerRouteNode) {
   return (
     left.kind === "stay" &&
@@ -288,12 +374,15 @@ export function buildRouteSegments(timelineItems: PlannerTimelineItem[]) {
       continue;
     }
 
-    const fromNode = toRouteNode(fromItem);
-    const toNode = toRouteNode(toItem);
+    const fromNode = toSegmentRouteNode(fromItem, "from");
+    const toNode = toSegmentRouteNode(toItem, "to");
     if (fromNode.date !== toNode.date) {
       continue;
     }
     if (isSameStayBoundaryPair(fromNode, toNode)) {
+      continue;
+    }
+    if (fromNode.kind === "transport" && toNode.kind === "transport") {
       continue;
     }
     if (isSameTransportBoundaryPair(fromNode, toNode)) {
@@ -308,5 +397,5 @@ export function buildRouteSegments(timelineItems: PlannerTimelineItem[]) {
 
 export function buildEndpointPrefixPattern(sourceId: string) {
   const escaped = sourceId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`^${escaped}:`);
+  return new RegExp(`^${escaped}(?::|$)`);
 }

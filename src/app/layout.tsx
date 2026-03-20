@@ -6,8 +6,9 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import ThemeProvider from "@/components/providers/ThemeProvider";
-import AppNav from "@/components/nav/AppNav";
+import ThemeProvider from "@/components/layout/ThemeProvider";
+import AppNav from "@/components/layout/AppNav";
+import { Analytics } from "@vercel/analytics/next";
 
 const instrumentSans = Instrument_Sans({
   variable: "--font-sans",
@@ -35,9 +36,9 @@ export const metadata: Metadata = {
   description: "Plan your travels with ease",
   manifest: "/manifest.json",
   icons: {
-    icon: "/Logo.png",
-    shortcut: "/Logo.png",
-    apple: "/Logo.png",
+    icon: "/material/Logo.png",
+    shortcut: "/material/Logo.png",
+    apple: "/material/Logo.png",
   },
   appleWebApp: {
     capable: true,
@@ -69,6 +70,7 @@ export default function RootLayout({
           <AppNav />
           <Toaster richColors position="top-center" />
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );

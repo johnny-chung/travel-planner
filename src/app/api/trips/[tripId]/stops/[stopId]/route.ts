@@ -9,7 +9,6 @@ import { TravelTime } from "@/lib/models/TravelTime";
 import { serializeStop } from "@/features/stops/serialization";
 
 type Params = { params: Promise<{ tripId: string; stopId: string }> };
-type ArrivalEntry = { date: string; time: string };
 
 function canAccess(trip: { userId: string; editors?: string[] }, userId: string): boolean {
   return trip.userId === userId || (trip.editors ?? []).includes(userId);
@@ -17,52 +16,80 @@ function canAccess(trip: { userId: string; editors?: string[] }, userId: string)
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { tripId, stopId } = await params;
   await connectDB();
-  const trip = await Trip.findOne({ _id: tripId }).lean() as { userId: string; editors?: string[] } | null;
-  if (!trip || !canAccess(trip, session.user.id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const trip = (await Trip.findOne({ _id: tripId }).lean()) as
+    | { userId: string; editors?: string[] }
+    | null;
+  if (!trip || !canAccess(trip, session.user.id)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const stop = await Stop.findOne({ _id: stopId }).lean();
-  if (!stop) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!stop) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   return NextResponse.json(serializeStop(stop, 1));
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { tripId, stopId } = await params;
   const body = await req.json();
-  let updatedBody = { ...body };
-  if (Array.isArray(body.arrivals) && body.arrivals.length > 0) {
-    const sorted = [...body.arrivals].sort((a: ArrivalEntry, b: ArrivalEntry) => {
-      if (a.date !== b.date) return a.date.localeCompare(b.date);
-      return a.time.localeCompare(b.time);
-    });
-    updatedBody = { ...updatedBody, arrivals: sorted };
-  }
-  delete updatedBody.date;
-  delete updatedBody.time;
+  const date = typeof body.date === "string" ? body.date : "";
+  const time = typeof body.time === "string" ? body.time : "";
+  const updatedBody = {
+    ...body,
+    status: date ? "scheduled" : "unscheduled",
+    date: date || "",
+    time: date ? time : "",
+    displayTime: Boolean(date && time),
+  };
+
   await connectDB();
-  const trip = await Trip.findOne({ _id: tripId }).lean() as { userId: string; editors?: string[] } | null;
-  if (!trip || !canAccess(trip, session.user.id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (updatedBody.arrivals !== undefined) {
-    const endpointPattern = buildEndpointPrefixPattern(stopId);
-    await TravelTime.deleteMany({ $or: [{ fromStopId: endpointPattern }, { toStopId: endpointPattern }] });
+  const trip = (await Trip.findOne({ _id: tripId }).lean()) as
+    | { userId: string; editors?: string[] }
+    | null;
+  if (!trip || !canAccess(trip, session.user.id)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  const endpointPattern = buildEndpointPrefixPattern(stopId);
+  await TravelTime.deleteMany({ $or: [{ fromStopId: endpointPattern }, { toStopId: endpointPattern }] });
   const stop = await Stop.findByIdAndUpdate(stopId, updatedBody, { new: true }).lean();
-  if (!stop) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!stop) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   await syncTripTravelDates(tripId);
   return NextResponse.json(serializeStop(stop, 1));
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { tripId, stopId } = await params;
   await connectDB();
-  const trip = await Trip.findOne({ _id: tripId }).lean() as { userId: string; editors?: string[]; status?: string } | null;
-  if (!trip || !canAccess(trip, session.user.id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (trip.status === 'archived') return NextResponse.json({ error: 'Trip is archived' }, { status: 403 });
+  const trip = (await Trip.findOne({ _id: tripId }).lean()) as
+    | { userId: string; editors?: string[]; status?: string }
+    | null;
+  if (!trip || !canAccess(trip, session.user.id)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (trip.status === "archived") {
+    return NextResponse.json({ error: "Trip is archived" }, { status: 403 });
+  }
+
   await Stop.findByIdAndDelete(stopId);
   const endpointPattern = buildEndpointPrefixPattern(stopId);
   await TravelTime.deleteMany({ $or: [{ fromStopId: endpointPattern }, { toStopId: endpointPattern }] });

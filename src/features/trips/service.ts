@@ -36,6 +36,7 @@ type LocationInput = {
   locationLat?: number | null;
   locationLng?: number | null;
   locationPlaceId?: string;
+  locationCountryCode?: string;
   locationThumbnail?: string;
 };
 
@@ -54,6 +55,7 @@ type RawTrip = {
   description?: string;
   centerName?: string;
   centerPlaceId?: string;
+  centerCountryCode?: string;
   centerThumbnail?: string;
   centerLat?: number | null;
   centerLng?: number | null;
@@ -91,6 +93,7 @@ function serializeTripSummary(trip: RawTrip, role: TripRole): TripSummary {
     description: trip.description ?? "",
     centerName: trip.centerName ?? "",
     centerPlaceId: trip.centerPlaceId ?? "",
+    centerCountryCode: trip.centerCountryCode ?? "",
     centerThumbnail: trip.centerThumbnail ?? "",
     centerLat: trip.centerLat ?? null,
     centerLng: trip.centerLng ?? null,
@@ -108,6 +111,7 @@ async function resolveLocation({
   locationLat,
   locationLng,
   locationPlaceId,
+  locationCountryCode,
   locationThumbnail,
 }: LocationInput) {
   if (typeof locationLat === "number" && typeof locationLng === "number") {
@@ -116,6 +120,7 @@ async function resolveLocation({
       centerLng: locationLng,
       centerName: location?.trim() ?? "",
       centerPlaceId: locationPlaceId?.trim() ?? "",
+      centerCountryCode: locationCountryCode?.trim().toUpperCase() ?? "",
       centerThumbnail: locationThumbnail?.trim() ?? "",
     };
   }
@@ -126,6 +131,7 @@ async function resolveLocation({
       centerLng: null,
       centerName: "",
       centerPlaceId: "",
+      centerCountryCode: "",
       centerThumbnail: "",
     };
   }
@@ -149,6 +155,12 @@ async function resolveLocation({
         centerLng: match.geometry.location.lng as number,
         centerName: (match.formatted_address as string) ?? location.trim(),
         centerPlaceId: locationPlaceId?.trim() ?? "",
+        centerCountryCode:
+          (match.address_components as Array<{ short_name?: string; types?: string[] }>)
+            ?.find((component) => component.types?.includes("country"))
+            ?.short_name?.toUpperCase() ??
+          locationCountryCode?.trim().toUpperCase() ??
+          "",
         centerThumbnail: locationThumbnail?.trim() ?? "",
       };
     }
@@ -161,6 +173,7 @@ async function resolveLocation({
     centerLng: null,
     centerName: location.trim(),
     centerPlaceId: locationPlaceId?.trim() ?? "",
+    centerCountryCode: locationCountryCode?.trim().toUpperCase() ?? "",
     centerThumbnail: locationThumbnail?.trim() ?? "",
   };
 }
@@ -223,6 +236,7 @@ async function getTripDetailForActor(
         description: trip.description ?? "",
         centerName: trip.centerName ?? "",
         centerPlaceId: trip.centerPlaceId ?? "",
+        centerCountryCode: trip.centerCountryCode ?? "",
         centerThumbnail: trip.centerThumbnail ?? "",
         shareCode: trip.shareCode ?? "",
         role: "owner",
@@ -276,6 +290,7 @@ async function getTripDetailForActor(
       description: trip.description ?? "",
       centerName: trip.centerName ?? "",
       centerPlaceId: trip.centerPlaceId ?? "",
+      centerCountryCode: trip.centerCountryCode ?? "",
       centerThumbnail: trip.centerThumbnail ?? "",
       shareCode: trip.shareCode ?? "",
       role: isOwner ? "owner" : "editor",

@@ -14,7 +14,7 @@ type Props = {
   className?: string;
 };
 
-const HOURS   = Array.from({ length: 24 }, (_, i) => i);
+const HOURS = [...Array.from({ length: 16 }, (_, i) => i + 8), ...Array.from({ length: 8 }, (_, i) => i)];
 const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
 function fmt12(h: number) {
