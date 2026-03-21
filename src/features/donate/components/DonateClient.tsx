@@ -38,26 +38,24 @@ export default function DonateClient({ success, canceled }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-600 to-blue-800 flex flex-col">
-      {/* Header */}
-      <div className="px-4 pt-24 pb-8 text-white text-center">
-        <Link href="/" className="absolute top-24 left-4 p-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-white" />
+    <div className="min-h-screen flex flex-col bg-[radial-gradient(circle_at_top,rgba(91,143,137,0.18),transparent_32%),linear-gradient(180deg,rgba(246,244,239,1)_0%,rgba(236,231,224,1)_100%)] dark:bg-[radial-gradient(circle_at_top,rgba(91,143,137,0.18),transparent_26%),linear-gradient(180deg,rgba(28,24,22,1)_0%,rgba(20,18,16,1)_100%)]">
+      <div className="px-4 pt-24 pb-8 text-center text-foreground">
+        <Link href="/" className="absolute top-24 left-4 rounded-xl border border-border/70 bg-card/80 p-2 transition-colors hover:bg-muted">
+          <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="w-16 h-16 rounded-3xl bg-white/20 flex items-center justify-center mx-auto mb-4">
-          <Heart className="w-8 h-8 text-white fill-red-600" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-border/80 bg-card/80 shadow-sm">
+          <Heart className="w-8 h-8 fill-[color:var(--color-accent)] text-primary" />
         </div>
         <h1 className="text-2xl font-bold">Support Roamer&apos;s Ledger</h1>
-        <p className="text-blue-100  my-2 text-sm">
+        <p className="my-2 text-sm text-muted-foreground">
             This is jsut a personal project and API call ain&apos;t free.            
           </p>
-        <p className="text-blue-200 text-sm mt-2 max-w-xs mx-auto">
+        <p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">
           Your contribution helps keep Roamer&apos;s Ledger free and growing. Every bit counts!
         </p>
       </div>
 
-      {/* Card */}
-      <div className="flex-1 bg-card rounded-t-3xl px-6 pt-8 pb-10 max-w-lg mx-auto w-full">
+      <div className="mx-auto flex w-full max-w-lg flex-1 rounded-t-[1.6rem] border border-border/70 bg-card px-6 pt-8 pb-10 shadow-[0_-18px_45px_rgba(47,67,65,0.08)]">
         {success ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <CheckCircle2 className="w-14 h-14 text-green-500 mb-4" />
@@ -66,7 +64,7 @@ export default function DonateClient({ success, canceled }: Props) {
               Your generosity means the world to us and helps us keep improving Roamer&apos;s Ledger.
             </p>
             <Link href="/" className="mt-6">
-              <Button className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white h-11 px-8 font-semibold">Back to Home</Button>
+              <Button className="h-11 rounded-xl bg-primary px-8 font-semibold text-primary-foreground hover:bg-primary/90">Back to Home</Button>
             </Link>
           </div>
         ) : canceled ? (
@@ -75,7 +73,7 @@ export default function DonateClient({ success, canceled }: Props) {
             <h2 className="text-xl font-bold text-foreground">Donation canceled</h2>
             <p className="text-muted-foreground text-sm mt-2">No worries — you can donate any time.</p>
             <Button
-              className="mt-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white h-11 px-8 font-semibold"
+              className="mt-6 h-11 rounded-xl bg-primary px-8 font-semibold text-primary-foreground hover:bg-primary/90"
               onClick={() => window.history.replaceState({}, "", "/donate")}
             >
               Try Again
@@ -94,8 +92,8 @@ export default function DonateClient({ success, canceled }: Props) {
                   onClick={() => setAmount(String(p))}
                   className={`rounded-2xl py-3 text-sm font-bold border-2 transition-colors ${
                     amount === String(p)
-                      ? "bg-blue-600 border-blue-600 text-white"
-                      : "bg-card border-border text-foreground hover:border-blue-400"
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "bg-card border-border text-foreground hover:border-primary/50"
                   }`}
                 >
                   ${p}
@@ -112,7 +110,7 @@ export default function DonateClient({ success, canceled }: Props) {
                 step="0.01"
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
-                className="pl-8 rounded-2xl h-12 text-sm font-medium focus-visible:ring-blue-500"
+                className="h-12 rounded-2xl pl-8 text-sm font-medium focus-visible:ring-primary"
                 placeholder="Other amount"
               />
             </div>
@@ -121,7 +119,7 @@ export default function DonateClient({ success, canceled }: Props) {
             {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
 
             <Button
-              className="w-full rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base gap-2 h-12"
+              className="h-12 w-full gap-2 rounded-2xl bg-primary text-base font-bold text-primary-foreground hover:bg-primary/90"
               onClick={handleDonate}
               disabled={!isValid || loading}
             >

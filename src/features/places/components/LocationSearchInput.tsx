@@ -105,7 +105,7 @@ export default function LocationSearchInput({ value, onChange, onSelect, apiKey 
 
   return (
     <div className="relative">
-      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
+        <MapPin className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <input
         type="text"
         value={value}
@@ -115,31 +115,31 @@ export default function LocationSearchInput({ value, onChange, onSelect, apiKey 
         placeholder="e.g. Tokyo, Japan"
         className="w-full h-11 pl-9 pr-9 rounded-xl border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       />
-      {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />}
+      {loading && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
       {!loading && value && (
         <button
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => { onChange(""); setPredictions([]); setOpen(false); }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
           <X className="w-4 h-4" />
         </button>
       )}
 
       {showDropdown && (
-        <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
-          {loading && <div className="px-4 py-3 text-sm text-gray-400 text-center">Searching…</div>}
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+          {loading && <div className="px-4 py-3 text-center text-sm text-muted-foreground">Searching…</div>}
           {!loading && predictions.map((p, i) => (
             <button
               key={i}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleSelect(p)}
-              className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 text-left border-b border-gray-50 last:border-0 transition-colors"
+              className="w-full flex items-start gap-3 border-b border-border/50 px-4 py-3 text-left transition-colors last:border-0 hover:bg-muted/60"
             >
-              <MapPin className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+              <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{p.mainText}</p>
-                <p className="text-xs text-gray-400 truncate">{p.secondaryText}</p>
+                <p className="truncate text-sm font-medium text-foreground">{p.mainText}</p>
+                <p className="truncate text-xs text-muted-foreground">{p.secondaryText}</p>
               </div>
             </button>
           ))}

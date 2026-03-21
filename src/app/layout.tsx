@@ -1,13 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import {
   IBM_Plex_Mono,
-  Instrument_Sans,
-  Shadows_Into_Light,
+  Manrope,
+  Poiret_One,
 } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import ThemeProvider from "@/components/layout/ThemeProvider";
 import AppNav from "@/components/layout/AppNav";
+import AppFooter from "@/components/layout/AppFooter";
+import { BRAND_LOGO_SRC } from "@/components/layout/brand-assets";
 import { Analytics } from "@vercel/analytics/next";
 import {
   SITE_DESCRIPTION,
@@ -17,10 +19,10 @@ import {
   getSiteUrl,
 } from "@/features/seo/metadata";
 
-const instrumentSans = Instrument_Sans({
+const manrope = Manrope({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -31,7 +33,7 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
-const shadowsIntoLight = Shadows_Into_Light({
+const poiretOne = Poiret_One({
   variable: "--font-brand",
   subsets: ["latin"],
   weight: ["400"],
@@ -56,9 +58,9 @@ export const metadata: Metadata = {
   ],
   manifest: "/manifest.json",
   icons: {
-    icon: "/material/Logo.png",
-    shortcut: "/material/Logo.png",
-    apple: "/material/Logo.png",
+    icon: BRAND_LOGO_SRC,
+    shortcut: BRAND_LOGO_SRC,
+    apple: BRAND_LOGO_SRC,
   },
   openGraph: {
     type: "website",
@@ -68,7 +70,7 @@ export const metadata: Metadata = {
     url: buildAbsoluteUrl("/"),
     images: [
       {
-        url: "/material/Logo.png",
+        url: BRAND_LOGO_SRC,
         width: 512,
         height: 512,
         alt: `${SITE_NAME} logo`,
@@ -79,7 +81,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: ["/material/Logo.png"],
+    images: [BRAND_LOGO_SRC],
   },
   appleWebApp: {
     capable: true,
@@ -93,7 +95,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#6d4323",
+  themeColor: "#2f6e62",
 };
 
 export default function RootLayout({
@@ -104,10 +106,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${instrumentSans.variable} ${ibmPlexMono.variable} ${shadowsIntoLight.variable} antialiased bg-background text-foreground`}
+        className={`${manrope.variable} ${ibmPlexMono.variable} ${poiretOne.variable} antialiased bg-background text-foreground`}
       >
         <ThemeProvider>
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <div className="flex-1">{children}</div>
+            <AppFooter />
+          </div>
           <AppNav />
           <Toaster richColors position="top-center" />
         </ThemeProvider>

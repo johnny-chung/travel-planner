@@ -35,7 +35,7 @@ export default function TripDocumentsCard({
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <FileText className="w-4 h-4 text-muted-foreground" /> Documents
           {documents.length > 0 ? (
-            <span className="rounded-full bg-[#f1dfc5] px-1.5 py-0.5 text-xs font-medium text-[#9d6030]">
+            <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
               {documents.length}
             </span>
           ) : null}
@@ -57,14 +57,14 @@ export default function TripDocumentsCard({
               <div className="divide-y divide-border">
                 {documents.map((document) => (
                   <div key={document._id} className="flex items-center gap-3 px-4 py-3">
-                    <FileText className="w-4 h-4 shrink-0 text-[#c38d5f]" />
+                    <FileText className="w-4 h-4 shrink-0 text-primary" />
                     <a
                       href={document.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1 min-w-0 group"
                     >
-                      <p className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-[#9d6030]">
+                      <p className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
                         {document.name}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
@@ -75,7 +75,7 @@ export default function TripDocumentsCard({
                       href={document.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="shrink-0 p-1.5 text-muted-foreground/60 transition-colors hover:text-[#9d6030]"
+                      className="shrink-0 p-1.5 text-muted-foreground/60 transition-colors hover:text-primary"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
@@ -102,7 +102,7 @@ export default function TripDocumentsCard({
                   type="button"
                   variant="ghost"
                   onClick={onAddDocument}
-                  className="flex items-center gap-2 p-0 text-sm font-medium text-[#9d6030] transition-colors hover:text-[#85502a]"
+                  className="flex items-center gap-2 p-0 text-sm font-medium text-primary transition-colors hover:text-primary/80"
                 >
                   <Plus className="w-4 h-4" /> Add document
                 </Button>

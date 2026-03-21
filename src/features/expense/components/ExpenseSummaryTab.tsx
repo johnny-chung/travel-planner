@@ -32,7 +32,7 @@ export default function ExpenseSummaryTab({
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-card rounded-2xl p-4 shadow-sm border border-border">
           <p className="text-xs text-muted-foreground mb-1">Shared Total</p>
-          <p className="text-xl font-bold text-[#9d6030]">CAD {totalShared.toFixed(2)}</p>
+          <p className="text-xl font-bold text-primary">CAD {totalShared.toFixed(2)}</p>
           <p className="text-xs text-muted-foreground mt-0.5">÷{members.length} = CAD {splitPerPerson.toFixed(2)}</p>
         </div>
         <div className="bg-card rounded-2xl p-4 shadow-sm border border-border">
@@ -59,7 +59,7 @@ export default function ExpenseSummaryTab({
             <div key={member.userId} className="flex items-center gap-3">
               <Avatar className="w-8 h-8">
                 <AvatarImage src={member.image} />
-                <AvatarFallback className="bg-[#f4e5d2] text-[#8b562d] text-xs font-semibold">
+                <AvatarFallback className="bg-primary/12 text-primary text-xs font-semibold">
                   {member.name?.[0]?.toUpperCase() ?? "?"}
                 </AvatarFallback>
               </Avatar>

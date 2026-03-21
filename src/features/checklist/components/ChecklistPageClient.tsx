@@ -156,29 +156,29 @@ export default function ChecklistPageClient({
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0 md:pt-16">
       <div
-        className="relative overflow-hidden px-4 pb-8 text-[#fff7ea] md:pt-6"
+        className="relative overflow-hidden px-4 pb-8 text-primary-foreground md:pt-6"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
       >
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#6d4323_0%,#8b562d_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#1c2421_0%,#2f6e62_58%,#5d7f76_100%)]" />
         <div className="relative mx-auto max-w-2xl">
           <div className="mb-4 flex items-center justify-between">
             <Link
               href={backHref}
-              className="flex items-center gap-1 text-sm text-[#f3ddbf] transition-colors hover:text-white"
+              className="flex items-center gap-1 text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground"
             >
               <ArrowLeft className="h-4 w-4" /> Trip details
             </Link>
           </div>
 
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#f3ddbf]">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-foreground/75">
             Checklist
           </p>
           <h1 className="mt-2 text-2xl font-bold">{tripName}</h1>
-          <p className="mt-2 text-sm text-[#f3ddbf]">
+          <p className="mt-2 text-sm text-primary-foreground/75">
             {completedCount} of {items.length} item{items.length === 1 ? "" : "s"} completed
           </p>
           {isArchived ? (
-            <p className="mt-3 rounded-2xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-[#fff1d3]">
+            <p className="mt-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm text-primary-foreground/85">
               This trip is archived. Checklist items are view only.
             </p>
           ) : null}

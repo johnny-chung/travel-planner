@@ -146,17 +146,17 @@ export default function StopDetailModal({
   const hasContact = !!(stop.phone || stop.address);
 
   return (
-    <div className="relative flex h-full flex-col bg-white">
+    <div className="relative flex h-full flex-col bg-card text-card-foreground">
       <div className="flex-shrink-0 px-6 pb-2 pt-4">
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 shadow-sm">
+          <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary shadow-sm">
             <span className="text-xs font-bold text-white">{stop.order}</span>
           </div>
           <div className="min-w-0">
-            <h2 className="text-lg font-bold leading-tight text-gray-900">
+            <h2 className="text-lg font-bold leading-tight text-foreground">
               {stop.name}
             </h2>
-            <p className="mt-0.5 truncate text-sm text-gray-400">
+            <p className="mt-0.5 truncate text-sm text-muted-foreground">
               {stop.address}
             </p>
           </div>
@@ -165,7 +165,7 @@ export default function StopDetailModal({
 
       <div className="flex-1 space-y-4 overflow-y-auto px-6 pb-2">
         {stop.thumbnail ? (
-          <div className="h-40 overflow-hidden rounded-2xl bg-gray-100">
+          <div className="h-40 overflow-hidden rounded-2xl bg-muted">
             <Image
               src={stop.thumbnail}
               alt={stop.name}
@@ -242,11 +242,11 @@ export default function StopDetailModal({
                         key={document._id}
                         type="button"
                         onClick={() => toggleDoc(document._id)}
-                        className={`w-full px-4 py-3 text-left transition-colors ${checked ? "bg-blue-50" : "bg-white hover:bg-gray-50"}`}
+                        className={`w-full px-4 py-3 text-left transition-colors ${checked ? "bg-primary/8 dark:bg-primary/10" : "bg-card hover:bg-muted/60"}`}
                       >
                         <div className="flex items-center gap-3">
                           <div
-                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${checked ? "border-blue-600 bg-blue-600" : "border-gray-300"}`}
+                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${checked ? "border-primary bg-primary" : "border-border"}`}
                           >
                             {checked ? (
                               <svg
@@ -265,10 +265,10 @@ export default function StopDetailModal({
                             ) : null}
                           </div>
                           <FileText
-                            className={`h-4 w-4 shrink-0 ${checked ? "text-blue-500" : "text-gray-400"}`}
+                            className={`h-4 w-4 shrink-0 ${checked ? "text-primary" : "text-muted-foreground"}`}
                           />
                           <span
-                            className={`truncate text-sm font-medium ${checked ? "text-blue-700" : "text-gray-700"}`}
+                            className={`truncate text-sm font-medium ${checked ? "text-primary" : "text-foreground"}`}
                           >
                             {document.name}
                           </span>
@@ -278,7 +278,7 @@ export default function StopDetailModal({
                   })}
                 </div>
                 {editLinkedDocs.length > 0 ? (
-                  <p className="text-xs text-blue-500">
+                  <p className="text-xs text-primary">
                     {editLinkedDocs.length} document
                     {editLinkedDocs.length !== 1 ? "s" : ""} linked
                   </p>
@@ -292,18 +292,18 @@ export default function StopDetailModal({
         ) : (
           <div className="space-y-3">
             {relatedVisits.length > 1 ? (
-              <details open className="overflow-hidden rounded-2xl border border-gray-200">
-                <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 transition-colors hover:bg-gray-50">
-                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <Calendar className="h-4 w-4 text-blue-400" />
+              <details open className="overflow-hidden rounded-2xl border border-border">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 transition-colors hover:bg-muted/60">
+                  <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Calendar className="h-4 w-4 text-primary" />
                     Visit Times
-                    <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-600">
+                    <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
                       {relatedVisits.length}
                     </span>
                   </span>
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </summary>
-                <div className="divide-y divide-gray-50 border-t border-gray-100">
+                <div className="divide-y divide-border/60 border-t border-border">
                   {relatedVisits.map((visit) => {
                     const isCurrent = visit._id === stop._id;
                     const visitDate = (() => {
@@ -320,18 +320,18 @@ export default function StopDetailModal({
                     return (
                       <div
                         key={visit._id}
-                        className={`flex items-center gap-3 px-4 py-3 ${isCurrent ? "bg-blue-50" : ""}`}
+                        className={`flex items-center gap-3 px-4 py-3 ${isCurrent ? "bg-primary/8 dark:bg-primary/10" : ""}`}
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5 text-blue-700">
+                            <div className="flex items-center gap-1.5 text-primary">
                               <Calendar className="h-3.5 w-3.5" />
                               <span className="text-sm font-medium">{visitDate}</span>
                             </div>
                             {visit.displayTime ? (
                               <>
                                 <Separator orientation="vertical" className="h-4" />
-                                <div className="flex items-center gap-1.5 text-blue-700">
+                                <div className="flex items-center gap-1.5 text-primary">
                                   <Clock className="h-3.5 w-3.5" />
                                   <span className="text-sm font-semibold">
                                     {visit.time}
@@ -346,7 +346,7 @@ export default function StopDetailModal({
                           </div>
                         </div>
                         {isCurrent ? (
-                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-600">
+                          <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[11px] font-medium text-primary">
                             Current
                           </span>
                         ) : null}
@@ -357,15 +357,15 @@ export default function StopDetailModal({
               </details>
             ) : null}
 
-            <div className="flex items-center gap-4 rounded-2xl bg-blue-50 p-4">
-              <div className="flex items-center gap-2 text-blue-700">
+            <div className="flex items-center gap-4 rounded-2xl bg-primary/8 p-4 dark:bg-primary/10">
+              <div className="flex items-center gap-2 text-primary">
                 <Calendar className="h-4 w-4" />
                 <span className="text-sm font-semibold">{formattedDate}</span>
               </div>
               {stop.displayTime ? (
                 <>
                   <Separator orientation="vertical" className="h-4" />
-                  <div className="flex items-center gap-2 text-blue-700">
+                  <div className="flex items-center gap-2 text-primary">
                     <Clock className="h-4 w-4" />
                     <span className="text-sm font-semibold">{stop.time}</span>
                   </div>
@@ -383,36 +383,36 @@ export default function StopDetailModal({
             ) : null}
 
             {hasContact ? (
-              <div className="overflow-hidden rounded-2xl border border-gray-200">
+              <div className="overflow-hidden rounded-2xl border border-border">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between px-4 py-3 transition-colors hover:bg-gray-50"
+                  className="flex w-full items-center justify-between px-4 py-3 transition-colors hover:bg-muted/60"
                   onClick={() => setShowContact((value) => !value)}
                 >
-                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <Contact className="h-4 w-4 text-gray-400" /> Contact
+                  <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Contact className="h-4 w-4 text-muted-foreground" /> Contact
                   </span>
                   {showContact ? (
-                    <ChevronUp className="h-4 w-4 text-gray-400" />
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   )}
                 </button>
                 {showContact ? (
-                  <div className="divide-y divide-gray-50 border-t border-gray-100">
+                  <div className="divide-y divide-border/60 border-t border-border">
                     {stop.address ? (
                       <div className="flex items-start gap-3 px-4 py-3">
-                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-                        <span className="text-sm text-gray-700">{stop.address}</span>
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="text-sm text-foreground">{stop.address}</span>
                       </div>
                     ) : null}
                     {stop.phone ? (
                       <a
                         href={`tel:${stop.phone}`}
-                        className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
+                        className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
                       >
-                        <Phone className="h-4 w-4 shrink-0 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground">
                           {stop.phone}
                         </span>
                       </a>
@@ -422,10 +422,10 @@ export default function StopDetailModal({
                         href={stop.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
+                        className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
                       >
-                        <Globe className="h-4 w-4 shrink-0 text-gray-400" />
-                        <span className="truncate text-sm font-medium text-blue-600">
+                        <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="truncate text-sm font-medium text-primary">
                           {stop.website.replace(/^https?:\/\//, "")}
                         </span>
                       </a>
@@ -436,27 +436,27 @@ export default function StopDetailModal({
             ) : null}
 
             {stop.openingHours.length > 0 ? (
-              <div className="overflow-hidden rounded-2xl border border-gray-200">
+              <div className="overflow-hidden rounded-2xl border border-border">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between px-4 py-3 transition-colors hover:bg-gray-50"
+                  className="flex w-full items-center justify-between px-4 py-3 transition-colors hover:bg-muted/60"
                   onClick={() => setShowHours((value) => !value)}
                 >
-                  <span className="text-sm font-semibold text-gray-700">
+                  <span className="text-sm font-semibold text-foreground">
                     Opening Hours
                   </span>
                   {showHours ? (
-                    <ChevronUp className="h-4 w-4 text-gray-400" />
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   )}
                 </button>
                 {showHours ? (
-                  <div className="space-y-1 border-t border-gray-100 px-4 pb-3 pt-1">
+                  <div className="space-y-1 border-t border-border px-4 pb-3 pt-1">
                     {stop.openingHours.map((openingHour, index) => (
                       <p
                         key={`${openingHour}-${index}`}
-                        className="py-0.5 text-xs text-gray-500"
+                        className="py-0.5 text-xs text-muted-foreground"
                       >
                         {openingHour}
                       </p>
@@ -467,47 +467,47 @@ export default function StopDetailModal({
             ) : null}
 
             {tripDocs.length > 0 ? (
-              <div className="overflow-hidden rounded-2xl border border-gray-200">
+              <div className="overflow-hidden rounded-2xl border border-border">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between px-4 py-3 transition-colors hover:bg-gray-50"
+                  className="flex w-full items-center justify-between px-4 py-3 transition-colors hover:bg-muted/60"
                   onClick={() => setShowDocs((value) => !value)}
                 >
-                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <FileText className="h-4 w-4 text-gray-400" /> Documents
+                  <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <FileText className="h-4 w-4 text-muted-foreground" /> Documents
                     {linkedDocs.length > 0 ? (
-                      <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-600">
+                      <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
                         {linkedDocs.length}
                       </span>
                     ) : null}
                   </span>
                   {showDocs ? (
-                    <ChevronUp className="h-4 w-4 text-gray-400" />
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   )}
                 </button>
                 {showDocs ? (
-                  <div className="border-t border-gray-100">
+                  <div className="border-t border-border">
                     {linkedDocs.length === 0 ? (
                       <p className="py-4 text-center text-xs text-gray-400">
                         No documents linked to this stop
                       </p>
                     ) : (
-                      <div className="divide-y divide-gray-50">
+                      <div className="divide-y divide-border/60">
                         {linkedDocs.map((document) => (
                           <a
                             key={document._id}
                             href={document.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-blue-50"
+                            className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-primary/8 dark:hover:bg-primary/10"
                           >
-                            <FileText className="h-4 w-4 shrink-0 text-blue-400" />
-                            <span className="flex-1 truncate text-sm font-medium text-gray-800 transition-colors group-hover:text-blue-600">
+                            <FileText className="h-4 w-4 shrink-0 text-primary" />
+                            <span className="flex-1 truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
                               {document.name}
                             </span>
-                            <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-300 group-hover:text-blue-400" />
+                            <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-primary" />
                           </a>
                         ))}
                       </div>
@@ -523,7 +523,7 @@ export default function StopDetailModal({
         )}
       </div>
 
-      <div className="flex-shrink-0 space-y-3 border-t border-gray-100 px-6 pb-8 pt-3">
+      <div className="flex-shrink-0 space-y-3 border-t border-border px-6 pb-8 pt-3">
         {isEdit && canEdit ? (
           confirmDelete ? (
             <div className="space-y-2">
@@ -571,7 +571,7 @@ export default function StopDetailModal({
                 </Link>
                 <SubmitButton
                   form="stop-update-form"
-                  className="h-11 flex-1 rounded-xl bg-blue-600 font-semibold hover:bg-blue-700"
+                  className="h-11 flex-1 rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
                   pendingLabel="Saving..."
                 >
                   Save Changes
@@ -593,10 +593,10 @@ export default function StopDetailModal({
               type="button"
               onClick={() => prevHref && router.push(prevHref)}
               disabled={!prevHref}
-              className="flex w-11 shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-white transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex w-11 shrink-0 flex-col items-center justify-center rounded-xl border border-border bg-card transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="Previous stop"
             >
-              <ChevronLeft className="h-5 w-5 text-gray-500" />
+              <ChevronLeft className="h-5 w-5 text-muted-foreground" />
             </button>
 
             <div className="flex-1 space-y-2">
@@ -606,7 +606,7 @@ export default function StopDetailModal({
                 rel="noopener noreferrer"
                 className="block"
               >
-                <Button className="h-11 w-full gap-2 rounded-xl bg-blue-600 font-semibold hover:bg-blue-700">
+                <Button className="h-11 w-full gap-2 rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-primary/90">
                   <ExternalLink className="h-4 w-4" /> Open in Google Maps
                 </Button>
               </a>
@@ -642,10 +642,10 @@ export default function StopDetailModal({
               type="button"
               onClick={() => nextHref && router.push(nextHref)}
               disabled={!nextHref}
-              className="flex w-11 shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-white transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex w-11 shrink-0 flex-col items-center justify-center rounded-xl border border-border bg-card transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="Next stop"
             >
-              <ChevronRight className="h-5 w-5 text-gray-500" />
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </button>
           </div>
         )}
@@ -659,13 +659,13 @@ export default function StopDetailModal({
           />
           <form
             action={duplicateFormAction}
-            className="relative z-10 mx-4 w-full max-w-sm space-y-4 rounded-3xl bg-white p-6 shadow-2xl"
+            className="relative z-10 mx-4 w-full max-w-sm space-y-4 rounded-3xl bg-card p-6 text-card-foreground shadow-2xl"
           >
             <input type="hidden" name="tripId" value={tripId} />
             <input type="hidden" name="stopId" value={stop._id} />
             <input type="hidden" name="returnTo" value={viewHref} />
-            <h3 className="text-lg font-bold text-gray-900">Add Another Visit</h3>
-            <p className="-mt-1 text-sm text-gray-500">{stop.name}</p>
+            <h3 className="text-lg font-bold text-foreground">Add Another Visit</h3>
+            <p className="-mt-1 text-sm text-muted-foreground">{stop.name}</p>
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-gray-500">Date</Label>
@@ -696,7 +696,7 @@ export default function StopDetailModal({
                 Cancel
               </Button>
               <SubmitButton
-                className="h-11 flex-1 rounded-xl bg-blue-600 hover:bg-blue-700"
+                className="h-11 flex-1 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                 disabled={!newVisitDate}
                 pendingLabel="Adding..."
               >

@@ -42,7 +42,7 @@ export default function TripStayCard({
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <BedDouble className="w-4 h-4 text-muted-foreground" /> Stay
           {items.length > 0 ? (
-            <span className="rounded-full bg-[#f1dfc5] px-1.5 py-0.5 text-xs font-medium text-[#9d6030]">
+            <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
               {items.length}
             </span>
           ) : null}
@@ -64,7 +64,7 @@ export default function TripStayCard({
               <div className="divide-y divide-border">
                 {items.map((item) => (
                   <div key={item._id} className="flex items-start gap-3 px-4 py-3">
-                    <div className="mt-0.5 rounded-xl bg-emerald-50 p-2 text-emerald-600">
+                    <div className="mt-0.5 rounded-xl bg-accent/70 p-2 text-accent-foreground">
                       <BedDouble className="w-4 h-4" />
                     </div>
                     <button
@@ -106,7 +106,7 @@ export default function TripStayCard({
                   type="button"
                   variant="ghost"
                   onClick={onAddStay}
-                  className="flex items-center gap-2 p-0 text-sm font-medium text-[#9d6030] transition-colors hover:text-[#85502a]"
+                  className="flex items-center gap-2 p-0 text-sm font-medium text-primary transition-colors hover:text-primary/80"
                 >
                   <Plus className="w-4 h-4" /> Add stay
                 </Button>

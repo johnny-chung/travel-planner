@@ -37,7 +37,7 @@ export default function TripTransportCard({
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Plane className="w-4 h-4 text-muted-foreground" /> Transport
           {items.length > 0 ? (
-            <span className="rounded-full bg-[#f1dfc5] px-1.5 py-0.5 text-xs font-medium text-[#9d6030]">
+            <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
               {items.length}
             </span>
           ) : null}
@@ -59,7 +59,7 @@ export default function TripTransportCard({
               <div className="divide-y divide-border">
                 {items.map((item) => (
                   <div key={item._id} className="flex items-start gap-3 px-4 py-3">
-                    <div className="mt-0.5 rounded-xl bg-[#f4e5d2] p-2 text-[#a16437]">
+                    <div className="mt-0.5 rounded-xl bg-accent/70 p-2 text-accent-foreground">
                       {item.type === "flight" ? (
                         <Plane className="w-4 h-4" />
                       ) : (
@@ -108,7 +108,7 @@ export default function TripTransportCard({
                   type="button"
                   variant="ghost"
                   onClick={onAddTransport}
-                  className="flex items-center gap-2 p-0 text-sm font-medium text-[#9d6030] transition-colors hover:text-[#85502a]"
+                  className="flex items-center gap-2 p-0 text-sm font-medium text-primary transition-colors hover:text-primary/80"
                 >
                   <Plus className="w-4 h-4" /> Add transport
                 </Button>

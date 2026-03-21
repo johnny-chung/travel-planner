@@ -158,7 +158,7 @@ export default function AddStayDialog({
               <Button
                 type="button"
                 variant="ghost"
-                className="h-auto px-0 py-1 text-xs text-blue-600 hover:text-blue-500"
+                className="h-auto px-0 py-1 text-xs text-primary hover:text-primary/80"
                 onClick={() => setRelaxedSearch(true)}
               >
                 Not found? Search all place types

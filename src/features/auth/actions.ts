@@ -8,5 +8,5 @@ export async function signInWithAuth0Action(formData?: FormData) {
 }
 
 export async function signOutAction() {
-  await signOut({ redirectTo: "/login" });
+  await signOut({ redirectTo: "/" });
 }

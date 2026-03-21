@@ -43,15 +43,15 @@ export default function ExpenseDetailClient({
   return (
     <div className="h-screen flex flex-col bg-background pb-16 md:pb-0 md:pt-16 overflow-hidden">
       <div
-        className="bg-[#8b562d] text-[#fff7ea] px-4 pb-4 md:pb-6 shrink-0"
+        className="bg-[linear-gradient(180deg,rgba(52,92,89,0.98)_0%,rgba(39,72,70,0.96)_100%)] px-4 pb-4 text-primary-foreground md:pb-6 shrink-0"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
       >
         <div className="max-w-2xl mx-auto">
-          <Link href="/expense" className="flex items-center gap-1 text-[#f3ddbf] hover:text-white text-sm mb-3 transition-colors">
+          <Link href="/expense" className="mb-3 flex items-center gap-1 text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
             <ArrowLeft className="w-4 h-4" /> All Expenses
           </Link>
           <h1 className="text-xl font-bold">{tripName}</h1>
-          <p className="text-[#f3ddbf] text-sm mt-0.5">Expense Tracker</p>
+          <p className="mt-0.5 text-sm text-primary-foreground/70">Expense Tracker</p>
         </div>
       </div>
 

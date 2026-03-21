@@ -69,7 +69,7 @@ export default function TripDetailClient({
   return (
     <div className="min-h-screen bg-background flex flex-col pb-20 md:pb-0 md:pt-16">
       <div
-        className="relative overflow-hidden text-[#fff7ea] px-4 pb-8 md:pt-6"
+        className="relative overflow-hidden px-4 pb-8 text-primary-foreground md:pt-6"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
       >
         {trip.centerThumbnail ? (
@@ -78,15 +78,15 @@ export default function TripDetailClient({
             style={{ backgroundImage: `url("${trip.centerThumbnail}")` }}
           />
         ) : null}
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(49,28,16,0.6)_0%,rgba(69,40,22,0.78)_55%,rgba(93,57,33,0.86)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(18,26,23,0.56)_0%,rgba(29,46,40,0.76)_55%,rgba(39,64,56,0.86)_100%)]" />
         {!trip.centerThumbnail ? (
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,#6d4323_0%,#8b562d_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,#1c2421_0%,#2f6e62_100%)]" />
         ) : null}
         <div className="relative max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <Link
               href={backHref}
-              className="flex items-center gap-1 text-[#f3ddbf] hover:text-white text-sm transition-colors"
+              className="flex items-center gap-1 text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground"
             >
               <ArrowLeft className="w-4 h-4" /> All Trips
             </Link>
@@ -100,7 +100,7 @@ export default function TripDetailClient({
                   }
                   openRestrictedFeature();
                 }}
-                className="flex items-center gap-1.5 text-[#f3ddbf] hover:text-white text-sm transition-colors"
+                className="flex items-center gap-1.5 text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground"
               >
                 <Share2 className="w-4 h-4" /> Share
               </button>
@@ -114,9 +114,9 @@ export default function TripDetailClient({
               </Badge>
             ) : null}
           </div>
-          {trip.description ? <p className="mt-1 text-sm text-[#f3ddbf]">{trip.description}</p> : null}
+          {trip.description ? <p className="mt-1 text-sm text-primary-foreground/75">{trip.description}</p> : null}
           {trip.centerName ? (
-            <div className="mt-2 flex items-center gap-1.5 text-sm text-[#f3ddbf]">
+            <div className="mt-2 flex items-center gap-1.5 text-sm text-primary-foreground/75">
               <MapPin className="w-3.5 h-3.5" /> {trip.centerName}
             </div>
           ) : null}
@@ -130,12 +130,12 @@ export default function TripDetailClient({
           </div>
         ) : null}
 
-        <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3">
           <Link
             href={resolvedPlanHref}
             className={cn(
               buttonVariants({ variant: "outline" }),
-              "h-16 rounded-2xl border-2 flex-col gap-1.5 text-sm font-semibold",
+              "h-16 rounded-lg border flex-col gap-1.5 text-sm font-semibold",
             )}
           >
             <Map className="w-5 h-5" />
@@ -146,7 +146,7 @@ export default function TripDetailClient({
               href={resolvedExpenseHref}
               className={cn(
                 buttonVariants({ variant: "outline" }),
-                "h-16 rounded-2xl border-2 flex-col gap-1.5 text-sm font-semibold",
+                "h-16 rounded-lg border flex-col gap-1.5 text-sm font-semibold",
               )}
             >
               <DollarSign className="w-5 h-5" />
@@ -158,7 +158,7 @@ export default function TripDetailClient({
               onClick={openRestrictedFeature}
               className={cn(
                 buttonVariants({ variant: "outline" }),
-                "h-16 rounded-2xl border-2 flex-col gap-1.5 text-sm font-semibold",
+                "h-16 rounded-lg border flex-col gap-1.5 text-sm font-semibold",
               )}
             >
               <DollarSign className="w-5 h-5" />
@@ -169,7 +169,7 @@ export default function TripDetailClient({
             href={resolvedChecklistHref}
             className={cn(
               buttonVariants({ variant: "outline" }),
-              "h-16 rounded-2xl border-2 flex-col gap-1.5 text-sm font-semibold",
+              "h-16 rounded-lg border flex-col gap-1.5 text-sm font-semibold",
             )}
           >
             <ListChecks className="w-5 h-5" />

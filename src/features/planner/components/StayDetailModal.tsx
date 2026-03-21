@@ -20,17 +20,17 @@ export default function StayDetailModal({ stay }: Props) {
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stay.address)}&query_place_id=${stay.placeId}`;
 
   return (
-    <div className="flex h-full flex-col bg-white">
+    <div className="flex h-full flex-col bg-card text-card-foreground">
       <div className="flex-shrink-0 px-6 pb-2 pt-4">
         <div className="flex min-w-0 items-start gap-3">
-          <div className="mt-0.5 rounded-2xl bg-emerald-100 p-2.5 text-emerald-700">
+          <div className="mt-0.5 rounded-xl bg-accent/70 p-2.5 text-accent-foreground">
             <BedDouble className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <h2 className="truncate text-lg font-bold text-gray-900">
+            <h2 className="truncate text-lg font-bold text-foreground">
               {stay.name}
             </h2>
-            <p className="mt-0.5 text-sm text-gray-400">
+            <p className="mt-0.5 text-sm text-muted-foreground">
               {stay.checkInDate} to {stay.checkOutDate}
             </p>
           </div>
@@ -39,7 +39,7 @@ export default function StayDetailModal({ stay }: Props) {
 
       <div className="flex-1 space-y-4 overflow-y-auto px-6 pb-4">
         {stay.thumbnail ? (
-          <div className="h-44 overflow-hidden rounded-2xl bg-gray-100">
+          <div className="h-44 overflow-hidden rounded-xl bg-muted">
             <Image
               src={stay.thumbnail}
               alt={stay.name}
@@ -50,22 +50,22 @@ export default function StayDetailModal({ stay }: Props) {
           </div>
         ) : null}
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200">
-          <div className="border-b border-gray-100 px-4 py-3 text-sm font-semibold text-gray-700">
+        <div className="overflow-hidden rounded-xl border border-border">
+          <div className="border-b border-border px-4 py-3 text-sm font-semibold text-foreground">
             Contact
           </div>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-border/60">
             <div className="flex items-start gap-3 px-4 py-3">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-              <span className="text-sm text-gray-700">{stay.address}</span>
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="text-sm text-foreground">{stay.address}</span>
             </div>
             {stay.phone ? (
               <a
                 href={`tel:${stay.phone}`}
-                className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
+                className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
               >
-                <Phone className="h-4 w-4 shrink-0 text-gray-400" />
-                <span className="text-sm font-medium text-gray-700">
+                <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">
                   {stay.phone}
                 </span>
               </a>
@@ -75,10 +75,10 @@ export default function StayDetailModal({ stay }: Props) {
                 href={stay.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
+                className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
               >
-                <Globe className="h-4 w-4 shrink-0 text-gray-400" />
-                <span className="truncate text-sm font-medium text-blue-600">
+                <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate text-sm font-medium text-primary">
                   {stay.website.replace(/^https?:\/\//, "")}
                 </span>
               </a>
@@ -87,9 +87,9 @@ export default function StayDetailModal({ stay }: Props) {
         </div>
       </div>
 
-      <div className="flex-shrink-0 border-t border-gray-100 px-6 pb-8 pt-3">
+      <div className="flex-shrink-0 border-t border-border px-6 pb-8 pt-3">
         <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="block">
-          <Button className="h-11 w-full rounded-xl bg-blue-600 font-semibold hover:bg-blue-700">
+          <Button className="h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-primary/90">
             <ExternalLink className="mr-2 h-4 w-4" />
             Open in Google Maps
           </Button>

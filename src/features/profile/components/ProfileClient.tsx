@@ -46,20 +46,20 @@ export default function ProfileClient({ user }: Props) {
       : `${user.routeUsageCount} / ${user.routeUsageLimit}`;
 
   return (
-    <div className="min-h-screen bg-[#f5ead8] pb-16 md:pb-0 md:pt-16">
+    <div className="min-h-screen bg-background pb-16 md:pb-0 md:pt-16">
       <section className="px-4 pb-6 pt-4 md:px-6">
-        <div className="mx-auto max-w-5xl overflow-hidden rounded-[2.25rem] border border-[#d7b48f]/60 bg-[linear-gradient(135deg,#6d4323_0%,#8b562d_55%,#a86835_100%)] shadow-[0_24px_70px_rgba(86,58,35,0.18)]">
+        <div className="mx-auto max-w-5xl overflow-hidden rounded-xl border border-border/70 bg-[linear-gradient(135deg,#1c2421_0%,#2f6e62_58%,#5d7f76_100%)] shadow-[0_22px_55px_rgba(31,26,23,0.12)]">
           <div className="grid gap-8 px-5 py-6 md:px-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center">
             <div>
               <div className="mb-6 flex items-center gap-3">
                 <Link
                   href="/"
-                  className="rounded-xl bg-[#fff7ea]/10 p-2 text-[#fff6ec] transition-colors hover:bg-[#fff7ea]/20"
+                  className="rounded-lg bg-white/8 p-2 text-[#fff6ec] transition-colors hover:bg-white/12"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </Link>
                 <div>
-                  <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#f1c48f]">
+                  <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#d6e7de]">
                     Profile
                   </p>
                   <h1 className="text-xl font-bold text-[#fff6ec] md:text-2xl">
@@ -69,9 +69,9 @@ export default function ProfileClient({ user }: Props) {
               </div>
 
               <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
-                <Avatar className="h-24 w-24 border-4 border-[#f2dcc0]/45 shadow-xl">
+                <Avatar className="h-24 w-24 border border-white/18 shadow-xl">
                   <AvatarImage src={user.image} alt={user.name} />
-                  <AvatarFallback className="bg-[#fff7ea]/20 text-2xl font-bold text-[#fff6ec]">
+                  <AvatarFallback className="bg-white/10 text-2xl font-bold text-[#fff6ec]">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -79,14 +79,14 @@ export default function ProfileClient({ user }: Props) {
                   <h2 className="text-xl font-bold text-[#fff6ec]">
                     {user.name || "Unknown user"}
                   </h2>
-                  <p className="mt-1 text-sm text-[#f3ddbf]">{user.email}</p>
+                  <p className="mt-1 text-sm text-[#dfe8e1]">{user.email}</p>
                   <div className="mt-3 flex items-center justify-center gap-2 sm:justify-start">
                     {user.membershipStatus === "pro" ? (
-                      <Badge className="bg-[#ebb06e]/25 text-[#fff1d9] hover:bg-[#ebb06e]/25">
+                        <Badge className="bg-[#c98b52]/20 text-[#fff1d9] hover:bg-[#c98b52]/20">
                         Pro
                       </Badge>
                     ) : (
-                      <Badge className="bg-[#fff7ea]/16 text-[#fff1d9]/80 hover:bg-[#fff7ea]/16">
+                        <Badge className="bg-white/10 text-[#fff1d9]/80 hover:bg-white/10">
                         Basic
                       </Badge>
                     )}
@@ -96,7 +96,7 @@ export default function ProfileClient({ user }: Props) {
             </div>
 
             <div className="hidden lg:block">
-              <div className="rounded-[1.8rem] border border-[#e7c49e]/35 bg-[#fff7ea]/10 p-4 backdrop-blur-sm">
+              <div className="rounded-lg border border-white/14 bg-white/8 p-4 backdrop-blur-sm">
                 <Image
                   src="/material/Notebook.png"
                   alt="Notebook illustration"
@@ -131,29 +131,29 @@ export default function ProfileClient({ user }: Props) {
                 value={user.phone}
               />
             ) : null}
-            <div className="rounded-[1.7rem] border border-[#d9b58c]/60 bg-[#fff9f0] px-4 py-3 shadow-[0_18px_45px_rgba(86,58,35,0.08)]">
-              <p className="mb-0.5 text-xs text-[#8f6d52]">Account ID</p>
-              <p className="truncate font-mono text-sm text-[#6f5138]">{user.id}</p>
+            <div className="rounded-lg border border-border/70 bg-card px-4 py-3 shadow-sm">
+              <p className="mb-0.5 text-xs text-muted-foreground">Account ID</p>
+              <p className="truncate font-mono text-sm text-foreground">{user.id}</p>
             </div>
           </div>
 
-          <div className="rounded-[1.8rem] border border-[#d9b58c]/60 bg-[#fff9f0] px-4 py-4 shadow-[0_18px_45px_rgba(86,58,35,0.08)]">
+          <div className="rounded-xl border border-border/70 bg-card px-4 py-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-[#f1dfc5]">
-                  <Crown className="h-5 w-5 text-[#ab6534]" />
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-accent/70">
+                  <Crown className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-[#8f6d52]">Membership</p>
+                  <p className="text-xs text-muted-foreground">Membership</p>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     {user.membershipStatus === "pro" ? (
-                      <Badge className="bg-[#d9f0d8] text-[#2f6d3a] hover:bg-[#d9f0d8]">
+                        <Badge className="bg-primary/12 text-primary hover:bg-primary/12">
                         Pro
                       </Badge>
                     ) : (
                       <Badge
                         variant="secondary"
-                        className="bg-[#f1dfc5] text-[#9d6030]"
+                        className="bg-accent/80 text-primary"
                       >
                         Basic
                       </Badge>
@@ -166,7 +166,7 @@ export default function ProfileClient({ user }: Props) {
                 <Link href="/upgrade">
                   <Button
                     size="sm"
-                    className="h-8 rounded-xl bg-[#9d6030] text-[#fff8ed] hover:bg-[#85502a]"
+                    className="h-8 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     Upgrade to Pro
                   </Button>
@@ -174,8 +174,8 @@ export default function ProfileClient({ user }: Props) {
               ) : null}
             </div>
 
-            <div className="flex items-center gap-2 border-t border-[#ead2b3] pt-3 text-sm text-[#6f5138]">
-              <Navigation className="h-4 w-4 flex-shrink-0 text-[#8f6d52]" />
+            <div className="flex items-center gap-2 border-t border-border pt-3 text-sm text-muted-foreground">
+              <Navigation className="h-4 w-4 flex-shrink-0 text-primary" />
               <span>
                 Route calculations this month: <strong>{monthlyUsage}</strong>
               </span>
@@ -186,7 +186,7 @@ export default function ProfileClient({ user }: Props) {
             <Button
               type="submit"
               variant="outline"
-              className="h-12 w-full rounded-2xl gap-2 border-red-200 font-semibold text-red-500 hover:bg-red-50"
+              className="h-12 w-full rounded-lg gap-2 border-red-200 font-semibold text-red-500 hover:bg-red-50"
             >
               <LogOut className="h-4 w-4" />
               Sign Out
@@ -208,13 +208,13 @@ function InfoRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-[1.7rem] border border-[#d9b58c]/60 bg-[#fff9f0] px-4 py-3 shadow-[0_18px_45px_rgba(86,58,35,0.08)]">
-      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-[#f1dfc5]">
+    <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-card px-4 py-3 shadow-sm">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-accent/70">
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-[#8f6d52]">{label}</p>
-        <p className="truncate text-sm font-medium text-[#4a3223]">{value}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="truncate text-sm font-medium text-foreground">{value}</p>
       </div>
     </div>
   );

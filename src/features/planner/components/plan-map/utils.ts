@@ -193,7 +193,7 @@ export function createMarkerElement(
           padding:3px 7px 4px;min-width:72px;max-width:110px;
           box-shadow:0 2px 8px rgba(0,0,0,0.18);text-align:center;
           border:1px solid rgba(0,0,0,0.08);">
-          <div style="font-size:10px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${truncName}</div>
+          <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${truncName}</div>
           <div style="font-size:9px;color:${pinColor};font-weight:600;margin-top:1px;white-space:nowrap;">${dateTimeLabel}</div>
         </div>
       </div>`;
@@ -207,7 +207,7 @@ export function createUnscheduledMarkerElement(stop: Stop) {
   element.innerHTML = `
       <div class="waypoint-marker" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.18s ease;">
         <div style="
-          background:#6b7280;color:white;width:32px;height:32px;
+          background:#546d69;color:white;width:32px;height:32px;
           border-radius:50% 50% 50% 0;transform:rotate(-45deg);
           display:flex;align-items:center;justify-content:center;
           border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);
@@ -219,8 +219,8 @@ export function createUnscheduledMarkerElement(stop: Stop) {
           padding:3px 7px 4px;min-width:72px;max-width:110px;
           box-shadow:0 2px 8px rgba(0,0,0,0.18);text-align:center;
           border:1px solid rgba(0,0,0,0.08);">
-          <div style="font-size:10px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${truncName}</div>
-          <div style="font-size:9px;color:#6b7280;font-weight:600;margin-top:1px;white-space:nowrap;">Unscheduled</div>
+          <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${truncName}</div>
+          <div style="font-size:9px;color:#546d69;font-weight:600;margin-top:1px;white-space:nowrap;">Unscheduled</div>
         </div>
       </div>`;
   return element;
@@ -249,19 +249,19 @@ export function createStayMarkerElement(stay: TripStayItem) {
   element.innerHTML = `
       <div class="waypoint-marker" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.18s ease;">
         <div style="
-          background:#8b5e3c;color:white;width:34px;height:34px;
+          background:#8b6b47;color:white;width:34px;height:34px;
           border-radius:12px;display:flex;align-items:center;justify-content:center;
           border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);
           font-size:16px;font-weight:700;flex-shrink:0;">
           <span>⌂</span>
         </div>
         <div style="
-          background:#fff8ef;border-radius:8px;margin-top:5px;
+          background:#fffdf8;border-radius:8px;margin-top:5px;
           padding:3px 7px 4px;min-width:72px;max-width:110px;
           box-shadow:0 2px 8px rgba(0,0,0,0.18);text-align:center;
-          border:1px solid rgba(139,94,60,0.18);">
-          <div style="font-size:10px;font-weight:700;color:#4a2f1d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${truncName}</div>
-          <div style="font-size:9px;color:#8b5e3c;font-weight:600;margin-top:1px;white-space:nowrap;">Stay · ${dateLabel}</div>
+          border:1px solid rgba(139,107,71,0.18);">
+          <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${truncName}</div>
+          <div style="font-size:9px;color:#8b6b47;font-weight:600;margin-top:1px;white-space:nowrap;">Stay · ${dateLabel}</div>
         </div>
       </div>`;
   return element;

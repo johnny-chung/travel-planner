@@ -116,7 +116,7 @@ export default function TripCreateDialog({
               ) : null}
             </div>
             {joinCode.length > 0 ? (
-              <p className="text-xs text-blue-600">
+              <p className="text-xs text-primary">
                 Enter a code to request access. The create form is disabled while joining.
               </p>
             ) : null}

@@ -74,7 +74,7 @@ export default function AddStopModal({
 
       <form
         action={formAction}
-        className="relative z-10 flex max-h-[calc(100vh-6.5rem-env(safe-area-inset-bottom))] w-full max-w-lg flex-col rounded-t-3xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-300 md:max-h-[90vh]"
+        className="relative z-10 flex max-h-[calc(100vh-6.5rem-env(safe-area-inset-bottom))] w-full max-w-lg flex-col rounded-t-3xl bg-card text-card-foreground shadow-2xl animate-in slide-in-from-bottom duration-300 md:max-h-[90vh]"
       >
         <input type="hidden" name="tripId" value={tripId} />
         <input type="hidden" name="returnTo" value={returnTo} />
@@ -95,17 +95,17 @@ export default function AddStopModal({
           />
         ))}
         <div className="flex-shrink-0 p-6 pb-4">
-          <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+          <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-border" />
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3 flex-1 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <MapPin className="w-5 h-5 text-blue-600" />
+              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12">
+                <MapPin className="w-5 h-5 text-primary" />
               </div>
               <div className="min-w-0">
-                <h2 className="font-bold text-gray-900 text-lg leading-tight truncate">
+                <h2 className="truncate text-lg font-bold leading-tight text-foreground">
                   {location.name}
                 </h2>
-                <p className="text-gray-400 text-sm truncate mt-0.5">
+                <p className="mt-0.5 truncate text-sm text-muted-foreground">
                   {location.address}
                 </p>
               </div>
@@ -113,7 +113,7 @@ export default function AddStopModal({
             <button
               type="button"
               onClick={onCancel}
-              className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400 ml-2 flex-shrink-0"
+              className="ml-2 shrink-0 rounded-xl p-1.5 text-muted-foreground hover:bg-muted"
             >
               <X className="w-5 h-5" />
             </button>
@@ -188,28 +188,28 @@ export default function AddStopModal({
           </div>
 
           {tripDocs.length > 0 && (
-            <div className="rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="overflow-hidden rounded-xl border border-border">
               <button
                 type="button"
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/60"
                 onClick={() => setDocsOpen((v) => !v)}
               >
-                <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <FileText className="w-4 h-4 text-gray-400" /> Link Documents
+                <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <FileText className="w-4 h-4 text-muted-foreground" /> Link Documents
                   {linkedDocIds.length > 0 && (
-                    <span className="bg-blue-100 text-blue-600 text-xs px-1.5 py-0.5 rounded-full font-medium">
+                    <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
                       {linkedDocIds.length}
                     </span>
                   )}
                 </span>
                 {docsOpen ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400" />
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 )}
               </button>
               {docsOpen && (
-                <div className="border-t border-gray-100 divide-y divide-gray-50">
+                <div className="divide-y divide-border/60 border-t border-border/70">
                   {tripDocs.map((doc) => {
                     const checked = linkedDocIds.includes(doc._id);
                     return (
@@ -217,10 +217,10 @@ export default function AddStopModal({
                         key={doc._id}
                         type="button"
                         onClick={() => toggleDoc(doc._id)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${checked ? "bg-blue-50" : "bg-white hover:bg-gray-50"}`}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${checked ? "bg-primary/8 dark:bg-primary/10" : "bg-card hover:bg-muted/60"}`}
                       >
                         <div
-                          className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? "bg-blue-600 border-blue-600" : "border-gray-300"}`}
+                          className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? "bg-primary border-primary" : "border-border"}`}
                         >
                           {checked && (
                             <svg
@@ -239,10 +239,10 @@ export default function AddStopModal({
                           )}
                         </div>
                         <FileText
-                          className={`w-4 h-4 shrink-0 ${checked ? "text-blue-500" : "text-gray-400"}`}
+                          className={`w-4 h-4 shrink-0 ${checked ? "text-primary" : "text-muted-foreground"}`}
                         />
                         <span
-                          className={`text-sm font-medium truncate ${checked ? "text-blue-700" : "text-gray-700"}`}
+                          className={`text-sm font-medium truncate ${checked ? "text-primary" : "text-foreground"}`}
                         >
                           {doc.name}
                         </span>
@@ -266,7 +266,7 @@ export default function AddStopModal({
           ) : null}
         </div>
 
-        <div className="flex-shrink-0 flex gap-3 border-t border-gray-100 px-6 pt-3 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] md:pb-8">
+        <div className="flex-shrink-0 flex gap-3 border-t border-border px-6 pt-3 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] md:pb-8">
           <Button
             variant="outline"
             className="flex-1 rounded-xl h-12"
@@ -275,7 +275,7 @@ export default function AddStopModal({
             Cancel
           </Button>
           <SubmitButton
-            className="flex-1 rounded-xl h-12 bg-blue-600 hover:bg-blue-700 font-semibold"
+            className="flex-1 rounded-xl h-12 bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
             pendingLabel="Saving..."
           >
             Save Stop

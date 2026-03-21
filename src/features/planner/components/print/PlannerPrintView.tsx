@@ -71,7 +71,7 @@ export default function PlannerPrintView({
 
       <div className="space-y-5">
         <section className="rounded-[28px] border bg-card px-5 py-5 shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#9d6030]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
             Itinerary Snapshot
           </p>
           <h1 className="mt-2 text-2xl font-semibold text-foreground">{planName}</h1>
@@ -100,8 +100,8 @@ export default function PlannerPrintView({
             className="rounded-[28px] border bg-card px-3 py-3 shadow-sm print:break-inside-avoid print:rounded-none print:border-0 print:px-0 print:py-0 print:shadow-none"
           >
             <div className="mb-3 flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-[#8b562d]" />
-              <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-[#9d6030]">
+              <div className="h-2 w-2 rounded-full bg-primary" />
+              <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">
                 {formatDayLabel(date)}
               </h2>
             </div>
@@ -122,7 +122,7 @@ export default function PlannerPrintView({
                   return (
                     <article key={item.id} className="rounded-2xl border px-3 py-2.5">
                       <div className="flex items-start gap-3">
-                        <div className="mt-0.5 rounded-full bg-[#8b562d] px-2 py-1 text-[10px] font-bold text-white">
+                        <div className="mt-0.5 rounded-full bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground">
                           {stop.order}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -143,7 +143,7 @@ export default function PlannerPrintView({
                               href={mapLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 underline underline-offset-2"
+                              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
                             >
                               <MapPin className="h-3 w-3" />
                               Open in Google Maps
@@ -171,9 +171,9 @@ export default function PlannerPrintView({
                   const stay = item.stay;
                   const mapLink = buildGoogleMapsLink(stay.address, stay.lat, stay.lng);
                   return (
-                    <article key={item.id} className="rounded-2xl border border-emerald-200 bg-emerald-50/50 px-3 py-2.5">
+                            <article key={item.id} className="rounded-2xl border border-border bg-accent/25 px-3 py-2.5">
                       <div className="flex items-start gap-3">
-                        <div className="mt-0.5 rounded-xl bg-emerald-100 p-2 text-emerald-700">
+                        <div className="mt-0.5 rounded-xl bg-accent/70 p-2 text-accent-foreground">
                           <BedDouble className="h-4 w-4" />
                         </div>
                         <div className="min-w-0 flex-1">
@@ -186,7 +186,7 @@ export default function PlannerPrintView({
                               href={mapLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 underline underline-offset-2"
+                              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
                             >
                               <MapPin className="h-3 w-3" />
                               Open in Google Maps
@@ -204,9 +204,9 @@ export default function PlannerPrintView({
                     ? transport.arrival.name || transport.arrival.address
                     : transport.departure.name || transport.departure.address;
                 return (
-                  <article key={item.id} className="rounded-2xl border border-amber-200 bg-amber-50/50 px-3 py-2.5">
+                    <article key={item.id} className="rounded-2xl border border-border bg-muted/40 px-3 py-2.5">
                     <div className="flex items-start gap-3">
-                      <div className="mt-0.5 rounded-xl bg-amber-100 p-2 text-amber-700">
+                        <div className="mt-0.5 rounded-xl bg-primary/12 p-2 text-primary">
                         <Plane className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -229,8 +229,8 @@ export default function PlannerPrintView({
         {unscheduledStops.length > 0 ? (
           <section className="rounded-[28px] border bg-card px-3 py-3 shadow-sm print:break-inside-avoid print:rounded-none print:border-0 print:px-0 print:py-0 print:shadow-none">
             <div className="mb-3 flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-[#8b562d]" />
-              <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-[#9d6030]">
+              <div className="h-2 w-2 rounded-full bg-primary" />
+              <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">
                 Unscheduled Stops
               </h2>
             </div>
@@ -250,7 +250,7 @@ export default function PlannerPrintView({
                         href={mapLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 underline underline-offset-2"
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
                       >
                         <MapPin className="h-3 w-3" />
                         Open in Google Maps

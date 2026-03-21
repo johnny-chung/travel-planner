@@ -102,7 +102,7 @@ export default function MapSearchBox({ map, onSelect, className }: Props) {
   return (
     <div className={className}>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
           value={query}
@@ -110,14 +110,14 @@ export default function MapSearchBox({ map, onSelect, className }: Props) {
           onFocus={() => query && setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder="Search for a place..."
-          className="w-full h-11 pl-9 pr-9 rounded-2xl bg-white shadow-lg border border-gray-100 text-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium placeholder:text-gray-400"
+          className="h-11 w-full rounded-xl border border-border bg-card pl-9 pr-9 text-sm font-medium text-foreground shadow-lg outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-primary"
         />
-        {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />}
+        {loading && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
         {!loading && query && (
           <button
             onMouseDown={(e) => e.preventDefault()}
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />
           </button>
@@ -125,19 +125,19 @@ export default function MapSearchBox({ map, onSelect, className }: Props) {
       </div>
 
       {showDropdown && (
-        <div className="mt-1 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          {loading && <div className="px-4 py-3 text-sm text-gray-400 text-center">Searching…</div>}
+        <div className="mt-1 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+          {loading && <div className="px-4 py-3 text-center text-sm text-muted-foreground">Searching…</div>}
           {!loading && predictions.map((p, i) => (
             <button
               key={i}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleSelect(p)}
-              className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 text-left border-b border-gray-50 last:border-0 transition-colors"
+              className="w-full flex items-start gap-3 border-b border-border/50 px-4 py-3 text-left transition-colors last:border-0 hover:bg-muted/60"
             >
-              <MapPin className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+              <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{p.mainText}</p>
-                <p className="text-xs text-gray-400 truncate">{p.secondaryText}</p>
+                <p className="truncate text-sm font-medium text-foreground">{p.mainText}</p>
+                <p className="truncate text-xs text-muted-foreground">{p.secondaryText}</p>
               </div>
             </button>
           ))}

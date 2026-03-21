@@ -30,39 +30,39 @@ export default function UpgradeClient({ currentStatus }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-16">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
         <Link
           href="/"
-          className="flex items-center gap-1.5 text-gray-400 hover:text-gray-600 text-sm mb-6 transition-colors"
+          className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
-            <Zap className="w-8 h-8 text-blue-600" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+            <Zap className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="font-brand text-2xl font-bold text-foreground">
             Roamer&apos;s Ledger Pro
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">
+          <p className="mt-1 text-sm text-muted-foreground">
             This is jsut a personal project and API call ain&apos;t free. You
             subscription help me pay the bill.
           </p>
-          <p className="text-gray-500 mt-1 text-sm">
+          <p className="mt-1 text-sm text-muted-foreground">
             Unlock the full Roamer&apos;s Ledger experience
           </p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-4">
+        <div className="mb-4 rounded-[1.4rem] border border-border bg-card p-6 shadow-sm">
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-3xl font-bold text-gray-900">$5</span>
-            <span className="text-gray-400 text-sm">/year</span>
-            <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-xs ml-1">
+            <span className="text-3xl font-bold text-foreground">$5</span>
+            <span className="text-sm text-muted-foreground">/year</span>
+            <Badge className="ml-1 bg-accent/70 text-accent-foreground hover:bg-accent/70 text-xs">
               50% off
             </Badge>
           </div>
-          <p className="text-gray-400 text-xs mb-5 line-through">
+          <p className="mb-5 text-xs text-muted-foreground line-through">
             Regular price $10/year
           </p>
 
@@ -75,10 +75,10 @@ export default function UpgradeClient({ currentStatus }: Props) {
             ].map((feature) => (
               <li
                 key={feature}
-                className="flex items-center gap-2.5 text-sm text-gray-700"
+                className="flex items-center gap-2.5 text-sm text-foreground"
               >
-                <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-3 h-3 text-blue-600" />
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary">
+                  <Check className="w-3 h-3" />
                 </div>
                 {feature}
               </li>
@@ -86,12 +86,12 @@ export default function UpgradeClient({ currentStatus }: Props) {
           </ul>
 
           {isPro ? (
-            <div className="w-full h-12 rounded-2xl bg-green-50 border border-green-200 flex items-center justify-center gap-2 text-green-700 font-semibold">
+            <div className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 font-semibold text-primary">
               <Check className="w-4 h-4" /> You&apos;re already a Pro member!
             </div>
           ) : (
             <Button
-              className="w-full h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 font-semibold text-base"
+              className="h-12 w-full rounded-xl bg-primary font-semibold text-base text-primary-foreground hover:bg-primary/90"
               onClick={handleUpgrade}
               disabled={loading}
             >
@@ -101,9 +101,17 @@ export default function UpgradeClient({ currentStatus }: Props) {
         </div>
 
         {!isPro && (
-          <p className="text-center text-xs text-gray-400">
-            Already subscribed? Your Pro status will be restored automatically.
-          </p>
+          <>
+            <p className="text-center text-xs text-muted-foreground">
+              Already subscribed? Send me an email.
+            </p>
+            <a
+              href="mailto:johnny@goodmanltd.com"
+              className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+            >
+              Support
+            </a>
+          </>
         )}
       </div>
     </div>

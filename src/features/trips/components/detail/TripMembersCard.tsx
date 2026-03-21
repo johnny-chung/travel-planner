@@ -31,7 +31,7 @@ export default function TripMembersCard({
       <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors">
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Users className="w-4 h-4 text-muted-foreground" /> Trip Members
-          <span className="rounded-full bg-[#f1dfc5] px-1.5 py-0.5 text-xs font-medium text-[#9d6030]">
+          <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
             {members.length}
           </span>
         </span>
@@ -48,7 +48,7 @@ export default function TripMembersCard({
               <div key={member.userId} className="flex items-center gap-3 px-4 py-3">
                 <Avatar className="w-9 h-9">
                   <AvatarImage src={member.image} />
-                  <AvatarFallback className="bg-[#f1dfc5] text-sm font-semibold text-[#85502a]">
+                  <AvatarFallback className="bg-primary/12 text-sm font-semibold text-primary">
                     {member.name?.[0]?.toUpperCase() ?? "?"}
                   </AvatarFallback>
                 </Avatar>

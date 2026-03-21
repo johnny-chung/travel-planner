@@ -119,7 +119,7 @@ function StopCardContent({
         className="block w-full rounded-2xl border border-border bg-card p-4 text-left shadow-sm transition-transform hover:shadow-md active:scale-[0.98]"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#8b562d] shadow-sm">
+          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary shadow-sm">
             <span className="text-[9px] font-bold text-white">{orderLabel}</span>
           </div>
           <div className="min-w-0 flex-1">
@@ -706,8 +706,8 @@ export default function StopsList({
               >
                 <summary className="mb-2 flex list-none cursor-pointer items-center justify-between gap-3">
                   <div className="min-w-0 flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5 text-[#c38d5f]" />
-                    <span className="truncate text-xs font-semibold uppercase tracking-wide text-[#9d6030]">
+                    <Calendar className="h-3.5 w-3.5 text-primary" />
+                    <span className="truncate text-xs font-semibold uppercase tracking-wide text-primary">
                       {formattedDate}
                     </span>
                     <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
@@ -739,8 +739,8 @@ export default function StopsList({
           <details open className="group rounded-2xl bg-muted/20 px-3 py-2">
             <summary className="mb-2 flex list-none cursor-pointer items-center justify-between gap-3">
               <div className="min-w-0 flex items-center gap-2">
-                <MapPin className="h-3.5 w-3.5 text-[#c38d5f]" />
-                <span className="truncate text-xs font-semibold uppercase tracking-wide text-[#9d6030]">
+                <MapPin className="h-3.5 w-3.5 text-primary" />
+                <span className="truncate text-xs font-semibold uppercase tracking-wide text-primary">
                   Unscheduled Stops
                 </span>
                 <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">

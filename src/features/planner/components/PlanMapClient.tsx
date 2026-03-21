@@ -360,7 +360,7 @@ export default function PlanMapClient({
 
       const colorMap = getDateColorMap(stops);
       groupedStopMarkers.forEach(({ representative, isMultiVisit }) => {
-        const color = colorMap.get(representative.date) ?? "#2563eb";
+        const color = colorMap.get(representative.date) ?? "#2f6e62";
         const markerElement = createMarkerElement(
           representative,
           isMultiVisit ? "M" : representative.order,

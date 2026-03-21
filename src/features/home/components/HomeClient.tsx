@@ -47,36 +47,46 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
     user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? "U";
 
   return (
-    <div className="min-h-screen bg-[#f5ead8] pb-16 md:pb-0 md:pt-16">
+    <div className="min-h-screen bg-background pb-16 md:pb-0 md:pt-16">
       <section
         className="px-2 pb-6 md:pt-4 md:px-6"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
       >
-        <div className="mx-auto max-w-5xl overflow-hidden rounded-md border border-[#d7b48f]/60 bg-[linear-gradient(135deg,#6d4323_0%,#8b562d_55%,#a86835_100%)] shadow-[0_24px_70px_rgba(86,58,35,0.18)]">
-          <div className="md:hidden border-b border-[#f2d4ac]/20 px-5 py-4 md:px-8">
-            <div className="flex items-center justify-between">
+        <div className="relative mx-auto max-w-5xl overflow-hidden rounded-xl border border-border/70 shadow-[0_22px_55px_rgba(31,26,23,0.12)]">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover"
+          >
+            <source src="/material/carousell.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(28,36,33,0.98)_0%,rgba(47,110,98,0.95)_58%,rgba(93,127,118,0.98)_100%)]" />
+          <div className="md:hidden border-b border-white/12 px-5 py-4 md:px-8">
+            <div className="relative z-10 flex items-center justify-between">
               <BrandLogo
                 size={40}
                 priority
-                iconClassName="h-10 w-10 rounded-2xl border border-[#d1a777]/50 bg-[#fff7ea] p-1.5"
-                labelClassName="text-base text-[#fff3df]"
+                iconClassName="h-10 w-10 rounded-xl border border-white/15 bg-white/8 p-1.5"
+                labelClassName="text-base text-[#f7efe2]"
               />
 
               <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger className="rounded-full outline-none">
-                  <Avatar className="h-10 w-10 border-2 border-[#f2dcc0]/45">
+                  <Avatar className="h-10 w-10 border border-white/20">
                     <AvatarImage src={user.image} />
-                    <AvatarFallback className="bg-[#fff7ea]/20 text-sm font-semibold text-[#fff6ec]">
+                    <AvatarFallback className="bg-white/10 text-sm font-semibold text-[#fff6ec]">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
                 </SheetTrigger>
                 <SheetContent side="right" className="flex w-72 flex-col p-0">
-                  <SheetHeader className="bg-[linear-gradient(135deg,#6d4323_0%,#8b562d_100%)] px-5 pb-6 pt-8 text-white">
+                  <SheetHeader className="bg-[linear-gradient(135deg,#1c2421_0%,#2f6e62_100%)] px-5 pb-6 pt-8 text-white">
                     <div className="flex flex-col items-center gap-3">
-                      <Avatar className="h-16 w-16 border-2 border-[#f2dcc0]/45">
+                      <Avatar className="h-16 w-16 border border-white/20">
                         <AvatarImage src={user.image} />
-                        <AvatarFallback className="bg-[#fff7ea]/20 text-xl font-semibold text-[#fff6ec]">
+                        <AvatarFallback className="bg-white/10 text-xl font-semibold text-[#fff6ec]">
                           {initials}
                         </AvatarFallback>
                       </Avatar>
@@ -84,15 +94,15 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                         <SheetTitle className="text-base font-bold text-white">
                           {user.name || "User"}
                         </SheetTitle>
-                        <p className="mt-0.5 flex items-center justify-center gap-1 text-xs text-[#f3ddbf]">
+                        <p className="mt-0.5 flex items-center justify-center gap-1 text-xs text-[#d8e6df]">
                           <Mail className="h-3 w-3" />
                           {user.email}
                         </p>
                         <span
                           className={`mt-2 inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                             membershipStatus === "pro"
-                              ? "bg-[#ebb06e]/25 text-[#fff1d9]"
-                              : "bg-[#fff7ea]/16 text-[#fff1d9]/80"
+                              ? "bg-[#c98b52]/20 text-[#fbf2e5]"
+                              : "bg-white/10 text-[#f1ebe0]/85"
                           }`}
                         >
                           {membershipStatus === "pro" ? "PRO" : "BASIC"}
@@ -109,8 +119,8 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                         router.push("/profile");
                       }}
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f1dfc5]">
-                        <User className="h-5 w-5 text-[#ab6534]" />
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/70">
+                        <User className="h-5 w-5 text-primary" />
                       </div>
                       <span className="font-medium text-foreground">
                         Profile
@@ -122,11 +132,11 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                       className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors hover:bg-muted"
                       onClick={() => setTheme(isDark ? "light" : "dark")}
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f1dfc5]">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/70">
                         {isDark ? (
-                          <Sun className="h-5 w-5 text-[#ab6534]" />
+                          <Sun className="h-5 w-5 text-primary" />
                         ) : (
-                          <Moon className="h-5 w-5 text-[#ab6534]" />
+                          <Moon className="h-5 w-5 text-primary" />
                         )}
                       </div>
                       <span className="font-medium text-foreground">
@@ -141,8 +151,8 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                         router.push("/notifications");
                       }}
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f1dfc5]">
-                        <Bell className="h-5 w-5 text-[#ab6534]" />
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/70">
+                        <Bell className="h-5 w-5 text-primary" />
                       </div>
                       <span className="font-medium text-foreground">
                         Notifications
@@ -168,34 +178,34 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
             </div>
           </div>
 
-          <div className="grid gap-8 px-5 py-7 md:px-8 lg:grid-cols-[minmax(0,1.08fr)_19rem] lg:items-end">
+          <div className="relative z-10 grid gap-8 px-5 py-7 md:px-8 lg:grid-cols-[minmax(0,1.08fr)_19rem] lg:items-end">
             <div>
-              <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#f1c48f]">
+              <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#d6e7de]">
                 Member Home
               </p>
               <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[#fff6ec] md:text-4xl">
                 Hello, {firstName}
               </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#f3ddbf] md:text-base">
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#deeadf] md:text-base">
                 Reopen the journal, find your last routes, and pick up the next
                 trip.
               </p>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <div className="rounded-md border border-[#e7c49e]/35 bg-[#fff7ea]/12 p-4 backdrop-blur-sm">
+                <div className="rounded-lg border border-white/14 bg-white/8 p-4 backdrop-blur-sm">
                   <p className="text-3xl font-bold text-[#fff6ec]">
                     {plans.length}
                   </p>
-                  <p className="mt-0.5 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-[#f3ddbf]">
+                  <p className="mt-0.5 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-[#deeadf]">
                     Trips
                   </p>
                 </div>
                 <Link
                   href="/donate"
-                  className="rounded-md border border-[#e7c49e]/35 bg-[#fff7ea]/12 p-4 transition-colors hover:bg-[#fff7ea]/20"
+                  className="rounded-lg border border-white/14 bg-white/8 p-4 transition-colors hover:bg-white/12"
                 >
                   <Heart className="h-6 w-6 text-[#fff1d9] fill-red-600" />
-                  <p className="mt-2 text-sm text-[#f3ddbf]">Support us</p>
+                  <p className="mt-2 text-sm text-[#deeadf]">Support us</p>
                 </Link>
               </div>
             </div>
@@ -219,12 +229,12 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
           {recentPlans.length > 0 ? (
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-base font-semibold text-[#4a3223]">
+                <h2 className="text-base font-semibold text-foreground">
                   Recent Trips
                 </h2>
                 <Link
                   href="/trips"
-                  className="flex items-center gap-1 text-md font-medium text-[#9d6030] hover:underline"
+                  className="flex items-center gap-1 text-md font-medium text-primary hover:underline"
                 >
                   See all <ChevronRight className="h-4 w-4" />
                 </Link>
@@ -233,17 +243,17 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-[#f1dfc5]">
-                <Map className="h-10 w-10 text-[#ab6534]" />
+              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-xl bg-accent">
+                <Map className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold text-[#4a3223]">
+              <h3 className="text-lg font-semibold text-foreground">
                 No Trips yet
               </h3>
-              <p className="mt-1 text-sm text-[#6f5138]">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Go to{" "}
                 <Link
                   href="/trips"
-                  className="font-medium text-[#9d6030] hover:underline"
+                  className="font-medium text-primary hover:underline"
                 >
                   Trips
                 </Link>{" "}
