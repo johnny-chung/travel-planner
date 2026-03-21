@@ -3,6 +3,7 @@ import "server-only";
 import { connectDB } from "@/lib/mongodb";
 import { TripServiceError } from "@/features/trips/errors";
 import { buildEndpointPrefixPattern } from "@/features/planner/timeline";
+import { canActorAccessTrip, type TripActor } from "@/features/trips/access";
 import { TripStay } from "@/lib/models/TripStay";
 import { TripTransport } from "@/lib/models/TripTransport";
 import { Trip } from "@/lib/models/Trip";
@@ -20,7 +21,9 @@ import type {
 } from "@/types/trip-logistics";
 
 type TripAccessRecord = {
-  userId: string;
+  userId?: string;
+  guestId?: string | null;
+  ownerType?: "user" | "guest";
   editors?: string[];
   status?: string;
 };
@@ -175,16 +178,16 @@ function serializeStay(raw: RawStay): TripStayItem {
   };
 }
 
-function canAccessTrip(trip: TripAccessRecord, userId: string) {
-  return trip.userId === userId || (trip.editors ?? []).includes(userId);
+async function getEditableTripForUser(tripId: string, userId: string) {
+  return getEditableTripForActor(tripId, { kind: "user", userId });
 }
 
-async function getEditableTripForUser(tripId: string, userId: string) {
+async function getEditableTripForActor(tripId: string, actor: TripActor) {
   const trip = (await Trip.findOne({ _id: tripId }).lean()) as
     | TripAccessRecord
     | null;
 
-  if (!trip || !canAccessTrip(trip, userId)) {
+  if (!trip || !canActorAccessTrip(trip, actor)) {
     throw new TripServiceError("NOT_FOUND", "Trip not found");
   }
 
@@ -867,6 +870,71 @@ export async function deleteStayForUser(
 ) {
   await connectDB();
   await getEditableTripForUser(tripId, userId);
+
+  const deleted = await TripStay.findOneAndDelete({
+    _id: stayId,
+    tripId,
+  }).lean();
+
+  if (!deleted) {
+    throw new TripServiceError("NOT_FOUND", "Stay not found");
+  }
+
+  const endpointPattern = buildEndpointPrefixPattern(stayId);
+  await TravelTime.deleteMany({
+    $or: [{ fromStopId: endpointPattern }, { toStopId: endpointPattern }],
+  });
+  await syncTripTravelDates(tripId);
+}
+
+export async function addStayForGuest(
+  tripId: string,
+  guestId: string,
+  input: AddStayInput,
+) {
+  await connectDB();
+  await getEditableTripForActor(tripId, { kind: "guest", guestId });
+  const nextItem = buildStayItem(input);
+
+  await TripStay.create({
+    tripId,
+    userId: "",
+    ...nextItem,
+  });
+
+  await syncTripTravelDates(tripId);
+}
+
+export async function updateStayForGuest(
+  tripId: string,
+  guestId: string,
+  stayId: string,
+  input: AddStayInput,
+) {
+  await connectDB();
+  await getEditableTripForActor(tripId, { kind: "guest", guestId });
+  const nextItem = buildStayItem(input);
+
+  const updated = await TripStay.findOneAndUpdate(
+    { _id: stayId, tripId },
+    nextItem,
+    { new: true },
+  ).lean();
+
+  if (!updated) {
+    throw new TripServiceError("NOT_FOUND", "Stay not found");
+  }
+
+  await syncTripTravelDates(tripId);
+}
+
+export async function deleteStayForGuest(
+  tripId: string,
+  guestId: string,
+  stayId: string,
+) {
+  await connectDB();
+  await getEditableTripForActor(tripId, { kind: "guest", guestId });
 
   const deleted = await TripStay.findOneAndDelete({
     _id: stayId,

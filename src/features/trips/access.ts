@@ -30,7 +30,7 @@ export function buildTripCapabilities(actor: TripActor): TripCapabilities {
     return {
       isGuest: true,
       canManageTransport: false,
-      canManageStay: false,
+      canManageStay: true,
       canManageDocuments: false,
       canUseExpenses: false,
       canCollaborate: false,

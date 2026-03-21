@@ -34,6 +34,7 @@ export default async function TrialTripDetailPage({ params }: Props) {
       totalExpense={detail.totalExpense}
       currentUserId=""
       googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""}
+      accessMode="guest"
       backHref="/try"
       planHref={`/try/${tripId}/plan`}
       checklistHref={`/try/${tripId}/checklist`}

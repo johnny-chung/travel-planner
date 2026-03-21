@@ -112,7 +112,9 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f1dfc5]">
                         <User className="h-5 w-5 text-[#ab6534]" />
                       </div>
-                      <span className="font-medium text-foreground">Profile</span>
+                      <span className="font-medium text-foreground">
+                        Profile
+                      </span>
                       <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground/60" />
                     </button>
 
@@ -180,15 +182,17 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
               </p>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <div className="rounded-[1.5rem] border border-[#e7c49e]/35 bg-[#fff7ea]/12 p-4 backdrop-blur-sm">
-                  <p className="text-3xl font-bold text-[#fff6ec]">{plans.length}</p>
+                <div className="rounded-md border border-[#e7c49e]/35 bg-[#fff7ea]/12 p-4 backdrop-blur-sm">
+                  <p className="text-3xl font-bold text-[#fff6ec]">
+                    {plans.length}
+                  </p>
                   <p className="mt-0.5 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-[#f3ddbf]">
                     Trips
                   </p>
                 </div>
                 <Link
                   href="/donate"
-                  className="rounded-[1.5rem] border border-[#e7c49e]/35 bg-[#fff7ea]/12 p-4 transition-colors hover:bg-[#fff7ea]/20"
+                  className="rounded-md border border-[#e7c49e]/35 bg-[#fff7ea]/12 p-4 transition-colors hover:bg-[#fff7ea]/20"
                 >
                   <Heart className="h-6 w-6 text-[#fff1d9] fill-red-600" />
                   <p className="mt-2 text-sm text-[#f3ddbf]">Support us</p>
@@ -197,16 +201,14 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
             </div>
 
             <div className="hidden lg:block">
-              <div className="rounded-[1.8rem] border border-[#e7c49e]/35 bg-[#fff7ea]/10 p-4 backdrop-blur-sm">
-                <Image
-                  src="/material/Compass_Map.png"
-                  alt="Compass and map"
-                  width={360}
-                  height={260}
-                  className="h-auto w-full object-contain"
-                  priority
-                />
-              </div>
+              <Image
+                src="/material/Cat_and_Bag.png"
+                alt="Compass and map"
+                width={360}
+                height={260}
+                className="h-auto w-full object-contain"
+                priority
+              />
             </div>
           </div>
         </div>
@@ -235,7 +237,7 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                 <Map className="h-10 w-10 text-[#ab6534]" />
               </div>
               <h3 className="text-lg font-semibold text-[#4a3223]">
-                No plans yet
+                No Trips yet
               </h3>
               <p className="mt-1 text-sm text-[#6f5138]">
                 Go to{" "}

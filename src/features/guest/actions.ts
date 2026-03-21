@@ -16,10 +16,16 @@ import {
   StopServiceError,
   updateStopForGuest,
 } from "@/features/stops/service";
+import {
+  addStayForGuest,
+  deleteStayForGuest,
+  updateStayForGuest,
+} from "@/features/trip-logistics/service";
 import type { TransportMode } from "@/types/travel";
 
 export type GuestFormActionState = {
   error?: string;
+  success?: boolean;
 };
 
 function parseNumber(value: FormDataEntryValue | null) {
@@ -129,7 +135,7 @@ export async function createTrialTripAction(
     });
 
     revalidateTrialPaths(String(trip._id));
-    redirect(`/try/${String(trip._id)}`);
+    redirect(`/try/${String(trip._id)}/plan`);
   } catch (error) {
     return { error: getErrorMessage(error, "Failed to create trip") };
   }
@@ -243,4 +249,70 @@ export async function applyGuestStopSchedulesAction(formData: FormData) {
   await applyStopSchedulesForGuest(tripId, guestId, schedules);
   revalidateTrialPaths(tripId);
   redirect(returnTo);
+}
+
+export async function addGuestStayAction(
+  _previousState: GuestFormActionState,
+  formData: FormData,
+): Promise<GuestFormActionState> {
+  const guestId = await getOrCreateGuestId();
+  const tripId = String(formData.get("tripId") ?? "");
+
+  try {
+    await addStayForGuest(tripId, guestId, {
+      name: String(formData.get("name") ?? ""),
+      address: String(formData.get("address") ?? ""),
+      placeId: String(formData.get("placeId") ?? ""),
+      lat: Number(formData.get("lat") ?? 0),
+      lng: Number(formData.get("lng") ?? 0),
+      checkInDate: String(formData.get("checkInDate") ?? ""),
+      checkOutDate: String(formData.get("checkOutDate") ?? ""),
+      thumbnail: String(formData.get("thumbnail") ?? ""),
+      phone: String(formData.get("phone") ?? ""),
+      website: String(formData.get("website") ?? ""),
+    });
+  } catch (error) {
+    return { error: getErrorMessage(error, "Failed to add stay") };
+  }
+
+  revalidateTrialPaths(tripId);
+  return { success: true };
+}
+
+export async function updateGuestStayAction(
+  _previousState: GuestFormActionState,
+  formData: FormData,
+): Promise<GuestFormActionState> {
+  const guestId = await getOrCreateGuestId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const stayId = String(formData.get("stayId") ?? "");
+
+  try {
+    await updateStayForGuest(tripId, guestId, stayId, {
+      name: String(formData.get("name") ?? ""),
+      address: String(formData.get("address") ?? ""),
+      placeId: String(formData.get("placeId") ?? ""),
+      lat: Number(formData.get("lat") ?? 0),
+      lng: Number(formData.get("lng") ?? 0),
+      checkInDate: String(formData.get("checkInDate") ?? ""),
+      checkOutDate: String(formData.get("checkOutDate") ?? ""),
+      thumbnail: String(formData.get("thumbnail") ?? ""),
+      phone: String(formData.get("phone") ?? ""),
+      website: String(formData.get("website") ?? ""),
+    });
+  } catch (error) {
+    return { error: getErrorMessage(error, "Failed to update stay") };
+  }
+
+  revalidateTrialPaths(tripId);
+  return { success: true };
+}
+
+export async function deleteGuestStayAction(formData: FormData) {
+  const guestId = await getOrCreateGuestId();
+  const tripId = String(formData.get("tripId") ?? "");
+  const stayId = String(formData.get("stayId") ?? "");
+
+  await deleteStayForGuest(tripId, guestId, stayId);
+  revalidateTrialPaths(tripId);
 }

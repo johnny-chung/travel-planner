@@ -106,7 +106,16 @@ export default function DatePicker({
             </span>
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-auto p-2">
+        <PopoverContent
+          align="start"
+          side="bottom"
+          collisionAvoidance={{
+            side: "none",
+            align: "shift",
+            fallbackAxisSide: "none",
+          }}
+          className="w-auto p-2"
+        >
           <Calendar
             mode="single"
             defaultMonth={initialMonth}

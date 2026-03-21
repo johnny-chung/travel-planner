@@ -6,6 +6,11 @@ import {
   type TripLogisticsActionState,
   updateStayAction,
 } from "@/features/trip-logistics/actions";
+import {
+  addGuestStayAction,
+  type GuestFormActionState,
+  updateGuestStayAction,
+} from "@/features/guest/actions";
 import type { PendingLocation } from "@/features/planner/components/plan-map/types";
 import PlaceSearchInput from "@/features/places/components/PlaceSearchInput";
 import SubmitButton from "@/features/shared/components/SubmitButton";
@@ -27,9 +32,11 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialStay?: TripStayItem | null;
+  accessMode?: "user" | "guest";
 };
 
 const initialState: TripLogisticsActionState = {};
+const initialGuestState: GuestFormActionState = {};
 
 export default function AddStayDialog({
   tripId,
@@ -37,12 +44,20 @@ export default function AddStayDialog({
   open,
   onOpenChange,
   initialStay = null,
+  accessMode = "user",
 }: Props) {
   const isEditing = Boolean(initialStay);
-  const [state, formAction] = useActionState(
+  const isGuest = accessMode === "guest";
+  const [userState, userFormAction] = useActionState(
     isEditing ? updateStayAction : addStayAction,
     initialState,
   );
+  const [guestState, guestFormAction] = useActionState(
+    isEditing ? updateGuestStayAction : addGuestStayAction,
+    initialGuestState,
+  );
+  const state = isGuest ? guestState : userState;
+  const formAction = isGuest ? guestFormAction : userFormAction;
   const [query, setQuery] = useState(initialStay?.name ?? "");
   const [location, setLocation] = useState<PendingLocation | null>(
     initialStay
@@ -102,7 +117,7 @@ export default function AddStayDialog({
     >
       <DialogContent className="rounded-3xl mx-4 max-w-md">
         <DialogHeader>
-          <DialogTitle>Add stay</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit stay" : "Add stay"}</DialogTitle>
         </DialogHeader>
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="tripId" value={tripId} />

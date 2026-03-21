@@ -93,7 +93,7 @@ export default function TripCardGrid({
     return (
       <Link
         href={isPending ? "#" : getTripHref(trip._id, cardTarget)}
-        className={`flex items-center gap-3 rounded-[1.7rem] border border-[#d9b58c]/60 bg-[#fff9f0] p-4 shadow-[0_18px_45px_rgba(86,58,35,0.08)] transition-all ${
+        className={`flex items-center gap-3 rounded-[1rem] border border-[#d9b58c]/60 bg-[#fff9f0] p-4 shadow-[0_18px_45px_rgba(86,58,35,0.08)] transition-all ${
           isPending
             ? "opacity-60 cursor-not-allowed"
             : "cursor-pointer active:scale-[0.98] hover:shadow-[0_22px_55px_rgba(86,58,35,0.12)]"
@@ -104,7 +104,7 @@ export default function TripCardGrid({
           }
         }}
       >
-        <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-[1.15rem] bg-[#f1dfc5]">
+        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#f1dfc5]">
           {trip.centerThumbnail ? (
             <Image
               src={trip.centerThumbnail}
@@ -112,7 +112,7 @@ export default function TripCardGrid({
               fill
               unoptimized
               className="object-cover"
-              sizes="48px"
+              sizes="60px"
             />
           ) : (
             <Map className="h-6 w-6 text-[#a56639]" />
@@ -187,7 +187,7 @@ export default function TripCardGrid({
     <>
       <div className="space-y-4">
         {activeTrips.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {activeTrips.map((trip) => (
               <TripCard key={trip._id} trip={trip} />
             ))}

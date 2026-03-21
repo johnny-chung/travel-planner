@@ -357,7 +357,7 @@ function SidebarContent({
             </div>
 
             <div className="rounded-xl border border-border bg-background/75">             
-              <div className="max-h-[28rem] overflow-y-auto p-2 space-y-1">
+              <div className="max-h-[18rem] overflow-y-auto p-2 space-y-1">
                 {!searchState.suggestLookup ? (
                   <p className="px-2.5 py-3 text-xs text-muted-foreground">
                     Pick a point on the map or from the itinerary, then look for suggestions.

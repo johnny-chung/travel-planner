@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Plus } from "lucide-react";
 import { createExpenseAction, type ExpenseActionState } from "@/features/expense/actions";
 import SubmitButton from "@/features/shared/components/SubmitButton";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import DatePicker from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 const initialState: ExpenseActionState = {};
 
@@ -19,26 +20,48 @@ type Props = {
 
 export default function ExpenseAddTab({ tripId, returnTo, initialDate }: Props) {
   const [state, formAction] = useActionState(createExpenseAction, initialState);
+  const [expenseType, setExpenseType] = useState<"shared" | "own">("shared");
 
   return (
     <form action={formAction} className="bg-card rounded-2xl p-5 shadow-sm border border-border space-y-4">
       <input type="hidden" name="tripId" value={tripId} />
       <input type="hidden" name="returnTo" value={returnTo} />
+      <input type="hidden" name="type" value={expenseType} />
 
       <div className="space-y-2">
         <Label>Expense Type</Label>
         <div className="grid grid-cols-2 gap-2">
-          <label className="cursor-pointer rounded-xl border-2 border-border bg-card px-3 py-2.5 text-center text-sm font-medium text-foreground">
-            <input type="radio" name="type" value="shared" defaultChecked className="sr-only" />
+          <button
+            type="button"
+            aria-pressed={expenseType === "shared"}
+            onClick={() => setExpenseType("shared")}
+            className={cn(
+              "rounded-xl border-2 px-3 py-2.5 text-center text-sm font-medium transition-colors",
+              expenseType === "shared"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-card text-foreground hover:bg-muted",
+            )}
+          >
             Shared
-          </label>
-          <label className="cursor-pointer rounded-xl border-2 border-border bg-card px-3 py-2.5 text-center text-sm font-medium text-foreground">
-            <input type="radio" name="type" value="own" className="sr-only" />
+          </button>
+          <button
+            type="button"
+            aria-pressed={expenseType === "own"}
+            onClick={() => setExpenseType("own")}
+            className={cn(
+              "rounded-xl border-2 px-3 py-2.5 text-center text-sm font-medium transition-colors",
+              expenseType === "own"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-card text-foreground hover:bg-muted",
+            )}
+          >
             Personal
-          </label>
+          </button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Shared expenses are split equally among all trip members.
+          {expenseType === "shared"
+            ? "Shared expenses are split equally among all trip members."
+            : "Personal expenses only count toward your own total."}
         </p>
       </div>
 

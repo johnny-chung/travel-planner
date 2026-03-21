@@ -64,6 +64,11 @@ export default function PlanMapClient({
   const [mapType, setMapType] = useState<"roadmap" | "hybrid">("roadmap");
   const [poiInfo, setPoiInfo] = useState<PendingLocation | null>(null);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const focusPoint = useMemo(() => {
+    const lat = Number(searchState.focusLat);
+    const lng = Number(searchState.focusLng);
+    return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+  }, [searchState.focusLat, searchState.focusLng]);
 
   const groupedStopMarkers = useMemo(() => {
     const groups = new Map<
@@ -250,6 +255,7 @@ export default function PlanMapClient({
               if (!place.location) return;
               const lat = place.location.lat();
               const lng = place.location.lng();
+              userFocusedMapRef.current = true;
               setPoiInfo({
                 name: place.displayName ?? "",
                 address: place.formattedAddress ?? "",
@@ -294,6 +300,7 @@ export default function PlanMapClient({
           const placeId = result.results[0]?.place_id ?? "";
           const lat = latLng.lat();
           const lng = latLng.lng();
+          userFocusedMapRef.current = true;
           setPendingLocation({
             name: address.split(",")[0],
             address,
@@ -320,6 +327,17 @@ export default function PlanMapClient({
 
     void init();
   }, [googleMapsApiKey, plan, router, setFocusHref, stops]);
+
+  useEffect(() => {
+    if (!googleMapRef.current || !mapLoaded) return;
+
+    if (!focusPoint) {
+      return;
+    }
+
+    userFocusedMapRef.current = true;
+    googleMapRef.current.panTo(focusPoint);
+  }, [focusPoint, mapLoaded]);
 
   useEffect(() => {
     if (!googleMapRef.current || !mapLoaded) return;

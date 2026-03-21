@@ -29,6 +29,7 @@ type Props = {
   planHref?: string;
   expenseHref?: string;
   checklistHref?: string;
+  accessMode?: "user" | "guest";
 };
 
 export default function TripDetailClient({
@@ -40,6 +41,7 @@ export default function TripDetailClient({
   planHref,
   expenseHref,
   checklistHref,
+  accessMode = "user",
 }: Props) {
   const [membersOpen, setMembersOpen] = useState(false);
   const [documentsOpen, setDocumentsOpen] = useState(false);
@@ -213,6 +215,7 @@ export default function TripDetailClient({
           items={trip.stayItems}
           isArchived={isArchived}
           canManage={trip.capabilities.canManageStay}
+          accessMode={accessMode}
           open={stayOpen}
           onOpenChange={setStayOpen}
           onAddStay={() => {
@@ -293,6 +296,7 @@ export default function TripDetailClient({
           key={selectedStay?._id ?? "new-stay"}
           tripId={trip._id}
           apiKey={googleMapsApiKey}
+          accessMode={accessMode}
           open={showAddStayDialog}
           onOpenChange={(open) => {
             setShowAddStayDialog(open);

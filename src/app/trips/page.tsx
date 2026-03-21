@@ -25,7 +25,7 @@ export default async function TripsPage({ searchParams }: Props) {
       currentView={currentView}
       activeTripCount={activeTripCount}
       googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""}
-      decorationImage="/material/Compass.png"
+      decorationImage="/material/Compass_Map.png"
     />
   );
 }

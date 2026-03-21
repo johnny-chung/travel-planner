@@ -49,7 +49,7 @@ export default function PlannerListActions({
       <div className="hidden md:flex fixed bottom-6 right-6 z-30 items-center gap-3">
         <PlannerPrintButton
           href={printHref}
-          className="inline-flex items-center rounded-full border bg-card px-4 py-3 shadow-lg"
+          className="inline-flex h-10 items-center rounded-full border bg-card px-4 shadow-lg"
         />
         <SharePlanButton
           title={`${planName} itinerary`}

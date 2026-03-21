@@ -1,5 +1,6 @@
 import { BedDouble, ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { deleteStayAction } from "@/features/trip-logistics/actions";
+import { deleteGuestStayAction } from "@/features/guest/actions";
 import SubmitButton from "@/features/shared/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,7 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   onAddStay: () => void;
   onEditStay: (item: TripStayItem) => void;
+  accessMode?: "user" | "guest";
 };
 
 export default function TripStayCard({
@@ -26,7 +28,10 @@ export default function TripStayCard({
   onOpenChange,
   onAddStay,
   onEditStay,
+  accessMode = "user",
 }: Props) {
+  const deleteAction = accessMode === "guest" ? deleteGuestStayAction : deleteStayAction;
+
   return (
     <Collapsible
       open={open}
@@ -79,7 +84,7 @@ export default function TripStayCard({
                       </p>
                     </button>
                     {!isArchived && canManage ? (
-                      <form action={deleteStayAction}>
+                      <form action={deleteAction}>
                         <input type="hidden" name="tripId" value={tripId} />
                         <input type="hidden" name="stayId" value={item._id} />
                         <SubmitButton
