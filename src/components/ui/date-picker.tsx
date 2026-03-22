@@ -122,9 +122,6 @@ export default function DatePicker({
             selected={selectedDate}
             onSelect={(nextDate) => {
               handleChange(toDateString(nextDate));
-              if (nextDate) {
-                setOpen(false);
-              }
             }}
             modifiers={{ highlighted: highlightedDates }}
             modifiersClassNames={{

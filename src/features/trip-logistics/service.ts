@@ -670,21 +670,41 @@ export function isVisitWithinTransportRange(
     return null;
   }
 
-  const arrivalStamp = `${visit.date}T${visit.time}`;
+  const arrivalStamp = toLocalDateTimeValue(visit.date, visit.time);
 
   return transports.find((transport) => {
-    const departureStamp = `${transport.departureDate}T${transport.departureTime}`;
-    const arrivalTransportStamp = `${transport.arrivalDate}T${transport.arrivalTime}`;
+    const departureStamp = toLocalDateTimeValue(
+      transport.departureDate,
+      transport.departureTime,
+    );
+    const arrivalTransportStamp = toLocalDateTimeValue(
+      transport.arrivalDate,
+      transport.arrivalTime,
+    );
     return arrivalStamp >= departureStamp && arrivalStamp <= arrivalTransportStamp;
   }) ?? null;
+}
+
+function toLocalDateTimeValue(date: string, time?: string) {
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = (time ?? "00:00").split(":").map(Number);
+
+  return Date.UTC(
+    year || 0,
+    Math.max((month || 1) - 1, 0),
+    day || 1,
+    hour || 0,
+    minute || 0,
+  );
 }
 
 function addMinutesToVisit(
   visit: { date: string; time?: string },
   minutes: number,
 ) {
-  const value = new Date(`${visit.date}T${visit.time}:00Z`);
+  const value = new Date(toLocalDateTimeValue(visit.date, visit.time));
   value.setUTCMinutes(value.getUTCMinutes() + minutes);
+
   return {
     date: value.toISOString().slice(0, 10),
     time: value.toISOString().slice(11, 16),

@@ -578,10 +578,15 @@ export default function StopsList({
               }
 
               if (item.kind === "transport") {
+                if (item.boundary === "arrival") {
+                  continue;
+                }
+
                 const transport = item.transport;
+                const arrivalBoundaryId = `${transport._id}:${transport.arrivalDate}:arrival`;
                 const segment =
                   buildRouteSegments(dayItems).find(
-                    (entry) => entry.from.id === item.id,
+                    (entry) => entry.from.id === arrivalBoundaryId,
                   ) ?? null;
                 const travelTime =
                   segment

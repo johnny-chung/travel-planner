@@ -14,6 +14,7 @@ type Props = {
   previousStop?: Stop | null;
   nextStop?: Stop | null;
   tripDocs: TripDoc[];
+  travelDates?: string[];
   accessMode: "user" | "guest";
   capabilities: TripCapabilities;
 };
@@ -28,6 +29,7 @@ export default function PlannerStopDetailView({
   previousStop,
   nextStop,
   tripDocs,
+  travelDates = [],
   accessMode,
   capabilities,
 }: Props) {
@@ -57,6 +59,7 @@ export default function PlannerStopDetailView({
           ? buildPlannerStopModalHref(pathname, searchState, nextStop._id)
           : null
       }
+      tripDates={travelDates}
       deleteReturnTo={closeHref}
       accessMode={accessMode}
       canVisitAgain={capabilities.canVisitAgain}

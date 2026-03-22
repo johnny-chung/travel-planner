@@ -206,6 +206,7 @@ async function getPlannerStopDetailForActor(
           (stop) => stop.placeId && stop.placeId === selectedStop.placeId,
         )
       : [selectedStop],
+    travelDates: trip.travelDates ?? [],
     previousStop: selectedIndex > 0 ? stopSequence[selectedIndex - 1] : null,
     nextStop:
       selectedIndex >= 0 && selectedIndex < stopSequence.length - 1

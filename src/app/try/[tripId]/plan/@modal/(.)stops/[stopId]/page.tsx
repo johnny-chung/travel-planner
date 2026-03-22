@@ -6,6 +6,7 @@ import { getGuestId } from "@/features/guest/session";
 import PlannerDetailDrawer from "@/features/planner/components/detail/PlannerDetailDrawer";
 import PlannerDetailSkeleton from "@/features/planner/components/detail/PlannerDetailSkeleton";
 import PlannerStopDetailView from "@/features/planner/components/detail/PlannerStopDetailView";
+import { buildPlannerBaseHref } from "@/features/planner/route-hrefs";
 import { getPlannerStopDetailForGuest } from "@/features/planner/service";
 import { parsePlannerSearchParams } from "@/features/planner/search-params";
 
@@ -55,15 +56,25 @@ async function TrialStopModalContent({ params, searchParams }: Props) {
       previousStop={detail.previousStop}
       nextStop={detail.nextStop}
       tripDocs={detail.tripDocs}
+      travelDates={detail.travelDates}
       accessMode="guest"
       capabilities={detail.capabilities}
     />
   );
 }
 
-export default function TrialStopModalPage(props: Props) {
+export default async function TrialStopModalPage(props: Props) {
+  const [{ tripId }, rawSearchParams] = await Promise.all([
+    props.params,
+    props.searchParams,
+  ]);
+  const closeHref = buildPlannerBaseHref(
+    `/try/${tripId}/plan`,
+    parsePlannerSearchParams(rawSearchParams),
+  );
+
   return (
-    <PlannerDetailDrawer title="Stop detail">
+    <PlannerDetailDrawer title="Stop detail" closeHref={closeHref}>
       <Suspense fallback={<PlannerDetailSkeleton />}>
         <TrialStopModalContent {...props} />
       </Suspense>

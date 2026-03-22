@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Calendar,
+  Calendar as CalendarIcon,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -36,6 +36,7 @@ import {
 } from "@/features/guest/actions";
 import SubmitButton from "@/features/shared/components/SubmitButton";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import DatePicker from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -53,6 +54,7 @@ type Props = {
   editHref: string;
   prevHref?: string | null;
   nextHref?: string | null;
+  tripDates?: string[];
   deleteReturnTo: string;
   accessMode?: "user" | "guest";
   canVisitAgain?: boolean;
@@ -70,6 +72,7 @@ export default function StopDetailModal({
   editHref,
   prevHref,
   nextHref,
+  tripDates = [],
   deleteReturnTo,
   accessMode = "user",
   canVisitAgain = true,
@@ -130,6 +133,16 @@ export default function StopDetailModal({
   );
 
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.address)}&query_place_id=${stop.placeId}`;
+  const visitAgainDate = newVisitDate
+    ? new Date(`${newVisitDate}T00:00:00`)
+    : undefined;
+  const highlightedTripDates = useMemo(
+    () =>
+      tripDates
+        .map((tripDate) => new Date(`${tripDate}T00:00:00`))
+        .filter((tripDate) => !Number.isNaN(tripDate.getTime())),
+    [tripDates],
+  );
 
   const formattedDate = (() => {
     if (!stop.date) {
@@ -293,9 +306,9 @@ export default function StopDetailModal({
           <div className="space-y-3">
             {relatedVisits.length > 1 ? (
               <details open className="overflow-hidden rounded-2xl border border-border">
-                <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 transition-colors hover:bg-muted/60">
-                  <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Calendar className="h-4 w-4 text-primary" />
+                    <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 transition-colors hover:bg-muted/60">
+                      <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <CalendarIcon className="h-4 w-4 text-primary" />
                     Visit Times
                     <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
                       {relatedVisits.length}
@@ -325,7 +338,7 @@ export default function StopDetailModal({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1.5 text-primary">
-                              <Calendar className="h-3.5 w-3.5" />
+                              <CalendarIcon className="h-3.5 w-3.5" />
                               <span className="text-sm font-medium">{visitDate}</span>
                             </div>
                             {visit.displayTime ? (
@@ -359,7 +372,7 @@ export default function StopDetailModal({
 
             <div className="flex items-center gap-4 rounded-2xl bg-primary/8 p-4 dark:bg-primary/10">
               <div className="flex items-center gap-2 text-primary">
-                <Calendar className="h-4 w-4" />
+                <CalendarIcon className="h-4 w-4" />
                 <span className="text-sm font-semibold">{formattedDate}</span>
               </div>
               {stop.displayTime ? (
@@ -669,13 +682,28 @@ export default function StopDetailModal({
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-gray-500">Date</Label>
-                <DatePicker
-                  name="date"
-                  value={newVisitDate}
-                  onChange={setNewVisitDate}
-                  className="rounded-xl"
-                  placeholder="Pick a date"
-                />
+                <input type="hidden" name="date" value={newVisitDate} />
+                <div className="overflow-hidden rounded-2xl border border-border bg-background">
+                  <Calendar
+                    mode="single"
+                    selected={visitAgainDate}
+                    defaultMonth={visitAgainDate ?? new Date()}
+                    onSelect={(nextDate) => {
+                      if (!nextDate) {
+                        setNewVisitDate("");
+                        return;
+                      }
+
+                      setNewVisitDate(format(nextDate, "yyyy-MM-dd"));
+                    }}
+                    modifiers={{ highlighted: highlightedTripDates }}
+                    modifiersClassNames={{
+                      highlighted:
+                        "bg-emerald-500/15 font-semibold text-emerald-900 dark:text-emerald-100",
+                    }}
+                    className="mx-auto"
+                  />
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-gray-500">Time</Label>

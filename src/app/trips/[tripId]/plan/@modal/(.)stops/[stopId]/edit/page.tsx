@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import PlannerDetailDrawer from "@/features/planner/components/detail/PlannerDetailDrawer";
 import PlannerDetailSkeleton from "@/features/planner/components/detail/PlannerDetailSkeleton";
 import PlannerStopDetailView from "@/features/planner/components/detail/PlannerStopDetailView";
+import { buildPlannerBaseHref } from "@/features/planner/route-hrefs";
 import { getPlannerStopDetailForUser } from "@/features/planner/service";
 import { parsePlannerSearchParams } from "@/features/planner/search-params";
 
@@ -44,15 +45,25 @@ async function TripStopEditModalContent({ params, searchParams }: Props) {
       previousStop={detail.previousStop}
       nextStop={detail.nextStop}
       tripDocs={detail.tripDocs}
+      travelDates={detail.travelDates}
       accessMode="user"
       capabilities={detail.capabilities}
     />
   );
 }
 
-export default function TripStopEditModalPage(props: Props) {
+export default async function TripStopEditModalPage(props: Props) {
+  const [{ tripId }, rawSearchParams] = await Promise.all([
+    props.params,
+    props.searchParams,
+  ]);
+  const closeHref = buildPlannerBaseHref(
+    `/trips/${tripId}/plan`,
+    parsePlannerSearchParams(rawSearchParams),
+  );
+
   return (
-    <PlannerDetailDrawer title="Edit stop">
+    <PlannerDetailDrawer title="Edit stop" closeHref={closeHref}>
       <Suspense fallback={<PlannerDetailSkeleton />}>
         <TripStopEditModalContent {...props} />
       </Suspense>

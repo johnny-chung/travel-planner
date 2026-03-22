@@ -277,7 +277,7 @@ export default function TripDetailClient({
 
       {trip.capabilities.canManageTransport ? (
         <AddTransportDialog
-          key={selectedTransport?._id ?? "new-transport"}
+          key={`${selectedTransport?._id ?? "new-transport"}-${showAddTransportDialog ? "open" : "closed"}`}
           tripId={trip._id}
           apiKey={googleMapsApiKey}
           open={showAddTransportDialog}
@@ -293,7 +293,7 @@ export default function TripDetailClient({
 
       {trip.capabilities.canManageStay ? (
         <AddStayDialog
-          key={selectedStay?._id ?? "new-stay"}
+          key={`${selectedStay?._id ?? "new-stay"}-${showAddStayDialog ? "open" : "closed"}`}
           tripId={trip._id}
           apiKey={googleMapsApiKey}
           accessMode={accessMode}
