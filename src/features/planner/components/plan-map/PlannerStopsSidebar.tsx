@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
 import {
   buildPlannerHref,
   type PlannerSearchState,
@@ -69,6 +70,39 @@ function useGroupedStops(stops: Stop[]) {
   }, [stops]);
 }
 
+function formatPlannerDate(date: string, locale: string) {
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(`${date}T00:00:00`));
+  } catch {
+    return date;
+  }
+}
+
+function formatPlannerTime(time: string, locale: string) {
+  const [hourString, minuteString] = time.split(":");
+  const hour = Number(hourString);
+  const minute = Number(minuteString);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+    return time;
+  }
+
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(new Date(2026, 0, 1, hour, minute));
+  } catch {
+    return time;
+  }
+}
+
 function SidebarContent({
   pathname,
   searchState,
@@ -85,6 +119,8 @@ function SidebarContent({
   const groupedStops = useGroupedStops(stops);
   const router = useRouter();
   const [isLookingSuggestions, startLookingSuggestions] = useTransition();
+  const dictionary = getClientDictionary(pathname);
+  const locale = getClientLocale(pathname);
 
   const detailedListHref = buildPlannerHref(pathname, searchState, {
     view: "list",
@@ -133,8 +169,8 @@ function SidebarContent({
           className="mt-1"
         >
           <TabsList className="w-full">
-            <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
-            <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
+            <TabsTrigger value="itinerary">{dictionary.planner.itinerary}</TabsTrigger>
+            <TabsTrigger value="suggestions">{dictionary.planner.suggestions}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="itinerary" className="mt-2 space-y-2">
@@ -147,9 +183,9 @@ function SidebarContent({
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 py-1">
                   <div className="flex min-w-0 items-center gap-2">
                     <Calendar className="h-3.5 w-3.5 text-primary/70" />
-                    <span className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      {date}
-                    </span>
+                      <span className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {formatPlannerDate(date, locale)}
+                      </span>
                   </div>
                   <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
                 </summary>
@@ -177,7 +213,9 @@ function SidebarContent({
                             {stop.name}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
-                            {stop.displayTime ? stop.time : "No time"}
+                            {stop.displayTime && stop.time
+                              ? formatPlannerTime(stop.time, locale)
+                              : dictionary.planner.noTime}
                           </p>
                         </div>
                         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
@@ -195,7 +233,7 @@ function SidebarContent({
                 <div className="flex min-w-0 items-center gap-2">
                   <List className="h-3.5 w-3.5 text-primary/70" />
                   <span className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Unscheduled Stops
+                    {dictionary.planner.unscheduledStops}
                   </span>
                 </div>
                 <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
@@ -203,7 +241,7 @@ function SidebarContent({
               <div className="mt-2 space-y-0.5">
                 {unscheduledStops.length === 0 ? (
                   <p className="px-2.5 py-2 text-xs text-muted-foreground">
-                    No unscheduled stops
+                    {dictionary.planner.noUnscheduledStops}
                   </p>
                 ) : (
                   unscheduledStops.map((stop) => {
@@ -229,7 +267,7 @@ function SidebarContent({
                             {stop.name}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
-                            Save for later
+                            {dictionary.planner.saveForLaterStatus}
                           </p>
                         </div>
                         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
@@ -248,7 +286,7 @@ function SidebarContent({
                 <div className="flex min-w-0 items-center gap-2">
                   <BedDouble className="h-3.5 w-3.5 text-primary/70" />
                   <span className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Stays
+                    {dictionary.planner.stays}
                   </span>
                 </div>
                 <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
@@ -256,7 +294,7 @@ function SidebarContent({
               <div className="mt-2 space-y-0.5">
                 {stays.length === 0 ? (
                   <p className="px-2.5 py-2 text-xs text-muted-foreground">
-                    No stays added
+                    {dictionary.planner.noStaysAdded}
                   </p>
                 ) : (
                   stays.map((stay) => {
@@ -282,7 +320,8 @@ function SidebarContent({
                             {stay.name}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
-                            {stay.checkInDate} → {stay.checkOutDate}
+                            {formatPlannerDate(stay.checkInDate, locale)} →{" "}
+                            {formatPlannerDate(stay.checkOutDate, locale)}
                           </p>
                         </div>
                         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
@@ -297,7 +336,7 @@ function SidebarContent({
           <TabsContent value="suggestions" className="mt-2 space-y-3">
             <div className="rounded-xl border border-border bg-background/75 p-2">
               <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Category
+                {dictionary.planner.category}
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <Link href={tourismHref} className="block">
@@ -309,7 +348,7 @@ function SidebarContent({
                     className="w-full rounded-xl justify-start"
                   >
                     <Sparkles className="h-4 w-4" />
-                    Tourism
+                    {dictionary.planner.tourism}
                   </Button>
                 </Link>
                 <Link href={cateringHref} className="block">
@@ -323,7 +362,7 @@ function SidebarContent({
                     className="w-full rounded-xl justify-start"
                   >
                     <UtensilsCrossed className="h-4 w-4" />
-                    Catering
+                    {dictionary.planner.catering}
                   </Button>
                 </Link>
               </div>
@@ -342,15 +381,15 @@ function SidebarContent({
                     {isLookingSuggestions ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Looking...
+                        {dictionary.planner.looking}
                       </>
                     ) : (
-                      "Look for suggestions"
+                      dictionary.planner.lookForSuggestions
                     )}
                   </Button>
                 ) : (
                   <Button type="button" className="w-full rounded-xl" disabled>
-                    Look for suggestions
+                    {dictionary.planner.lookForSuggestions}
                   </Button>
                 )}
               </div>
@@ -360,11 +399,11 @@ function SidebarContent({
               <div className="max-h-[18rem] overflow-y-auto p-2 space-y-1">
                 {!searchState.suggestLookup ? (
                   <p className="px-2.5 py-3 text-xs text-muted-foreground">
-                    Pick a point on the map or from the itinerary, then look for suggestions.
+                    {dictionary.planner.pickPointHelp}
                   </p>
                 ) : suggestions.length === 0 ? (
                   <p className="px-2.5 py-3 text-xs text-muted-foreground">
-                    No suggestions found for this area.
+                    {dictionary.planner.noSuggestionsFound}
                   </p>
                 ) : (
                   suggestions.map((suggestion) => (
@@ -403,7 +442,7 @@ function SidebarContent({
         <Link href={detailedListHref}>
           <Button variant="outline" className="w-full rounded-xl">
             <List className="mr-2 h-4 w-4" />
-            View detailed list
+            {dictionary.planner.viewDetailedList}
           </Button>
         </Link>
       </div>
@@ -486,6 +525,8 @@ export function PlannerStopsSidebarMobile({
   onStaySelect,
   onSuggestionSelect,
 }: SharedProps) {
+  const dictionary = getClientDictionary(pathname);
+
   return (
     <Sheet>
       <SheetTrigger
@@ -502,7 +543,7 @@ export function PlannerStopsSidebarMobile({
       </SheetTrigger>
       <SheetContent side="left" className="w-[88vw] max-w-sm p-0">
         <SheetHeader className="border-b border-border">
-          <SheetTitle>Stops</SheetTitle>
+          <SheetTitle>{dictionary.planner.stopsTitle}</SheetTitle>
         </SheetHeader>
         <SidebarContent
           pathname={pathname}

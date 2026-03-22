@@ -24,8 +24,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import BrandLogo from "@/components/layout/BrandLogo";
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import { cn } from "@/lib/utils";
 import type { MembershipStatus } from "@/types/travel";
+import {
+  defaultLocale,
+  localizeHref,
+  removeLocaleFromPathname,
+} from "@/features/i18n/config";
+import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
 
 type Props = {
   user: {
@@ -60,11 +67,15 @@ export default function AppNavClient({
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
-  const isGuestNav = !user && pathname.startsWith("/try");
+  const localizedPathname = pathname ?? `/${defaultLocale}`;
+  const locale = getClientLocale(localizedPathname);
+  const dictionary = getClientDictionary(localizedPathname);
+  const cleanPathname = removeLocaleFromPathname(localizedPathname);
+  const isGuestNav = !user && cleanPathname.startsWith("/try");
   const currentUser = user ?? { name: "", email: "", image: "" };
-  const isPrintRoute = pathname.endsWith("/plan/print");
+  const isPrintRoute = cleanPathname.endsWith("/plan/print");
 
-  if ((!user && !isGuestNav) || pathname === "/login" || isPrintRoute) {
+  if ((!user && !isGuestNav) || cleanPathname === "/login" || isPrintRoute) {
     return null;
   }
 
@@ -73,79 +84,79 @@ export default function AppNavClient({
     currentUser.email?.[0]?.toUpperCase() ??
     "U";
   const isDark = (resolvedTheme ?? "light") === "dark";
-  const currentTripId = getTripIdFromPath(pathname);
+  const currentTripId = getTripIdFromPath(cleanPathname);
 
   function navHref(tab: "trips" | "plan" | "expense"): string {
     if (isGuestNav) {
       if (tab === "trips") {
-        return "/try";
+        return localizeHref(locale, "/try");
       }
 
       if (tab === "plan" && currentTripId) {
-        return `/try/${currentTripId}/plan`;
+        return localizeHref(locale, `/try/${currentTripId}/plan`);
       }
 
-      return "/try";
+      return localizeHref(locale, "/try");
     }
 
     if (tab === "trips") {
-      return "/trips";
+      return localizeHref(locale, "/trips");
     }
 
     if (currentTripId) {
-      return `/trips/${currentTripId}/${tab}`;
+      return localizeHref(locale, `/trips/${currentTripId}/${tab}`);
     }
 
-    return tab === "plan" ? "/plans" : "/expense";
+    return localizeHref(locale, tab === "plan" ? "/plans" : "/expense");
   }
 
   function isActive(tab: "trips" | "plan" | "expense" | "/"): boolean {
     if (isGuestNav) {
       if (tab === "/") {
-        return pathname === "/";
+        return cleanPathname === "/";
       }
 
       if (tab === "trips") {
-        return pathname === "/try" || /^\/try\/[^/]+$/.test(pathname);
+        return cleanPathname === "/try" || /^\/try\/[^/]+$/.test(cleanPathname);
       }
 
       if (tab === "plan") {
-        return /^\/try\/[^/]+\/plan$/.test(pathname);
+        return /^\/try\/[^/]+\/plan$/.test(cleanPathname);
       }
 
       return false;
     }
 
     if (tab === "/") {
-      return pathname === "/";
+      return cleanPathname === "/";
     }
 
     if (tab === "trips") {
-      return pathname === "/trips" || /^\/trips\/[^/]+$/.test(pathname);
+      return cleanPathname === "/trips" || /^\/trips\/[^/]+$/.test(cleanPathname);
     }
 
     if (tab === "plan") {
-      return pathname === "/plans" || pathname === "/plan" || /\/plan$/.test(pathname);
+      return cleanPathname === "/plans" || cleanPathname === "/plan" || /\/plan$/.test(cleanPathname);
     }
 
     if (tab === "expense") {
-      return pathname === "/expense" || /\/expense$/.test(pathname);
+      return cleanPathname === "/expense" || /\/expense$/.test(cleanPathname);
     }
 
-    return pathname === `/${tab}` || pathname.startsWith(`/${tab}/`);
+    return cleanPathname === `/${tab}` || cleanPathname.startsWith(`/${tab}/`);
   }
 
   const navItems = [
-    { tab: "/" as const, label: "Home", icon: Home, href: "/" },
-    { tab: "trips" as const, label: "Trips", icon: MapPin, href: navHref("trips") },
-    { tab: "plan" as const, label: "Plans", icon: Map, href: navHref("plan") },
+    { tab: "/" as const, label: dictionary.common.home, icon: Home, href: localizeHref(locale, "/") },
+    { tab: "trips" as const, label: dictionary.common.trips, icon: MapPin, href: navHref("trips") },
+    { tab: "plan" as const, label: dictionary.common.plans, icon: Map, href: navHref("plan") },
   ];
 
   const userNavItems = [
     ...navItems,
     {
       tab: "expense" as const,
-      label: "Expenses",
+      label: dictionary.common.expenses,
       icon: Wallet,
       href: navHref("expense"),
     },
@@ -157,7 +168,7 @@ export default function AppNavClient({
     <>
       <header className="hidden md:flex fixed inset-x-0 top-0 z-50 h-16 bg-background/95 backdrop-blur border-b shadow-sm items-center px-6 gap-4">
         <Link
-          href="/"
+          href={localizeHref(locale, "/")}
           className="flex items-center gap-2 font-bold text-primary text-lg mr-6 shrink-0"
         >
           <BrandLogo
@@ -184,22 +195,24 @@ export default function AppNavClient({
           ))}
         </nav>
         <div className="shrink-0 flex items-center gap-2">
+          <LanguageSwitcher variant="outline" className="h-10 px-3" />
           {isGuestNav ? (
             <form action={signInWithAuth0Action}>
-              <input type="hidden" name="redirectTo" value="/auth/post-login" />
+              <input type="hidden" name="redirectTo" value={localizeHref(locale, "/auth/post-login")} />
               <button
                 type="submit"
                 className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <UserPlus className="w-4 h-4" />
-                Sign Up
+                {dictionary.common.signUp}
               </button>
             </form>
           ) : null}
           {!isGuestNav ? (
           <Link
-            href="/notifications"
+            href={localizeHref(locale, "/notifications")}
             className="relative p-2 rounded-lg hover:bg-muted transition-colors"
+            aria-label={dictionary.nav.notifications}
           >
             <Bell className="w-5 h-5 text-muted-foreground" />
             {notificationCount > 0 ? (
@@ -232,21 +245,23 @@ export default function AppNavClient({
                       : "bg-gray-100 text-gray-500",
                   )}
                 >
-                  {membershipStatus === "pro" ? "PRO" : "BASIC"}
+                  {membershipStatus === "pro"
+                    ? dictionary.nav.membershipPro
+                    : dictionary.nav.membershipBasic}
                 </span>
               </div>
               <DropdownMenuItem
-                onClick={() => router.push("/profile")}
+                onClick={() => router.push(localizeHref(locale, "/profile"))}
                 className="flex items-center gap-2 cursor-pointer"
               >
-                <User className="w-4 h-4" /> Profile
+                <User className="w-4 h-4" /> {dictionary.common.profile}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="flex items-center gap-2 cursor-pointer"
                 onClick={() => setTheme(isDark ? "light" : "dark")}
               >
                 {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                {isDark ? "Light Mode" : "Dark Mode"}
+                {isDark ? dictionary.nav.lightMode : dictionary.nav.darkMode}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <form action={signOutAction}>
@@ -254,7 +269,7 @@ export default function AppNavClient({
                   type="submit"
                   className="relative flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm text-red-500 outline-hidden select-none hover:bg-destructive/10"
                 >
-                  <LogOut className="w-4 h-4" /> Sign out
+                  <LogOut className="w-4 h-4" /> {dictionary.nav.signOut}
                 </button>
               </form>
             </DropdownMenuContent>
@@ -286,13 +301,13 @@ export default function AppNavClient({
           })}
           {isGuestNav ? (
             <form action={signInWithAuth0Action} className="flex-1">
-              <input type="hidden" name="redirectTo" value="/auth/post-login" />
+              <input type="hidden" name="redirectTo" value={localizeHref(locale, "/auth/post-login")} />
               <button
                 type="submit"
                 className="flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-medium text-primary"
               >
                 <UserPlus className="w-5 h-5" />
-                Sign Up
+                {dictionary.common.signUp}
               </button>
             </form>
           ) : null}

@@ -13,6 +13,37 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
+function formatMarkerDate(date: string, locale: string) {
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      month: "short",
+      day: "numeric",
+    }).format(new Date(`${date}T00:00:00`));
+  } catch {
+    return date;
+  }
+}
+
+function formatMarkerTime(time: string, locale: string) {
+  const [hourString, minuteString] = time.split(":");
+  const hour = Number(hourString);
+  const minute = Number(minuteString);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+    return time;
+  }
+
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(new Date(2026, 0, 1, hour, minute));
+  } catch {
+    return time;
+  }
+}
+
 export function getStopSortTime(stop: Pick<Stop, "time" | "displayTime">) {
   return stop.displayTime && stop.time ? stop.time : UNTYPED_STOP_SORT_TIME;
 }
@@ -161,29 +192,12 @@ export function createMarkerElement(
   stop: Stop,
   markerLabel: number | string,
   pinColor: string,
+  locale = "en",
 ) {
   const truncName = stop.name.length > 20 ? `${stop.name.slice(0, 20)}…` : stop.name;
-  const [, month, day] = stop.date.split("-").map(Number);
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const dateLabel = `${months[month - 1]} ${day}`;
+  const dateLabel = formatMarkerDate(stop.date, locale);
 
-  const [hour, minute] = (stop.time || "00:00").split(":").map(Number);
-  const period = hour >= 12 ? "pm" : "am";
-  const hour12 = hour % 12 || 12;
-  const timeLabel = `${hour12}:${minute.toString().padStart(2, "0")}${period}`;
+  const timeLabel = formatMarkerTime(stop.time || "00:00", locale);
   const dateTimeLabel = stop.displayTime ? `${dateLabel} · ${timeLabel}` : dateLabel;
   const safeName = escapeHtml(truncName);
   const safeDateTimeLabel = escapeHtml(dateTimeLabel);
@@ -211,9 +225,10 @@ export function createMarkerElement(
   return element;
 }
 
-export function createUnscheduledMarkerElement(stop: Stop) {
+export function createUnscheduledMarkerElement(stop: Stop, subtitle: string) {
   const truncName = stop.name.length > 20 ? `${stop.name.slice(0, 20)}…` : stop.name;
   const safeName = escapeHtml(truncName);
+  const safeSubtitle = escapeHtml(subtitle);
 
   const element = document.createElement("div");
   element.innerHTML = `
@@ -232,14 +247,15 @@ export function createUnscheduledMarkerElement(stop: Stop) {
           box-shadow:0 2px 8px rgba(0,0,0,0.18);text-align:center;
           border:1px solid rgba(0,0,0,0.08);">
           <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
-          <div style="font-size:9px;color:#546d69;font-weight:600;margin-top:1px;white-space:nowrap;">Unscheduled</div>
+          <div style="font-size:9px;color:#546d69;font-weight:600;margin-top:1px;white-space:nowrap;">${safeSubtitle}</div>
         </div>
       </div>`;
   return element;
 }
 
-export function createSuggestionMarkerElement(title = "Suggestion") {
+export function createSuggestionMarkerElement(title = "Suggestion", subtitle = "Suggestion") {
   const safeTitle = escapeHtml(title);
+  const safeSubtitle = escapeHtml(subtitle);
   const element = document.createElement("div");
   element.innerHTML = `
       <div class="waypoint-marker" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.18s ease;">
@@ -257,32 +273,23 @@ export function createSuggestionMarkerElement(title = "Suggestion") {
           box-shadow:0 2px 8px rgba(0,0,0,0.18);text-align:center;
           border:1px solid rgba(0,0,0,0.08);">
           <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeTitle}</div>
-          <div style="font-size:9px;color:#d38a45;font-weight:600;margin-top:1px;white-space:nowrap;">Suggestion</div>
+          <div style="font-size:9px;color:#d38a45;font-weight:600;margin-top:1px;white-space:nowrap;">${safeSubtitle}</div>
         </div>
       </div>`;
   return element;
 }
 
-export function createStayMarkerElement(stay: TripStayItem) {
+export function createStayMarkerElement(stay: TripStayItem, locale = "en", stayLabel = "Stay") {
   const truncName = stay.name.length > 20 ? `${stay.name.slice(0, 20)}…` : stay.name;
-  const [, month, day] = stay.checkInDate.split("-").map(Number);
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const dateLabel = `${months[month - 1]} ${day}${stay.checkOutDate !== stay.checkInDate ? ` - ${stay.checkOutDate.slice(5)}` : ""}`;
+  const checkInLabel = formatMarkerDate(stay.checkInDate, locale);
+  const checkOutLabel = formatMarkerDate(stay.checkOutDate, locale);
+  const dateLabel =
+    stay.checkOutDate !== stay.checkInDate
+      ? `${checkInLabel} - ${checkOutLabel}`
+      : checkInLabel;
   const safeName = escapeHtml(truncName);
   const safeDateLabel = escapeHtml(dateLabel);
+  const safeStayLabel = escapeHtml(stayLabel);
 
   const element = document.createElement("div");
   element.innerHTML = `
@@ -300,7 +307,7 @@ export function createStayMarkerElement(stay: TripStayItem) {
           box-shadow:0 2px 8px rgba(0,0,0,0.18);text-align:center;
           border:1px solid rgba(139,107,71,0.18);">
           <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
-          <div style="font-size:9px;color:#8b6b47;font-weight:600;margin-top:1px;white-space:nowrap;">Stay · ${safeDateLabel}</div>
+          <div style="font-size:9px;color:#8b6b47;font-weight:600;margin-top:1px;white-space:nowrap;">${safeStayLabel} · ${safeDateLabel}</div>
         </div>
       </div>`;
   return element;

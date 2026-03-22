@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import ExpenseAddTab from "@/features/expense/components/ExpenseAddTab";
 import ExpenseAllTab from "@/features/expense/components/ExpenseAllTab";
 import ExpenseSummaryTab from "@/features/expense/components/ExpenseSummaryTab";
 import ExpenseTabsNav from "@/features/expense/components/ExpenseTabsNav";
+import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
+import { localizeHref, type AppLocale } from "@/features/i18n/config";
 import type { ExpenseItem, ExpenseMember, ExpenseTab } from "@/features/expense/types";
 
 type Props = {
@@ -21,12 +24,18 @@ type Props = {
   currentDate: string;
 };
 
-function buildReturnTo(tripId: string, tab: ExpenseTab, from: string, to: string) {
+function buildReturnTo(
+  locale: AppLocale,
+  tripId: string,
+  tab: ExpenseTab,
+  from: string,
+  to: string,
+) {
   const params = new URLSearchParams();
   params.set("tab", tab);
   if (from) params.set("from", from);
   if (to) params.set("to", to);
-  return `/trips/${tripId}/expense?${params.toString()}`;
+  return localizeHref(locale, `/trips/${tripId}/expense?${params.toString()}`);
 }
 
 export default function ExpenseDetailClient({
@@ -40,6 +49,10 @@ export default function ExpenseDetailClient({
   filterTo,
   currentDate,
 }: Props) {
+  const pathname = usePathname();
+  const locale = getClientLocale(pathname);
+  const dictionary = getClientDictionary(pathname);
+
   return (
     <div className="h-screen flex flex-col bg-background pb-16 md:pb-0 md:pt-16 overflow-hidden">
       <div
@@ -48,11 +61,11 @@ export default function ExpenseDetailClient({
       >
         <div className="max-w-2xl mx-auto">
           <div className="rounded-2xl border border-white/10 bg-black/18 px-4 py-4 backdrop-blur-sm md:px-5">
-            <Link href="/expense" className="mb-3 flex items-center gap-1 text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground dark:text-foreground dark:hover:text-foreground">
-              <ArrowLeft className="w-4 h-4" /> All Expenses
+            <Link href={localizeHref(locale, "/expense")} className="mb-3 flex items-center gap-1 text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground dark:text-foreground dark:hover:text-foreground">
+              <ArrowLeft className="w-4 h-4" /> {dictionary.expense.backAllExpenses}
             </Link>
             <h1 className="text-xl font-bold text-primary-foreground dark:text-foreground">{tripName}</h1>
-            <p className="mt-0.5 text-sm text-primary-foreground/75 dark:text-foreground">Expense Tracker</p>
+            <p className="mt-0.5 text-sm text-primary-foreground/75 dark:text-foreground">{dictionary.expense.titleSuffix}</p>
           </div>
         </div>
       </div>
@@ -65,7 +78,7 @@ export default function ExpenseDetailClient({
             <TabsContent value="add" className="flex-1 overflow-y-auto px-4 py-4">
               <ExpenseAddTab
                 tripId={tripId}
-                returnTo={buildReturnTo(tripId, "add", filterFrom, filterTo)}
+                returnTo={buildReturnTo(locale, tripId, "add", filterFrom, filterTo)}
                 initialDate={currentDate}
               />
             </TabsContent>
@@ -80,7 +93,7 @@ export default function ExpenseDetailClient({
                 members={members}
                 filterFrom={filterFrom}
                 filterTo={filterTo}
-                returnTo={buildReturnTo(tripId, "all", filterFrom, filterTo)}
+                returnTo={buildReturnTo(locale, tripId, "all", filterFrom, filterTo)}
               />
             </TabsContent>
           ) : null}

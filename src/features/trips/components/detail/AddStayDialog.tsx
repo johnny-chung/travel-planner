@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   addStayAction,
   type TripLogisticsActionState,
@@ -24,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { TripStayItem } from "@/types/trip-logistics";
 
 type Props = {
@@ -46,6 +48,8 @@ export default function AddStayDialog({
   initialStay = null,
   accessMode = "user",
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const isEditing = Boolean(initialStay);
   const isGuest = accessMode === "guest";
   const [userState, userFormAction] = useActionState(
@@ -117,7 +121,9 @@ export default function AddStayDialog({
     >
       <DialogContent className="rounded-3xl mx-4 max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit stay" : "Add stay"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? dictionary.tripDetail.editStay : dictionary.tripDetail.addStay}
+          </DialogTitle>
         </DialogHeader>
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="tripId" value={tripId} />
@@ -138,7 +144,7 @@ export default function AddStayDialog({
           <input type="hidden" name="website" value={location?.website ?? ""} />
 
           <div className="space-y-1.5">
-            <Label>Lodging</Label>
+            <Label>{dictionary.tripDetail.lodging}</Label>
             <PlaceSearchInput
               apiKey={apiKey}
               value={query}
@@ -150,7 +156,7 @@ export default function AddStayDialog({
                 setQuery(selectedLocation.name);
                 setLocation(selectedLocation);
               }}
-              placeholder="Search for a hotel or stay"
+              placeholder={dictionary.tripDetail.staySearchPlaceholder}
               includedPrimaryTypes={relaxedSearch ? undefined : ["lodging"]}
               autoFocus
             />
@@ -161,17 +167,17 @@ export default function AddStayDialog({
                 className="h-auto px-0 py-1 text-xs text-primary hover:text-primary/80"
                 onClick={() => setRelaxedSearch(true)}
               >
-                Not found? Search all place types
+                {dictionary.tripDetail.stayBroadenSearch}
               </Button>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Showing broader place suggestions now.
+                {dictionary.tripDetail.stayBroadened}
               </p>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <Label>Stay period</Label>
+            <Label>{dictionary.tripDetail.stayPeriod}</Label>
             <DateRangePicker
               fromName="checkInDate"
               toName="checkOutDate"
@@ -181,7 +187,7 @@ export default function AddStayDialog({
                 setCheckInDate(from);
                 setCheckOutDate(to);
               }}
-              placeholder="Pick check-in and check-out"
+              placeholder={dictionary.tripDetail.stayPeriodPlaceholder}
             />
           </div>
 
@@ -197,13 +203,13 @@ export default function AddStayDialog({
                 resetForm();
               }}
             >
-              Cancel
+              {dictionary.tripCreate.cancel}
             </Button>
             <SubmitButton
               className="flex-1 rounded-xl"
-              pendingLabel={isEditing ? "Saving..." : "Adding..."}
+              pendingLabel={isEditing ? dictionary.common.saving : dictionary.common.adding}
             >
-              {isEditing ? "Save" : "Add"}
+              {isEditing ? dictionary.common.save : dictionary.common.add}
             </SubmitButton>
           </DialogFooter>
         </form>

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Printer } from "lucide-react";
+import { getClientDictionary } from "@/features/i18n/client";
 
 type Props = {
   href: string;
@@ -14,17 +16,24 @@ export default function PlannerPrintButton({
   iconOnly = false,
   className = "",
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
+
   return (
     <Link
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       className={className}
-      aria-label="Download itinerary PDF"
+      aria-label={dictionary.planner.saveAsPdf}
     >
       <span className="inline-flex items-center gap-2">
         <Printer className="h-4 w-4" />
-        {iconOnly ? <span className="sr-only">Save as PDF</span> : "Save as PDF"}
+        {iconOnly ? (
+          <span className="sr-only">{dictionary.planner.saveAsPdf}</span>
+        ) : (
+          dictionary.planner.saveAsPdf
+        )}
       </span>
     </Link>
   );

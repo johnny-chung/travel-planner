@@ -11,6 +11,7 @@ import {
   Map as MapIcon,
   SlidersHorizontal,
 } from "lucide-react";
+import { getClientDictionary } from "@/features/i18n/client";
 import { cn } from "@/lib/utils";
 import { buildPlannerHref, type PlannerSearchState } from "@/features/planner/search-params";
 
@@ -33,6 +34,7 @@ export default function PlannerHeader({
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const dictionary = getClientDictionary(pathname);
   const mapHref = buildPlannerHref(pathname, searchState, {
     view: "map",
     stopId: null,
@@ -66,7 +68,10 @@ export default function PlannerHeader({
               {planName}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {stopCount} stop{stopCount !== 1 ? "s" : ""}
+              {(stopCount === 1
+                ? dictionary.planner.stopCount
+                : dictionary.planner.stopCountPlural
+              ).replace("{count}", String(stopCount))}
             </p>
           </div>
 
@@ -102,7 +107,7 @@ export default function PlannerHeader({
               ) : (
                 <MapIcon className="w-4 h-4" />
               )}{" "}
-              Map
+              {dictionary.planner.map}
             </button>
             <button
               type="button"
@@ -123,7 +128,7 @@ export default function PlannerHeader({
               ) : (
                 <List className="w-4 h-4" />
               )}{" "}
-              List
+              {dictionary.planner.list}
             </button>
           </div>
         </div>
@@ -132,7 +137,7 @@ export default function PlannerHeader({
       {isArchived ? (
         <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2 flex items-center gap-2 text-yellow-800 text-sm flex-shrink-0">
           <Archive className="w-4 h-4 flex-shrink-0" />
-          This trip is archived. Add and delete actions are disabled.
+          {dictionary.planner.archivedNotice}
         </div>
       ) : null}
     </>

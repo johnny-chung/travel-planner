@@ -1,3 +1,4 @@
+import { usePathname } from "next/navigation";
 import { BedDouble, ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { deleteStayAction } from "@/features/trip-logistics/actions";
 import { deleteGuestStayAction } from "@/features/guest/actions";
@@ -5,6 +6,7 @@ import SubmitButton from "@/features/shared/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { TripStayItem } from "@/types/trip-logistics";
 
 type Props = {
@@ -30,6 +32,8 @@ export default function TripStayCard({
   onEditStay,
   accessMode = "user",
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const deleteAction = accessMode === "guest" ? deleteGuestStayAction : deleteStayAction;
 
   return (
@@ -40,7 +44,7 @@ export default function TripStayCard({
     >
       <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors">
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <BedDouble className="w-4 h-4 text-muted-foreground" /> Stay
+          <BedDouble className="w-4 h-4 text-muted-foreground" /> {dictionary.tripDetail.stays}
           {items.length > 0 ? (
             <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
               {items.length}
@@ -58,7 +62,7 @@ export default function TripStayCard({
           <CardContent className="p-0 border-t border-border">
             {items.length === 0 ? (
               <p className="text-center text-muted-foreground text-sm py-6">
-                No stays added yet
+                {dictionary.tripDetail.noStaysAdded}
               </p>
             ) : (
               <div className="divide-y divide-border">
@@ -108,7 +112,7 @@ export default function TripStayCard({
                   onClick={onAddStay}
                   className="flex items-center gap-2 p-0 text-sm font-medium text-primary transition-colors hover:text-primary/80"
                 >
-                  <Plus className="w-4 h-4" /> Add stay
+                  <Plus className="w-4 h-4" /> {dictionary.tripDetail.addStay}
                 </Button>
               </div>
             ) : null}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Plus, RefreshCw } from "lucide-react";
 import { useState, useTransition } from "react";
@@ -9,6 +9,8 @@ import TripCardGrid from "@/features/trips/components/list/TripCardGrid";
 import TripCreateDialog from "@/features/trips/components/list/TripCreateDialog";
 import { Button } from "@/components/ui/button";
 import type { TripSummary } from "@/types/travel";
+import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
+import { localizeHref } from "@/features/i18n/config";
 
 export type Trip = TripSummary;
 
@@ -47,16 +49,30 @@ export default function TripListClient({
   autoOpenCreate = false,
   decorationImage = "/material/Compass.png",
 }: Props) {
+  const pathname = usePathname();
   const router = useRouter();
+  const locale = getClientLocale(pathname);
+  const dictionary = getClientDictionary(pathname);
   const [isRefreshing, startTransition] = useTransition();
   const [showCreateDialog, setShowCreateDialog] = useState(autoOpenCreate);
+  const localizedCollectionPath = localizeHref(locale, collectionPath);
+  const tripCountLabel =
+    activeTripCount === 1
+      ? dictionary.tripsPage.tripCount.replace(
+          "{count}",
+          String(activeTripCount),
+        )
+      : dictionary.tripsPage.tripCountPlural.replace(
+          "{count}",
+          String(activeTripCount),
+        );
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background pb-16 md:pb-0 md:pt-16">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(47,110,98,0.08),_transparent_42%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-[linear-gradient(180deg,rgba(47,110,98,0.12),rgba(47,110,98,0))]" />
 
-      <div className="relative px-4 pt-6 pb-4 max-w-4xl mx-auto w-full">
+      <div className="relative mx-auto w-full max-w-4xl px-4 pb-4 pt-6">
         <div className="rounded-xl border border-border/70 bg-[linear-gradient(135deg,#1c2421_0%,#2f6e62_58%,#5d7f76_100%)] px-5 py-5 shadow-[0_22px_55px_rgba(31,26,23,0.12)] sm:px-6">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -64,7 +80,7 @@ export default function TripListClient({
                 {pageTitle}
               </h1>
               <p className="mt-1 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-[#deeadf]">
-                {activeTripCount} trip{activeTripCount !== 1 ? "s" : ""}
+                {tripCountLabel}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -75,7 +91,9 @@ export default function TripListClient({
                 className="h-11 w-11 rounded-lg border-white/14 bg-white/8 text-[#f6efe2] hover:bg-white/12 hover:text-[#fff7ea]"
                 onClick={() => startTransition(() => router.refresh())}
               >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
               </Button>
               {showCreate ? (
                 <Button
@@ -83,7 +101,7 @@ export default function TripListClient({
                   className="hidden h-11 rounded-lg border border-white/14 bg-[#f7f2e8] px-5 font-semibold text-[#24483f] shadow-sm hover:bg-[#ece5d8] md:flex"
                   onClick={() => setShowCreateDialog(true)}
                 >
-                  <Plus className="mr-2 h-4 w-4" /> New Trip
+                  <Plus className="mr-2 h-4 w-4" /> {dictionary.tripsPage.newTrip}
                 </Button>
               ) : null}
             </div>
@@ -91,14 +109,14 @@ export default function TripListClient({
         </div>
       </div>
 
-      <div className="relative px-4 max-w-4xl mx-auto w-full pb-8 space-y-5">
+      <div className="relative mx-auto w-full max-w-4xl space-y-5 px-4 pb-8">
         {showFilters ? (
           <div className="inline-flex items-center gap-2 rounded-lg border border-border/70 bg-card/95 p-1 shadow-[0_12px_30px_rgba(31,26,23,0.06)]">
             <Link
               href={
                 currentView === "active"
-                  ? collectionPath
-                  : `${collectionPath}?view=active`
+                  ? localizedCollectionPath
+                  : `${localizedCollectionPath}?view=active`
               }
               className={`rounded-full px-4 py-2 text-sm transition-colors ${
                 currentView === "active"
@@ -106,22 +124,26 @@ export default function TripListClient({
                   : "text-muted-foreground hover:bg-muted"
               }`}
             >
-              Active
+              {dictionary.tripsPage.active}
             </Link>
             <Link
-              href={`${collectionPath}?view=all`}
+              href={`${localizedCollectionPath}?view=all`}
               className={`rounded-full px-4 py-2 text-sm transition-colors ${
                 currentView === "all"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted"
               }`}
             >
-              All
+              {dictionary.tripsPage.all}
             </Link>
           </div>
         ) : null}
 
-        <TripCardGrid trips={initialTrips} cardTarget={cardTarget} canShareCode={canShareCode} />
+        <TripCardGrid
+          trips={initialTrips}
+          cardTarget={cardTarget}
+          canShareCode={canShareCode}
+        />
       </div>
 
       <div className="pointer-events-none fixed bottom-6 right-5 z-0 hidden md:block">
@@ -137,13 +159,13 @@ export default function TripListClient({
       </div>
 
       {showCreate ? (
-        <div className="md:hidden fixed bottom-20 right-4 z-40">
+        <div className="fixed bottom-20 right-4 z-40 md:hidden">
           <Button
             type="button"
             className="h-14 w-14 rounded-lg border border-border/70 bg-primary p-0 text-primary-foreground shadow-[0_18px_40px_rgba(31,26,23,0.16)] hover:bg-primary/90"
             onClick={() => setShowCreateDialog(true)}
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="h-6 w-6" />
           </Button>
         </div>
       ) : null}

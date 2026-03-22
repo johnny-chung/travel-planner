@@ -1,6 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { ExpenseItem, ExpenseMember } from "@/features/expense/types";
 
 type Props = {
@@ -14,6 +16,8 @@ export default function ExpenseSummaryTab({
   members,
   currentUserId,
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const sharedExpenses = expenses.filter((expense) => expense.type === "shared" && expense.currency === "CAD");
   const myOwnExpenses = expenses.filter((expense) => expense.type === "own" && expense.addedBy === currentUserId && expense.currency === "CAD");
   const totalShared = sharedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -31,25 +35,25 @@ export default function ExpenseSummaryTab({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-card rounded-2xl p-4 shadow-sm border border-border">
-          <p className="text-xs text-muted-foreground mb-1">Shared Total</p>
+          <p className="text-xs text-muted-foreground mb-1">{dictionary.expense.sharedTotal}</p>
           <p className="text-xl font-bold text-primary">CAD {totalShared.toFixed(2)}</p>
           <p className="text-xs text-muted-foreground mt-0.5">÷{members.length} = CAD {splitPerPerson.toFixed(2)}</p>
         </div>
         <div className="bg-card rounded-2xl p-4 shadow-sm border border-border">
-          <p className="text-xs text-muted-foreground mb-1">My Personal</p>
+          <p className="text-xs text-muted-foreground mb-1">{dictionary.expense.myPersonal}</p>
           <p className="text-xl font-bold text-foreground">CAD {totalOwn.toFixed(2)}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Not shared</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{dictionary.expense.notShared}</p>
         </div>
       </div>
 
       <div className="bg-card rounded-2xl p-4 shadow-sm border border-border">
-        <p className="text-xs text-muted-foreground mb-1">My Total Cost</p>
+        <p className="text-xs text-muted-foreground mb-1">{dictionary.expense.myTotalCost}</p>
         <p className="text-2xl font-bold text-foreground">CAD {myTotal.toFixed(2)}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">Personal + my share of group expenses</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{dictionary.expense.myTotalHint}</p>
       </div>
 
       <div className="bg-card rounded-2xl p-5 shadow-sm border border-border space-y-3">
-        <h3 className="font-semibold text-foreground">Balance per person</h3>
+        <h3 className="font-semibold text-foreground">{dictionary.expense.balancePerPerson}</h3>
         {members.map((member) => {
           const paid = getPaidShared(member.userId);
           const balance = paid - splitPerPerson;
@@ -64,28 +68,30 @@ export default function ExpenseSummaryTab({
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{isMe ? "You" : member.name}</p>
+                <p className="text-sm font-medium text-foreground truncate">{isMe ? dictionary.expense.you : member.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {isMe ? `Spending: CAD ${paid.toFixed(2)}` : `Paid: CAD ${paid.toFixed(2)}`}
+                  {isMe
+                    ? `${dictionary.expense.spending}: CAD ${paid.toFixed(2)}`
+                    : `${dictionary.expense.paid}: CAD ${paid.toFixed(2)}`}
                 </p>
               </div>
               <div className="text-right shrink-0">
                 {balance > 0.005 ? (
                   <p className="text-sm font-semibold text-green-600">
-                    {isMe ? "+" : "You owe"}CAD {balance.toFixed(2)}
+                    {isMe ? "+" : `${dictionary.expense.youOwe} `}CAD {balance.toFixed(2)}
                   </p>
                 ) : balance < -0.005 ? (
                   <p className="text-sm font-semibold text-red-500">
-                    {isMe ? "-" : "Owes you"}CAD {Math.abs(balance).toFixed(2)}
+                    {isMe ? "-" : `${dictionary.expense.owesYou} `}CAD {Math.abs(balance).toFixed(2)}
                   </p>
                 ) : (
-                  <p className="text-sm font-semibold text-muted-foreground">Settled</p>
+                  <p className="text-sm font-semibold text-muted-foreground">{dictionary.expense.settled}</p>
                 )}
               </div>
             </div>
           );
         })}
-        <p className="text-xs text-muted-foreground/60 pt-1">Based on equal split of shared expenses (CAD only)</p>
+        <p className="text-xs text-muted-foreground/60 pt-1">{dictionary.expense.equalSplitNote}</p>
       </div>
     </div>
   );

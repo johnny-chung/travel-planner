@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Bus, Car, ChevronRight, Footprints } from "lucide-react";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { TravelTimeEntry } from "@/features/planner/components/plan-map/types";
 
 type Props = {
@@ -16,6 +20,8 @@ function formatDistance(distanceMeters?: number | null) {
 }
 
 export default function TravelTimeCard({ travelTime, href }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   if (!travelTime) return null;
   const Icon = ModeIcon[travelTime.mode];
   const fallbackSummary =
@@ -41,7 +47,10 @@ export default function TravelTimeCard({ travelTime, href }: Props) {
               {summary}
             </p>
             <p className="text-[11px] text-muted-foreground/80 mt-0.5">
-              Total: {travelTime.durationMinutes} min
+              {dictionary.planner.travelTotal.replace(
+                "{minutes}",
+                String(travelTime.durationMinutes),
+              )}
             </p>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground/70 flex-shrink-0 mt-1" />
@@ -50,4 +59,3 @@ export default function TravelTimeCard({ travelTime, href }: Props) {
     </div>
   );
 }
-

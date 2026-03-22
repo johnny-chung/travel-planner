@@ -1,9 +1,11 @@
+import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp, ExternalLink, FileText, Plus, X } from "lucide-react";
 import { removeTripDocumentAction } from "@/features/trips/actions";
 import SubmitButton from "@/features/shared/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { TripDocument } from "@/types/travel";
 
 type Props = {
@@ -25,6 +27,8 @@ export default function TripDocumentsCard({
   onOpenChange,
   onAddDocument,
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   return (
     <Collapsible
       open={open}
@@ -33,7 +37,7 @@ export default function TripDocumentsCard({
     >
       <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors">
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <FileText className="w-4 h-4 text-muted-foreground" /> Documents
+          <FileText className="w-4 h-4 text-muted-foreground" /> {dictionary.tripDetail.documents}
           {documents.length > 0 ? (
             <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
               {documents.length}
@@ -51,7 +55,7 @@ export default function TripDocumentsCard({
           <CardContent className="p-0 border-t border-border">
             {documents.length === 0 ? (
               <p className="text-center text-muted-foreground text-sm py-6">
-                No documents linked yet
+                {dictionary.tripDetail.noDocumentsLinked}
               </p>
             ) : (
               <div className="divide-y divide-border">
@@ -104,7 +108,7 @@ export default function TripDocumentsCard({
                   onClick={onAddDocument}
                   className="flex items-center gap-2 p-0 text-sm font-medium text-primary transition-colors hover:text-primary/80"
                 >
-                  <Plus className="w-4 h-4" /> Add document
+                  <Plus className="w-4 h-4" /> {dictionary.tripDetail.addDocument}
                 </Button>
               </div>
             ) : null}

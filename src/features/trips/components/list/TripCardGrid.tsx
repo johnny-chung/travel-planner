@@ -5,10 +5,13 @@ import { ChevronDown, ChevronRight, ChevronUp, Map, MapPin, Share2 } from "lucid
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ShareCodeDialog from "@/features/shared/components/ShareCodeDialog";
+import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
+import { localizeHref } from "@/features/i18n/config";
 import type { TripSummary } from "@/types/travel";
 
 type Props = {
@@ -64,6 +67,9 @@ export default function TripCardGrid({
   cardTarget = "trip",
   canShareCode = true,
 }: Props) {
+  const pathname = usePathname();
+  const locale = getClientLocale(pathname);
+  const dictionary = getClientDictionary(pathname);
   const [shareTrip, setShareTrip] = useState<TripSummary | null>(null);
   const [archivedOpen, setArchivedOpen] = useState(false);
 
@@ -76,9 +82,9 @@ export default function TripCardGrid({
         <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-[1.4rem] bg-primary/12">
           <Map className="h-10 w-10 text-primary" />
         </div>
-        <h3 className="text-lg font-semibold text-foreground">No trips yet</h3>
+        <h3 className="text-lg font-semibold text-foreground">{dictionary.home.emptyTitle}</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create your first trip to get started
+          {dictionary.home.emptyBodyPrefix} {dictionary.home.emptyBodyLink} {dictionary.home.emptyBodySuffix}
         </p>
       </div>
     );
@@ -92,7 +98,7 @@ export default function TripCardGrid({
 
     return (
       <Link
-        href={isPending ? "#" : getTripHref(trip._id, cardTarget)}
+        href={isPending ? "#" : localizeHref(locale, getTripHref(trip._id, cardTarget))}
         className={`flex items-center gap-3 rounded-xl border border-border/80 bg-card p-4 shadow-[0_18px_45px_rgba(47,67,65,0.08)] transition-all dark:shadow-[0_18px_45px_rgba(0,0,0,0.22)] ${
           isPending
             ? "opacity-60 cursor-not-allowed"
@@ -128,7 +134,7 @@ export default function TripCardGrid({
                 variant="secondary"
                 className="h-4 bg-primary/12 px-1.5 py-0 text-[10px] text-primary hover:bg-primary/12"
               >
-                Editor
+                {dictionary.tripList.editor}
               </Badge>
             ) : null}
             {trip.role === "pending" ? (
@@ -136,12 +142,12 @@ export default function TripCardGrid({
                 variant="outline"
                 className="h-4 border-accent px-1.5 py-0 text-[10px] text-accent-foreground"
               >
-                Pending
+                {dictionary.tripList.pending}
               </Badge>
             ) : null}
             {trip.status === "archived" ? (
               <Badge className="h-4 bg-muted px-1.5 py-0 text-[10px] text-muted-foreground hover:bg-muted">
-                Archived
+                {dictionary.tripList.archived}
               </Badge>
             ) : null}
           </div>
@@ -202,7 +208,7 @@ export default function TripCardGrid({
               ) : (
                 <ChevronDown className="w-4 h-4" />
               )}
-              Archived Trips ({archivedTrips.length})
+              {dictionary.tripList.archivedTrips} ({archivedTrips.length})
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
@@ -223,8 +229,8 @@ export default function TripCardGrid({
               setShareTrip(null);
             }
           }}
-          title="Share Trip"
-          description={`Share this code so others can request to join ${shareTrip.name}.`}
+          title={dictionary.tripDetail.shareTitle}
+          description={dictionary.tripDetail.shareDescription.replace("{tripName}", shareTrip.name)}
           shareCode={shareTrip.shareCode}
         />
       ) : null}

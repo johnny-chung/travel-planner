@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { X } from "lucide-react";
+import { getRequestDictionary } from "@/features/i18n/server";
 import {
   buildPlannerHref,
   type PlannerSearchState,
@@ -14,11 +15,12 @@ type Props = {
   tripDates: string[];
 };
 
-export default function PlannerFiltersForm({
+export default async function PlannerFiltersForm({
   pathname,
   searchState,
   tripDates,
 }: Props) {
+  const { dictionary } = await getRequestDictionary();
   const clearHref = buildPlannerHref(pathname, searchState, {
     from: null,
     to: null,
@@ -41,27 +43,27 @@ export default function PlannerFiltersForm({
           fromValue={searchState.from}
           toValue={searchState.to}
           highlightDates={tripDates}
-          highlightLabel="Trip days are highlighted"
+          highlightLabel={dictionary.planner.tripDaysHighlighted}
         />
 
         <div className="grid gap-3 md:grid-cols-2">
           <PlannerFilterSwitch
             id="planner-hide-unscheduled"
             name="hideUnscheduled"
-            label="Hide unscheduled markers"
+            label={dictionary.planner.unscheduledStops}
             defaultChecked={searchState.hideUnscheduledMap}
           />
           <PlannerFilterSwitch
             id="planner-hide-stays"
             name="hideStays"
-            label="Hide stay markers"
+            label={dictionary.planner.stays}
             defaultChecked={searchState.hideStaysMap}
           />
         </div>
 
         <div className="flex items-center gap-3">
           <Button type="submit" variant="outline" className="rounded-xl h-9">
-            Apply
+            {dictionary.planner.applyFilters}
           </Button>
           {searchState.from ||
           searchState.to ||

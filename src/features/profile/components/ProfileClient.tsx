@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ArrowLeft,
   CreditCard,
@@ -17,6 +18,8 @@ import { signOutAction } from "@/features/auth/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
+import { localizeHref } from "@/features/i18n/config";
 
 type Props = {
   user: {
@@ -32,6 +35,9 @@ type Props = {
 };
 
 export default function ProfileClient({ user }: Props) {
+  const pathname = usePathname();
+  const locale = getClientLocale(pathname);
+  const dictionary = getClientDictionary(pathname);
   const initials = user.name
     ? user.name
         .split(" ")
@@ -43,7 +49,7 @@ export default function ProfileClient({ user }: Props) {
 
   const monthlyUsage =
     user.routeUsageLimit === null
-      ? "Unlimited"
+      ? dictionary.profile.unlimited
       : `${user.routeUsageCount} / ${user.routeUsageLimit}`;
 
   return (
@@ -54,17 +60,17 @@ export default function ProfileClient({ user }: Props) {
             <div>
               <div className="mb-6 flex items-center gap-3">
                 <Link
-                  href="/"
+                  href={localizeHref(locale, "/")}
                   className="rounded-lg bg-white/8 p-2 text-[#fff6ec] transition-colors hover:bg-white/12"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </Link>
                 <div>
                   <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#d6e7de]">
-                    Profile
+                    {dictionary.profile.eyebrow}
                   </p>
                   <h1 className="text-xl font-bold text-[#fff6ec] md:text-2xl">
-                    Member Details
+                    {dictionary.profile.title}
                   </h1>
                 </div>
               </div>
@@ -78,17 +84,17 @@ export default function ProfileClient({ user }: Props) {
                 </Avatar>
                 <div>
                   <h2 className="text-xl font-bold text-[#fff6ec]">
-                    {user.name || "Unknown user"}
+                    {user.name || dictionary.profile.unknownUser}
                   </h2>
                   <p className="mt-1 text-sm text-[#dfe8e1]">{user.email}</p>
                   <div className="mt-3 flex items-center justify-center gap-2 sm:justify-start">
                     {user.membershipStatus === "pro" ? (
-                        <Badge className="bg-[#c98b52]/20 text-[#fff1d9] hover:bg-[#c98b52]/20">
-                        Pro
+                      <Badge className="bg-[#c98b52]/20 text-[#fff1d9] hover:bg-[#c98b52]/20">
+                        {dictionary.profile.pro}
                       </Badge>
                     ) : (
-                        <Badge className="bg-white/10 text-[#fff1d9]/80 hover:bg-white/10">
-                        Basic
+                      <Badge className="bg-white/10 text-[#fff1d9]/80 hover:bg-white/10">
+                        {dictionary.profile.basic}
                       </Badge>
                     )}
                   </div>
@@ -117,24 +123,28 @@ export default function ProfileClient({ user }: Props) {
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <InfoRow
               icon={<User className="h-5 w-5 text-[#ab6534]" />}
-              label="Full Name"
+              label={dictionary.profile.fullName}
               value={user.name || "—"}
             />
             <InfoRow
               icon={<Mail className="h-5 w-5 text-[#ab6534]" />}
-              label="Email"
+              label={dictionary.profile.email}
               value={user.email || "—"}
             />
             {user.phone ? (
               <InfoRow
                 icon={<Phone className="h-5 w-5 text-[#ab6534]" />}
-                label="Phone"
+                label={dictionary.profile.phone}
                 value={user.phone}
               />
             ) : null}
             <div className="rounded-lg border border-border/70 bg-card px-4 py-3 shadow-sm">
-              <p className="mb-0.5 text-xs text-muted-foreground">Account ID</p>
-              <p className="truncate font-mono text-sm text-foreground">{user.id}</p>
+              <p className="mb-0.5 text-xs text-muted-foreground">
+                {dictionary.profile.accountId}
+              </p>
+              <p className="truncate font-mono text-sm text-foreground">
+                {user.id}
+              </p>
             </div>
           </div>
 
@@ -145,18 +155,20 @@ export default function ProfileClient({ user }: Props) {
                   <Crown className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Membership</p>
+                  <p className="text-xs text-muted-foreground">
+                    {dictionary.profile.membership}
+                  </p>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     {user.membershipStatus === "pro" ? (
-                        <Badge className="bg-primary/12 text-primary hover:bg-primary/12">
-                        Pro
+                      <Badge className="bg-primary/12 text-primary hover:bg-primary/12">
+                        {dictionary.profile.pro}
                       </Badge>
                     ) : (
                       <Badge
                         variant="secondary"
                         className="bg-accent/80 text-primary"
                       >
-                        Basic
+                        {dictionary.profile.basic}
                       </Badge>
                     )}
                   </div>
@@ -164,12 +176,12 @@ export default function ProfileClient({ user }: Props) {
               </div>
 
               {user.membershipStatus !== "pro" ? (
-                <Link href="/upgrade">
+                <Link href={localizeHref(locale, "/upgrade")}>
                   <Button
                     size="sm"
                     className="h-8 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
                   >
-                    Upgrade to Pro
+                    {dictionary.profile.upgradeToPro}
                   </Button>
                 </Link>
               ) : null}
@@ -178,21 +190,23 @@ export default function ProfileClient({ user }: Props) {
             <div className="flex items-center gap-2 border-t border-border pt-3 text-sm text-muted-foreground">
               <Navigation className="h-4 w-4 flex-shrink-0 text-primary" />
               <span>
-                Route calculations this month: <strong>{monthlyUsage}</strong>
+                {dictionary.profile.routeUsage}: <strong>{monthlyUsage}</strong>
               </span>
             </div>
           </div>
 
-          <Link href="/orders" className="block">
+          <Link href={localizeHref(locale, "/orders")} className="block">
             <div className="flex items-center justify-between rounded-xl border border-border/70 bg-card px-4 py-4 shadow-sm transition-colors hover:bg-muted/40">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-accent/70">
                   <CreditCard className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Orders</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {dictionary.profile.ordersTitle}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    View completed Stripe payments
+                    {dictionary.profile.ordersBody}
                   </p>
                 </div>
               </div>
@@ -207,7 +221,7 @@ export default function ProfileClient({ user }: Props) {
               className="h-12 w-full rounded-lg gap-2 border-red-200 font-semibold text-red-500 hover:bg-red-50"
             >
               <LogOut className="h-4 w-4" />
-              Sign Out
+              {dictionary.profile.signOut}
             </Button>
           </form>
         </div>

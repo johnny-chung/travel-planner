@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import {
   createTripAction,
@@ -22,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { getClientDictionary } from "@/features/i18n/client";
 
 type Props = {
   apiKey: string;
@@ -42,6 +44,8 @@ export default function TripCreateDialog({
   allowJoin = true,
   title = "New Trip",
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const createAction = mode === "guest" ? createTrialTripAction : createTripAction;
   const [createState, createFormAction] = useActionState<FormActionState, FormData>(
     createAction,
@@ -94,11 +98,11 @@ export default function TripCreateDialog({
         <div className="space-y-4 py-2">
           {allowJoin ? (
           <form action={joinFormAction} className="space-y-2">
-            <Label>Join existing trip</Label>
+            <Label>{dictionary.tripCreate.joinExisting}</Label>
             <div className="relative">
               <Input
                 name="shareCode"
-                placeholder="6-letter code e.g. ABC123"
+                placeholder={dictionary.tripCreate.shareCodePlaceholder}
                 value={joinCode}
                 onChange={(event) =>
                   setJoinCode(event.target.value.toUpperCase().slice(0, 6))
@@ -117,7 +121,7 @@ export default function TripCreateDialog({
             </div>
             {joinCode.length > 0 ? (
               <p className="text-xs text-primary">
-                Enter a code to request access. The create form is disabled while joining.
+                {dictionary.tripCreate.joinHelp}
               </p>
             ) : null}
             {joinState.error ? (
@@ -127,10 +131,10 @@ export default function TripCreateDialog({
               <div className="pt-1">
                 <SubmitButton
                   className="w-full rounded-xl"
-                  pendingLabel="Sending..."
+                  pendingLabel={dictionary.tripCreate.sending}
                   disabled={joinCode.length < 4}
                 >
-                  Request Access
+                  {dictionary.tripCreate.requestAccess}
                 </SubmitButton>
               </div>
             ) : null}
@@ -142,17 +146,17 @@ export default function TripCreateDialog({
               {allowJoin ? (
                 <div className="flex items-center gap-2 text-muted-foreground/60 text-xs">
                   <div className="flex-1 h-px bg-border" />
-                  OR
+                  {dictionary.tripCreate.or}
                   <div className="flex-1 h-px bg-border" />
                 </div>
               ) : null}
               <div className="space-y-2">
                 <Label>
-                  Trip Name <span className="text-red-500">*</span>
+                  {dictionary.tripCreate.tripName} <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   name="name"
-                  placeholder="e.g. Japan Spring 2025"
+                  placeholder={dictionary.tripCreate.tripNamePlaceholder}
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   className="rounded-xl h-11"
@@ -161,8 +165,10 @@ export default function TripCreateDialog({
               </div>
               <div className="space-y-2">
                 <Label>
-                  Starting Location{" "}
-                  <span className="text-muted-foreground text-xs">(optional)</span>
+                  {dictionary.tripCreate.startingLocation}{" "}
+                  <span className="text-muted-foreground text-xs">
+                    ({dictionary.tripCreate.optional})
+                  </span>
                 </Label>
                 <LocationSearchInput
                   value={location}
@@ -193,12 +199,14 @@ export default function TripCreateDialog({
               </div>
               <div className="space-y-2">
                 <Label>
-                  Description{" "}
-                  <span className="text-muted-foreground text-xs">(optional)</span>
+                  {dictionary.tripCreate.description}{" "}
+                  <span className="text-muted-foreground text-xs">
+                    ({dictionary.tripCreate.optional})
+                  </span>
                 </Label>
                 <Textarea
                   name="description"
-                  placeholder="What's this trip about?"
+                  placeholder={dictionary.tripCreate.descriptionPlaceholder}
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
                   maxLength={500}
@@ -216,12 +224,12 @@ export default function TripCreateDialog({
                   name="transportMode"
                   value="drive"
                   uncheckedValue="transit"
-                  aria-label="Will you rent a car?"
+                  aria-label={dictionary.tripCreate.rentCar}
                 />
                 <Label className="text-sm text-foreground">
-                  Will you rent a car?{" "}
+                  {dictionary.tripCreate.rentCar}{" "}
                   <span className="text-muted-foreground text-xs">
-                    (sets the default to Drive mode)
+                    ({dictionary.tripCreate.rentCarHint})
                   </span>
                 </Label>
               </div>
@@ -238,14 +246,14 @@ export default function TripCreateDialog({
                     resetForm();
                   }}
                 >
-                  Cancel
+                  {dictionary.tripCreate.cancel}
                 </Button>
                 <SubmitButton
                   className="flex-1 rounded-xl"
-                  pendingLabel="Creating..."
+                  pendingLabel={dictionary.tripCreate.creating}
                   disabled={!name.trim()}
                 >
-                  Create
+                  {dictionary.tripCreate.create}
                 </SubmitButton>
               </DialogFooter>
             </form>
@@ -260,7 +268,7 @@ export default function TripCreateDialog({
                   resetForm();
                 }}
               >
-                Cancel
+                {dictionary.tripCreate.cancel}
               </Button>
             </DialogFooter>
           )}

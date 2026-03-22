@@ -1,4 +1,11 @@
 import type { Metadata } from "next";
+import {
+  defaultLocale,
+  localizeHref,
+  locales,
+  toHtmlLang,
+  type AppLocale,
+} from "@/features/i18n/config";
 
 export const SITE_NAME = "Roamer's Ledger";
 export const SITE_TITLE = "Roamer's Ledger | Travel Planner";
@@ -23,6 +30,27 @@ export function buildAbsoluteUrl(path = "/") {
   return new URL(path, getSiteUrl()).toString();
 }
 
+export function buildLocaleUrl(locale: AppLocale, path = "/") {
+  return buildAbsoluteUrl(localizeHref(locale, path));
+}
+
+export function buildLocaleAlternates(locale: AppLocale, path = "/") {
+  const languages = Object.fromEntries(
+    locales.map((supportedLocale) => [
+      toHtmlLang(supportedLocale),
+      buildLocaleUrl(supportedLocale, path),
+    ]),
+  );
+
+  return {
+    canonical: buildLocaleUrl(locale, path),
+    languages: {
+      ...languages,
+      "x-default": buildLocaleUrl(defaultLocale, path),
+    },
+  };
+}
+
 export function createNoIndexMetadata(): Metadata {
   return {
     robots: {
@@ -36,4 +64,3 @@ export function createNoIndexMetadata(): Metadata {
     },
   };
 }
-

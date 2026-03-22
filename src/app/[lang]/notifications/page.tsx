@@ -1,0 +1,35 @@
+import { requireUserId } from "@/features/auth/session";
+import { getDictionary } from "@/features/i18n/dictionaries";
+import { getTripNotificationsForOwner } from "@/features/trips/service";
+import NotificationsList from "@/features/notifications/components/list/NotificationsList";
+import type { AppLocale } from "@/features/i18n/config";
+
+type Props = {
+  params: Promise<{ lang: AppLocale }>;
+};
+
+export default async function NotificationsPage({ params }: Props) {
+  const { lang } = await params;
+  const dictionary = getDictionary(lang);
+  const userId = await requireUserId();
+  const notifications = await getTripNotificationsForOwner(userId);
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col pb-16 md:pb-0 md:pt-16">
+      <div className="px-4 pt-6 pb-4 max-w-2xl mx-auto w-full">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            {dictionary.notificationsPage.title}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {dictionary.notificationsPage.subtitle}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex-1 px-4 max-w-2xl mx-auto w-full">
+        <NotificationsList notifications={notifications} />
+      </div>
+    </div>
+  );
+}

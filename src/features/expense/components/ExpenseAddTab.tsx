@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
 import { createExpenseAction, type ExpenseActionState } from "@/features/expense/actions";
 import SubmitButton from "@/features/shared/components/SubmitButton";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import DatePicker from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getClientDictionary } from "@/features/i18n/client";
 import { cn } from "@/lib/utils";
 
 const initialState: ExpenseActionState = {};
@@ -19,6 +21,8 @@ type Props = {
 };
 
 export default function ExpenseAddTab({ tripId, returnTo, initialDate }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const [state, formAction] = useActionState(createExpenseAction, initialState);
   const [expenseType, setExpenseType] = useState<"shared" | "own">("shared");
 
@@ -29,7 +33,7 @@ export default function ExpenseAddTab({ tripId, returnTo, initialDate }: Props) 
       <input type="hidden" name="type" value={expenseType} />
 
       <div className="space-y-2">
-        <Label>Expense Type</Label>
+        <Label>{dictionary.expense.expenseType}</Label>
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -42,7 +46,7 @@ export default function ExpenseAddTab({ tripId, returnTo, initialDate }: Props) 
                 : "border-border bg-card text-foreground hover:bg-muted",
             )}
           >
-            Shared
+            {dictionary.expense.shared}
           </button>
           <button
             type="button"
@@ -55,47 +59,47 @@ export default function ExpenseAddTab({ tripId, returnTo, initialDate }: Props) 
                 : "border-border bg-card text-foreground hover:bg-muted",
             )}
           >
-            Personal
+            {dictionary.expense.personal}
           </button>
         </div>
         <p className="text-xs text-muted-foreground">
           {expenseType === "shared"
-            ? "Shared expenses are split equally among all trip members."
-            : "Personal expenses only count toward your own total."}
+            ? dictionary.expense.sharedHelp
+            : dictionary.expense.personalHelp}
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label>Description</Label>
-        <Input name="description" placeholder="e.g. Dinner at Ramen shop" className="rounded-xl h-11" required />
+        <Label>{dictionary.expense.description}</Label>
+        <Input name="description" placeholder={dictionary.expense.descriptionPlaceholder} className="rounded-xl h-11" required />
       </div>
 
       <div className="space-y-2">
-        <Label>Date</Label>
+        <Label>{dictionary.expense.date}</Label>
         <DatePicker
           name="date"
           value={initialDate}
           className="rounded-xl"
-          placeholder="Pick expense date"
+          placeholder={dictionary.expense.datePlaceholder}
         />
       </div>
 
       <div className="grid grid-cols-3 gap-2">
         <div className="col-span-2 space-y-2">
-          <Label>Amount</Label>
+          <Label>{dictionary.expense.amount}</Label>
           <Input type="number" name="amount" placeholder="0.00" step="0.01" min="0" className="rounded-xl h-11" required />
         </div>
         <div className="space-y-2">
-          <Label>Currency</Label>
+          <Label>{dictionary.expense.currency}</Label>
           <Input name="currency" value="CAD" readOnly className="rounded-xl h-11 bg-muted text-muted-foreground" />
         </div>
       </div>
 
       {state.error ? <p className="text-sm text-red-500">{state.error}</p> : null}
 
-      <SubmitButton className="w-full h-11 rounded-xl gap-2" pendingLabel="Adding...">
+      <SubmitButton className="w-full h-11 rounded-xl gap-2" pendingLabel={dictionary.expense.adding}>
         <Plus className="w-4 h-4" />
-        Add Expense
+        {dictionary.expense.addExpense}
       </SubmitButton>
       <Button type="reset" variant="ghost" className="hidden" />
     </form>

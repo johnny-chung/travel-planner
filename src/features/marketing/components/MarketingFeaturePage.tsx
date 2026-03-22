@@ -3,20 +3,24 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signInWithAuth0Action } from "@/features/auth/actions";
+import { localizeHref } from "@/features/i18n/config";
+import { getRequestDictionary } from "@/features/i18n/server";
 import type { MarketingFeaturePage as MarketingFeaturePageContent } from "@/features/marketing/content";
 
 type Props = {
   page: MarketingFeaturePageContent;
 };
 
-export default function MarketingFeaturePage({ page }: Props) {
+export default async function MarketingFeaturePage({ page }: Props) {
+  const { locale, dictionary } = await getRequestDictionary();
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <section className="border-b border-border bg-[linear-gradient(180deg,rgba(255,252,247,0.98)_0%,rgba(242,240,234,0.92)_100%)] px-4 py-16 dark:bg-[linear-gradient(180deg,rgba(31,28,25,0.96)_0%,rgba(24,22,20,0.98)_100%)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="mb-6">
             <Link
-              href="/"
+              href={localizeHref(locale, "/")}
               className="text-xs font-medium uppercase tracking-[0.24em] text-primary/80 hover:text-primary"
             >
               Roamer&apos;s Ledger
@@ -27,10 +31,10 @@ export default function MarketingFeaturePage({ page }: Props) {
             <div>
               <div className="mb-5">
                 <Link
-                  href="/"
+                  href={localizeHref(locale, "/")}
                   className="inline-flex items-center rounded-xl border border-border bg-card/90 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                 >
-                  Back to home
+                  {dictionary.marketing.backHome}
                 </Link>
               </div>
               <p className="text-xs font-medium uppercase tracking-[0.28em] text-primary/80">
@@ -55,20 +59,24 @@ export default function MarketingFeaturePage({ page }: Props) {
               </ul>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/try">
+                <Link href={localizeHref(locale, "/try")}>
                   <Button className="h-12 rounded-xl bg-primary px-6 text-primary-foreground hover:bg-primary/90">
-                    Try it out
+                    {dictionary.marketing.tryItOut}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <form action={signInWithAuth0Action}>
-                  <input type="hidden" name="redirectTo" value="/auth/post-login" />
+                  <input
+                    type="hidden"
+                    name="redirectTo"
+                    value={localizeHref(locale, "/auth/post-login")}
+                  />
                   <Button
                     type="submit"
                     variant="outline"
                     className="h-12 rounded-xl border-border bg-card/90 px-6 text-foreground hover:bg-muted"
                   >
-                    Sign in
+                    {dictionary.marketing.signIn}
                   </Button>
                 </form>
               </div>

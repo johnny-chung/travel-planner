@@ -1,13 +1,14 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Bus, Car, ExternalLink, Footprints, PersonStanding } from "lucide-react";
 import {
   calculateTravelTimeAction,
   type TravelTimeActionState,
 } from "@/features/travel-times/actions";
 import SubmitButton from "@/features/shared/components/SubmitButton";
+import { getClientDictionary } from "@/features/i18n/client";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -18,12 +19,6 @@ import type {
 } from "@/features/planner/components/plan-map/types";
 
 type TravelMode = "TRANSIT" | "DRIVE" | "WALK";
-
-const MODES: { value: TravelMode; label: string; Icon: React.ElementType }[] = [
-  { value: "TRANSIT", label: "Transit", Icon: Bus },
-  { value: "DRIVE", label: "Drive", Icon: Car },
-  { value: "WALK", label: "Walk", Icon: Footprints },
-];
 
 type Props = {
   tripId: string;
@@ -138,6 +133,8 @@ function groupTransitDetails(
 }
 
 function StepRow({ step }: { step: DisplayStep }) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const Icon =
     step.type === "TRANSIT" ? Bus : step.type === "DRIVE" ? Car : PersonStanding;
   return (
@@ -155,7 +152,7 @@ function StepRow({ step }: { step: DisplayStep }) {
               ) : null}
               {step.headsign ? (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Towards {step.headsign}
+                  {dictionary.planner.towards.replace("{headsign}", step.headsign)}
                 </p>
               ) : null}
               {step.mapsUrl ? (
@@ -166,7 +163,7 @@ function StepRow({ step }: { step: DisplayStep }) {
                   className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                 >
                   <ExternalLink className="w-3 h-3" />
-                  Open in Google Maps
+                  {dictionary.planner.openInGoogleMaps}
                 </a>
               ) : null}
             </div>
@@ -191,10 +188,17 @@ export default function ModeEditSheet({
   closeHref,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const [state, formAction] = useActionState(
     calculateTravelTimeAction,
     initialState,
   );
+  const modes: { value: TravelMode; label: string; Icon: React.ElementType }[] = [
+    { value: "TRANSIT", label: dictionary.planner.transit, Icon: Bus },
+    { value: "DRIVE", label: dictionary.planner.drive, Icon: Car },
+    { value: "WALK", label: dictionary.planner.walk, Icon: Footprints },
+  ];
   const [selected, setSelected] = useState<TravelMode>(currentMode);
   const currentRouteMode = currentTravelTime?.mode ?? currentMode;
   const directionsUrl = useMemo(
@@ -219,7 +223,7 @@ export default function ModeEditSheet({
     <Dialog open={true} onOpenChange={(open) => !open && router.push(closeHref)}>
       <DialogContent className="rounded-3xl mx-4 max-w-sm">
         <DialogHeader>
-          <DialogTitle>Route Detail</DialogTitle>
+          <DialogTitle>{dictionary.planner.routeDetail}</DialogTitle>
         </DialogHeader>
         <form action={formAction} className="space-y-3">
           <input type="hidden" name="tripId" value={tripId} />
@@ -241,7 +245,7 @@ export default function ModeEditSheet({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Current Route
+                    {dictionary.planner.currentRoute}
                   </p>
                   <p className="text-sm font-medium text-foreground mt-1">
                     {currentTravelTime.summary || `${currentTravelTime.durationMinutes} min`}
@@ -264,7 +268,7 @@ export default function ModeEditSheet({
                 )}
               >
                 <ExternalLink className="w-4 h-4" />
-                Open directions in Google Maps
+                {dictionary.planner.openDirections}
               </a>
               {!showOnlySummary && groupedTransitDetails.length > 0 ? (
                 <div className="space-y-2">
@@ -276,7 +280,7 @@ export default function ModeEditSheet({
             </div>
           ) : null}
           <div className="grid grid-cols-3 gap-3 py-2">
-            {MODES.map(({ value, label, Icon }) => (
+            {modes.map(({ value, label, Icon }) => (
               <button
                 key={value}
                 type="button"
@@ -300,13 +304,13 @@ export default function ModeEditSheet({
               className="flex-1 rounded-xl"
               onClick={() => router.push(closeHref)}
             >
-              Cancel
+              {dictionary.planner.cancel}
             </Button>
             <SubmitButton
               className="flex-1 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
-              pendingLabel="Confirming..."
+              pendingLabel={dictionary.planner.confirming}
             >
-              Confirm
+              {dictionary.planner.confirm}
             </SubmitButton>
           </DialogFooter>
         </form>

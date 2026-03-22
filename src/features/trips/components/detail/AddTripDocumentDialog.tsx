@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import {
   addTripDocumentAction,
   type FormActionState,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getClientDictionary } from "@/features/i18n/client";
 
 type Props = {
   tripId: string;
@@ -26,6 +28,8 @@ type Props = {
 const initialState: FormActionState = {};
 
 export default function AddTripDocumentDialog({ tripId, open, onOpenChange }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const [state, formAction] = useActionState<FormActionState, FormData>(
     addTripDocumentAction,
     initialState,
@@ -44,26 +48,26 @@ export default function AddTripDocumentDialog({ tripId, open, onOpenChange }: Pr
     >
       <DialogContent className="rounded-3xl mx-4 max-w-sm">
         <DialogHeader>
-          <DialogTitle>Add Document</DialogTitle>
+          <DialogTitle>{dictionary.tripDetail.addDocument}</DialogTitle>
         </DialogHeader>
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="tripId" value={tripId} />
           <p className="text-muted-foreground text-sm">
-            Paste a Google Drive or Google Docs share link.
+            {dictionary.tripDetail.addDocumentHelp}
           </p>
           <div className="space-y-1.5">
-            <Label>Name</Label>
+            <Label>{dictionary.tripDetail.documentName}</Label>
             <Input
               name="name"
-              placeholder="e.g. Itinerary Draft"
+              placeholder={dictionary.tripDetail.documentNamePlaceholder}
               className="rounded-xl h-11"
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Google Link</Label>
+            <Label>{dictionary.tripDetail.googleLink}</Label>
             <Input
               name="url"
-              placeholder="https://docs.google.com/..."
+              placeholder={dictionary.tripDetail.googleLinkPlaceholder}
               className="rounded-xl h-11"
             />
           </div>
@@ -75,13 +79,13 @@ export default function AddTripDocumentDialog({ tripId, open, onOpenChange }: Pr
               className="flex-1 rounded-xl"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {dictionary.tripCreate.cancel}
             </Button>
             <SubmitButton
               className="flex-1 rounded-xl"
-              pendingLabel="Adding..."
+              pendingLabel={dictionary.common.adding}
             >
-              Add
+              {dictionary.common.add}
             </SubmitButton>
           </DialogFooter>
         </form>

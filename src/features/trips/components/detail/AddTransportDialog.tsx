@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Check, Loader2, Plane, Route } from "lucide-react";
 import {
   addTransportAction,
@@ -28,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getClientDictionary } from "@/features/i18n/client";
 import { cn } from "@/lib/utils";
 import type { FlightRouteSuggestion } from "@/types/trip-logistics";
 import type { TripTransportItem } from "@/types/trip-logistics";
@@ -59,6 +61,8 @@ export default function AddTransportDialog({
   onOpenChange,
   initialTransport = null,
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const isEditing = Boolean(initialTransport);
   const [state, formAction] = useActionState(
     isEditing ? updateTransportAction : addTransportAction,
@@ -289,9 +293,13 @@ export default function AddTransportDialog({
         }
       }}
     >
-        <DialogContent className="mx-auto flex max-h-[calc(100vh-2rem)] w-[min(100%-1rem,44rem)] max-w-[44rem] flex-col overflow-hidden rounded-2xl px-2 sm:w-[44rem] sm:max-w-[44rem] md:px-4">
+      <DialogContent className="mx-auto flex max-h-[calc(100vh-2rem)] w-[min(100%-1rem,44rem)] max-w-[44rem] flex-col overflow-hidden rounded-2xl px-2 sm:w-[44rem] sm:max-w-[44rem] md:px-4">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit transport" : "Add transport"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? dictionary.tripDetail.editTransport
+              : dictionary.tripDetail.addTransport}
+          </DialogTitle>
         </DialogHeader>
         <form action={formAction} className="space-y-4 overflow-x-hidden overflow-y-auto pr-1">
           <input type="hidden" name="tripId" value={tripId} />
@@ -391,7 +399,7 @@ export default function AddTransportDialog({
           />
 
           <div className="space-y-1.5">
-            <Label>Type</Label>
+            <Label>{dictionary.tripDetail.transportType}</Label>
             <Select value={type} onValueChange={(value) => setType(value as "flight" | "custom")}>
               <SelectTrigger className="rounded-xl h-11">
                 <SelectValue />
@@ -399,12 +407,12 @@ export default function AddTransportDialog({
               <SelectContent>
                 <SelectItem value="flight">
                   <span className="inline-flex items-center gap-2">
-                    <Plane className="w-4 h-4" /> Flight
+                    <Plane className="w-4 h-4" /> {dictionary.tripDetail.flight}
                   </span>
                 </SelectItem>
                 <SelectItem value="custom">
                   <span className="inline-flex items-center gap-2">
-                    <Route className="w-4 h-4" /> Custom
+                    <Route className="w-4 h-4" /> {dictionary.tripDetail.customTransport}
                   </span>
                 </SelectItem>
               </SelectContent>
@@ -414,7 +422,7 @@ export default function AddTransportDialog({
           {type === "flight" ? (
             <>
               <div className="space-y-1.5">
-                <Label>Flight number</Label>
+                <Label>{dictionary.tripDetail.flightNumber}</Label>
                 <Input
                   name="flightNumber"
                   value={flightNumber}
@@ -422,12 +430,12 @@ export default function AddTransportDialog({
                     setFlightNumber(event.target.value);
                     setSelectedSuggestionId("");
                   }}
-                  placeholder="e.g. AC849"
+                  placeholder={dictionary.tripDetail.flightNumberPlaceholder}
                   className="rounded-xl h-11"
                   autoComplete="off"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Enter a valid flight number to fetch route suggestions from AirLabs.
+                  {dictionary.tripDetail.flightLookupHelp}
                 </p>
               </div>
 
@@ -435,12 +443,12 @@ export default function AddTransportDialog({
                 <div className="space-y-2 rounded-2xl border border-border bg-muted/20 p-3">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium text-foreground">
-                      Route suggestions
+                      {dictionary.tripDetail.routeSuggestions}
                     </p>
                     {isLookingUp ? (
                       <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Searching
+                        {dictionary.planner.searching}
                       </span>
                     ) : null}
                   </div>
@@ -482,23 +490,24 @@ export default function AddTransportDialog({
                 </div>
               ) : flightNumber.trim() ? (
                 <p className="text-sm text-muted-foreground">
-                  Flight number format should look like <span className="font-medium">AC849</span>.
+                  {dictionary.tripDetail.flightNumberFormatPrefix}{" "}
+                  <span className="font-medium">AC849</span>.
                 </p>
               ) : null}
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Departure date</Label>
+                  <Label>{dictionary.tripDetail.departureDate}</Label>
                   <DatePicker
                     name="departureDate"
                     value={departureDate}
                     onChange={setDepartureDate}
                     className="rounded-xl"
-                    placeholder="Pick departure date"
+                    placeholder={dictionary.tripDetail.pickDepartureDate}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Departure time</Label>
+                  <Label>{dictionary.tripDetail.departureTime}</Label>
                   <Input
                     type="time"
                     name="departureTime"
@@ -510,17 +519,17 @@ export default function AddTransportDialog({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Arrival date</Label>
+                  <Label>{dictionary.tripDetail.arrivalDate}</Label>
                   <DatePicker
                     name="arrivalDate"
                     value={arrivalDate}
                     onChange={setArrivalDate}
                     className="rounded-xl"
-                    placeholder="Pick arrival date"
+                    placeholder={dictionary.tripDetail.pickArrivalDate}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Arrival time</Label>
+                  <Label>{dictionary.tripDetail.arrivalTime}</Label>
                   <Input
                     type="time"
                     name="arrivalTime"
@@ -532,7 +541,7 @@ export default function AddTransportDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label>Departure airport</Label>
+                <Label>{dictionary.tripDetail.departureAirport}</Label>
                 <PlaceSearchInput
                   apiKey={apiKey}
                   value={departureQuery}
@@ -545,13 +554,13 @@ export default function AddTransportDialog({
                     setDepartureQuery(location.name);
                     setDeparture(location);
                   }}
-                  placeholder="Search for the departure airport"
+                  placeholder={dictionary.tripDetail.departureAirportPlaceholder}
                   autoFocus={false}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label>Arrival airport</Label>
+                <Label>{dictionary.tripDetail.arrivalAirport}</Label>
                 <PlaceSearchInput
                   apiKey={apiKey}
                   value={destinationQuery}
@@ -564,7 +573,7 @@ export default function AddTransportDialog({
                     setDestinationQuery(location.name);
                     setDestination(location);
                   }}
-                  placeholder="Search for the arrival airport"
+                  placeholder={dictionary.tripDetail.arrivalAirportPlaceholder}
                   autoFocus={false}
                 />
               </div>
@@ -572,28 +581,28 @@ export default function AddTransportDialog({
           ) : (
             <>
               <div className="space-y-1.5">
-                <Label>Transport title</Label>
+                <Label>{dictionary.tripDetail.transportTitle}</Label>
                 <Input
                   name="title"
                   value={customTitle}
                   onChange={(event) => setCustomTitle(event.target.value)}
-                  placeholder="e.g. Ferry to island"
+                  placeholder={dictionary.tripDetail.transportTitlePlaceholder}
                   className="rounded-xl h-11"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Departure date</Label>
+                  <Label>{dictionary.tripDetail.departureDate}</Label>
                   <DatePicker
                     name="departureDate"
                     value={departureDate}
                     onChange={setDepartureDate}
                     className="rounded-xl"
-                    placeholder="Pick departure date"
+                    placeholder={dictionary.tripDetail.pickDepartureDate}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Departure time</Label>
+                  <Label>{dictionary.tripDetail.departureTime}</Label>
                   <Input
                     type="time"
                     name="departureTime"
@@ -605,17 +614,17 @@ export default function AddTransportDialog({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Arrival date</Label>
+                  <Label>{dictionary.tripDetail.arrivalDate}</Label>
                   <DatePicker
                     name="arrivalDate"
                     value={arrivalDate}
                     onChange={setArrivalDate}
                     className="rounded-xl"
-                    placeholder="Pick arrival date"
+                    placeholder={dictionary.tripDetail.pickArrivalDate}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Arrival time</Label>
+                  <Label>{dictionary.tripDetail.arrivalTime}</Label>
                   <Input
                     type="time"
                     name="arrivalTime"
@@ -626,7 +635,7 @@ export default function AddTransportDialog({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Departure location</Label>
+                <Label>{dictionary.tripDetail.departureLocation}</Label>
                 <PlaceSearchInput
                   apiKey={apiKey}
                   value={departureQuery}
@@ -638,12 +647,12 @@ export default function AddTransportDialog({
                     setDepartureQuery(location.name);
                     setDeparture(location);
                   }}
-                  placeholder="Search for the departure location"
+                  placeholder={dictionary.tripDetail.departureLocationPlaceholder}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label>Destination</Label>
+                <Label>{dictionary.tripDetail.destination}</Label>
                 <PlaceSearchInput
                   apiKey={apiKey}
                   value={destinationQuery}
@@ -655,7 +664,7 @@ export default function AddTransportDialog({
                     setDestinationQuery(location.name);
                     setDestination(location);
                   }}
-                  placeholder="Search for the destination"
+                  placeholder={dictionary.tripDetail.destinationPlaceholder}
                   autoFocus={false}
                 />
               </div>
@@ -674,14 +683,14 @@ export default function AddTransportDialog({
                 resetForm();
               }}
             >
-              Cancel
+              {dictionary.tripCreate.cancel}
             </Button>
             <SubmitButton
               className="flex-1 rounded-xl"
-              pendingLabel={isEditing ? "Saving..." : "Adding..."}
+              pendingLabel={isEditing ? dictionary.common.saving : dictionary.common.adding}
               disabled={type === "flight" ? !canSubmitFlight : undefined}
             >
-              {isEditing ? "Save" : "Add"}
+              {isEditing ? dictionary.common.save : dictionary.common.add}
             </SubmitButton>
           </DialogFooter>
         </form>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { Search, X, MapPin, Loader2 } from "lucide-react";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { PendingLocation } from "@/features/planner/components/plan-map/types";
 
 type Prediction = {
@@ -19,6 +21,8 @@ type Props = {
 // Rendered only after importLibrary("places") has resolved in PlanMapClient.
 // Uses the new AutocompleteSuggestion API (AutocompleteService is legacy-only).
 export default function MapSearchBox({ map, onSelect, className }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [query, setQuery] = useState("");
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -109,7 +113,7 @@ export default function MapSearchBox({ map, onSelect, className }: Props) {
           onChange={handleInputChange}
           onFocus={() => query && setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
-          placeholder="Search for a place..."
+          placeholder={dictionary.planner.searchPlacePlaceholder}
           className="h-11 w-full rounded-xl border border-border bg-card pl-9 pr-9 text-sm font-medium text-foreground shadow-lg outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-primary"
         />
         {loading && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
@@ -126,7 +130,11 @@ export default function MapSearchBox({ map, onSelect, className }: Props) {
 
       {showDropdown && (
         <div className="mt-1 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
-          {loading && <div className="px-4 py-3 text-center text-sm text-muted-foreground">Searching…</div>}
+          {loading && (
+            <div className="px-4 py-3 text-center text-sm text-muted-foreground">
+              {dictionary.planner.searching}
+            </div>
+          )}
           {!loading && predictions.map((p, i) => (
             <button
               key={i}

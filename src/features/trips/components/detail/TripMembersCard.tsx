@@ -1,3 +1,4 @@
+import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp, Trash2, Users } from "lucide-react";
 import { removeTripMemberAction } from "@/features/trips/actions";
 import SubmitButton from "@/features/shared/components/SubmitButton";
@@ -5,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { TripMember } from "@/types/travel";
 
 type Props = {
@@ -22,6 +24,8 @@ export default function TripMembersCard({
   open,
   onOpenChange,
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   return (
     <Collapsible
       open={open}
@@ -30,7 +34,7 @@ export default function TripMembersCard({
     >
       <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors">
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Users className="w-4 h-4 text-muted-foreground" /> Trip Members
+          <Users className="w-4 h-4 text-muted-foreground" /> {dictionary.tripDetail.tripMembers}
           <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
             {members.length}
           </span>
@@ -58,7 +62,7 @@ export default function TripMembersCard({
                 </div>
                 {member.isOwner ? (
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                    Owner
+                    {dictionary.tripDetail.owner}
                   </Badge>
                 ) : null}
                 {isOwner && !member.isOwner ? (

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Calendar as CalendarIcon,
   ChevronDown,
@@ -42,6 +42,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import TimePicker from "@/components/ui/TimePicker";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { Stop, TripDoc } from "@/features/planner/components/plan-map/types";
 
 type Props = {
@@ -78,6 +79,8 @@ export default function StopDetailModal({
   canVisitAgain = true,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const canEdit = stop.editable !== false;
   const updateAction =
     accessMode === "guest" ? updateGuestStopAction : updateStopAction;
@@ -148,7 +151,7 @@ export default function StopDetailModal({
 
   const formattedDate = (() => {
     if (!stop.date) {
-      return "Not scheduled yet";
+      return dictionary.planner.notScheduledYet;
     }
 
     try {
@@ -207,7 +210,7 @@ export default function StopDetailModal({
             ))}
             <div className="grid grid-cols-1 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-500">Date</Label>
+                <Label className="text-xs font-medium text-gray-500">{dictionary.planner.date}</Label>
                 <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_12rem]">
                   <div className="overflow-hidden rounded-2xl border border-border bg-background">
                     <Calendar
@@ -236,7 +239,7 @@ export default function StopDetailModal({
                       htmlFor="stop-edit-date-input"
                       className="text-xs font-medium text-gray-500"
                     >
-                      Enter date
+                      {dictionary.planner.enterDate}
                     </Label>
                     <Input
                       id="stop-edit-date-input"
@@ -261,24 +264,24 @@ export default function StopDetailModal({
                       }}
                       disabled={!date}
                     >
-                      Clear date
+                      {dictionary.planner.clearDate}
                     </Button>
                   </div>
                 </div>
                 <p className="text-[11px] text-gray-400">
-                  Leave blank to keep this stop in the unscheduled list.
+                  {dictionary.planner.dateBlankHint}
                 </p>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-500">Time</Label>
+                <Label className="text-xs font-medium text-gray-500">{dictionary.planner.timeOptional}</Label>
                 <TimePicker value={time} onChange={setTime} />
                 <p className="text-[11px] text-gray-400">
-                  Optional when a date is selected.
+                  {dictionary.planner.timeOptionalWhenDate}
                 </p>
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-gray-500">Notes</Label>
+              <Label className="text-xs font-medium text-gray-500">{dictionary.planner.notes}</Label>
               <Textarea
                 name="notes"
                 value={notes}
@@ -286,7 +289,7 @@ export default function StopDetailModal({
                 maxLength={500}
                 className="resize-none rounded-xl text-sm"
                 rows={3}
-                placeholder="Add notes..."
+                placeholder={dictionary.planner.notesPlaceholder}
               />
               <p className="text-right text-[11px] text-muted-foreground">
                 {notes.length}/500
@@ -296,7 +299,7 @@ export default function StopDetailModal({
             {tripDocs.length > 0 ? (
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-gray-500">
-                  Linked Documents
+                  {dictionary.planner.linkDocuments}
                 </Label>
                 <div className="divide-y divide-gray-50 overflow-hidden rounded-2xl border border-gray-200">
                   {tripDocs.map((document) => {
@@ -344,8 +347,10 @@ export default function StopDetailModal({
                 </div>
                 {editLinkedDocs.length > 0 ? (
                   <p className="text-xs text-primary">
-                    {editLinkedDocs.length} document
-                    {editLinkedDocs.length !== 1 ? "s" : ""} linked
+                    {(editLinkedDocs.length === 1
+                      ? dictionary.planner.documentsLinkedCount
+                      : dictionary.planner.documentsLinkedCountPlural
+                    ).replace("{count}", String(editLinkedDocs.length))}
                   </p>
                 ) : null}
               </div>
@@ -359,9 +364,9 @@ export default function StopDetailModal({
             {relatedVisits.length > 1 ? (
               <details open className="overflow-hidden rounded-2xl border border-border">
                     <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 transition-colors hover:bg-muted/60">
-                      <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <CalendarIcon className="h-4 w-4 text-primary" />
-                    Visit Times
+                    {dictionary.planner.visitTimes}
                     <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
                       {relatedVisits.length}
                     </span>
@@ -405,14 +410,14 @@ export default function StopDetailModal({
                               </>
                             ) : (
                               <span className="text-xs text-muted-foreground">
-                                No time set
+                                {dictionary.planner.noTimeSet}
                               </span>
                             )}
                           </div>
                         </div>
                         {isCurrent ? (
                           <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[11px] font-medium text-primary">
-                            Current
+                            {dictionary.planner.current}
                           </span>
                         ) : null}
                       </div>
@@ -440,7 +445,7 @@ export default function StopDetailModal({
 
             {stop.notes ? (
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="mb-1 text-xs font-medium text-gray-400">NOTES</p>
+                <p className="mb-1 text-xs font-medium text-gray-400">{dictionary.planner.notes.toUpperCase()}</p>
                 <p className="whitespace-pre-wrap text-sm text-gray-700">
                   {stop.notes}
                 </p>
@@ -455,7 +460,8 @@ export default function StopDetailModal({
                   onClick={() => setShowContact((value) => !value)}
                 >
                   <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Contact className="h-4 w-4 text-muted-foreground" /> Contact
+                    <Contact className="h-4 w-4 text-muted-foreground" />{" "}
+                    {dictionary.planner.contact}
                   </span>
                   {showContact ? (
                     <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -508,7 +514,7 @@ export default function StopDetailModal({
                   onClick={() => setShowHours((value) => !value)}
                 >
                   <span className="text-sm font-semibold text-foreground">
-                    Opening Hours
+                    {dictionary.planner.openingHours}
                   </span>
                   {showHours ? (
                     <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -539,7 +545,8 @@ export default function StopDetailModal({
                   onClick={() => setShowDocs((value) => !value)}
                 >
                   <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <FileText className="h-4 w-4 text-muted-foreground" /> Documents
+                    <FileText className="h-4 w-4 text-muted-foreground" />{" "}
+                    {dictionary.planner.documents}
                     {linkedDocs.length > 0 ? (
                       <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
                         {linkedDocs.length}
@@ -556,7 +563,7 @@ export default function StopDetailModal({
                   <div className="border-t border-border">
                     {linkedDocs.length === 0 ? (
                       <p className="py-4 text-center text-xs text-gray-400">
-                        No documents linked to this stop
+                        {dictionary.planner.noDocumentsLinked}
                       </p>
                     ) : (
                       <div className="divide-y divide-border/60">
@@ -593,7 +600,7 @@ export default function StopDetailModal({
           confirmDelete ? (
             <div className="space-y-2">
               <p className="text-center text-sm text-gray-500">
-                Are you sure you want to delete this stop?
+                {dictionary.planner.deleteStopConfirm}
               </p>
               <div className="flex gap-3">
                 <Button
@@ -602,7 +609,7 @@ export default function StopDetailModal({
                   className="h-11 flex-1 rounded-xl"
                   onClick={() => setConfirmDelete(false)}
                 >
-                  No, keep it
+                  {dictionary.planner.deleteKeep}
                 </Button>
                 <form
                   action={
@@ -618,9 +625,9 @@ export default function StopDetailModal({
                   <SubmitButton
                     variant="destructive"
                     className="h-11 w-full rounded-xl"
-                    pendingLabel="Deleting..."
+                    pendingLabel={dictionary.planner.deleting}
                   >
-                    Yes, delete
+                    {dictionary.planner.deleteConfirm}
                   </SubmitButton>
                 </form>
               </div>
@@ -632,14 +639,14 @@ export default function StopDetailModal({
                   href={viewHref}
                   className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-border bg-background text-sm font-medium text-foreground transition-colors hover:bg-muted"
                 >
-                  Cancel
+                  {dictionary.planner.cancel}
                 </Link>
                 <SubmitButton
                   form="stop-update-form"
                   className="h-11 flex-1 rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
-                  pendingLabel="Saving..."
+                  pendingLabel={dictionary.planner.saving}
                 >
-                  Save Changes
+                  {dictionary.planner.saveChanges}
                 </SubmitButton>
               </div>
               <Button
@@ -648,7 +655,7 @@ export default function StopDetailModal({
                 className="h-10 w-full gap-2 rounded-xl border-red-200 text-red-500 hover:bg-red-50"
                 onClick={() => setConfirmDelete(true)}
               >
-                <Trash2 className="h-4 w-4" /> Delete Stop
+                <Trash2 className="h-4 w-4" /> {dictionary.planner.deleteStop}
               </Button>
             </div>
           )
@@ -659,7 +666,7 @@ export default function StopDetailModal({
               onClick={() => prevHref && router.push(prevHref)}
               disabled={!prevHref}
               className="flex w-11 shrink-0 flex-col items-center justify-center rounded-xl border border-border bg-card transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Previous stop"
+              aria-label={dictionary.planner.previousStop}
             >
               <ChevronLeft className="h-5 w-5 text-muted-foreground" />
             </button>
@@ -672,7 +679,8 @@ export default function StopDetailModal({
                 className="block"
               >
                 <Button className="h-11 w-full gap-2 rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-primary/90">
-                  <ExternalLink className="h-4 w-4" /> Open in Google Maps
+                  <ExternalLink className="h-4 w-4" />{" "}
+                  {dictionary.planner.openInGoogleMaps}
                 </Button>
               </a>
               <div className="flex gap-2">
@@ -682,7 +690,7 @@ export default function StopDetailModal({
                       href={editHref}
                       className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                     >
-                      <Edit2 className="h-4 w-4" /> Edit
+                      <Edit2 className="h-4 w-4" /> {dictionary.planner.edit}
                     </Link>
                     {canVisitAgain ? (
                       <Button
@@ -695,7 +703,8 @@ export default function StopDetailModal({
                           setShowVisitAgain(true);
                         }}
                       >
-                        <RefreshCw className="h-4 w-4" /> Visit Again
+                        <RefreshCw className="h-4 w-4" />{" "}
+                        {dictionary.planner.visitAgain}
                       </Button>
                     ) : null}
                   </>
@@ -708,7 +717,7 @@ export default function StopDetailModal({
               onClick={() => nextHref && router.push(nextHref)}
               disabled={!nextHref}
               className="flex w-11 shrink-0 flex-col items-center justify-center rounded-xl border border-border bg-card transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Next stop"
+              aria-label={dictionary.planner.nextStop}
             >
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </button>
@@ -729,11 +738,15 @@ export default function StopDetailModal({
             <input type="hidden" name="tripId" value={tripId} />
             <input type="hidden" name="stopId" value={stop._id} />
             <input type="hidden" name="returnTo" value={viewHref} />
-            <h3 className="text-lg font-bold text-foreground">Add Another Visit</h3>
+            <h3 className="text-lg font-bold text-foreground">
+              {dictionary.planner.addAnotherVisit}
+            </h3>
             <p className="-mt-1 text-sm text-muted-foreground">{stop.name}</p>
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-500">Date</Label>
+                <Label className="text-xs font-medium text-gray-500">
+                  {dictionary.planner.date}
+                </Label>
                 <input type="hidden" name="date" value={newVisitDate} />
                 <div className="overflow-hidden rounded-2xl border border-border bg-background">
                   <Calendar
@@ -758,11 +771,13 @@ export default function StopDetailModal({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-500">Time</Label>
+                <Label className="text-xs font-medium text-gray-500">
+                  {dictionary.planner.timeOptional}
+                </Label>
                 <TimePicker value={newVisitTime} onChange={setNewVisitTime} />
                 <input type="hidden" name="time" value={newVisitTime} />
                 <p className="text-[11px] text-gray-400">
-                  Optional when a date is selected.
+                  {dictionary.planner.timeOptionalWhenDate}
                 </p>
               </div>
             </div>
@@ -773,14 +788,14 @@ export default function StopDetailModal({
                 className="h-11 flex-1 rounded-xl"
                 onClick={() => setShowVisitAgain(false)}
               >
-                Cancel
+                {dictionary.planner.cancel}
               </Button>
               <SubmitButton
                 className="h-11 flex-1 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                 disabled={!newVisitDate}
-                pendingLabel="Adding..."
+                pendingLabel={dictionary.planner.adding}
               >
-                Add
+                {dictionary.planner.add}
               </SubmitButton>
             </div>
           </form>

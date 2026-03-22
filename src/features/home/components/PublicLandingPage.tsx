@@ -2,56 +2,60 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import BrandLogo from "@/components/layout/BrandLogo";
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import { signInWithAuth0Action } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
+import { getRequestDictionary } from "@/features/i18n/server";
+import { localizeHref } from "@/features/i18n/config";
 
-const showcaseCards = [
-  {
-    title: "See your itinerary and map together",
-    copy: "Lay out each stop on a real route, keep the day sequence visible, and understand the trip at a glance instead of juggling separate notes and map tabs.",
-    extraImg: "/material/Cat_1.png",
-    mediaType: "video" as const,
-    mediaSrc: "/material/Recording_1.mp4",
-    mediaAlt: "Planner map and itinerary recording",
-    mediaSide: "left" as const,
-  },
-  {
-    title: "Plan your route effortlessly",
-    copy: "See the trip as a timeline and a map, calculate movement between stops, and keep the day sequence clear while the itinerary evolves.",
-    extraImg: "/material/Compass.png",
-    mediaType: "image" as const,
-    mediaSrc: "/material/Route.jpg",
-    mediaAlt: "Route illustration",
-    mediaSide: "right" as const,
-  },
-  {
-    title: "Keep transport, stays, notes, and timing in one plan",
-    copy: "Flights, hotels, route details, documents, and day-by-day stops belong in the same trip, so the plan stays readable from first sketch to travel day.",
-    mediaType: "video" as const,
-    mediaSrc: "/material/Transport_recording.mp4",
-    mediaAlt: "Transport planning recording",
-    mediaSide: "left" as const,
-  },
-  {
-    title: "Plan together and keep everyone on the same page",
-    copy: "Share the trip, collaborate with friends, and keep the schedule readable for everyone instead of passing details around in separate chats.",
-    extraImg: "/material/Notebook.png",
-    mediaType: "video" as const,
-    mediaSrc: "/material/Recording_2.mp4",
-    mediaAlt: "Collaboration planning recording",
-    mediaSide: "left" as const,
-  },
-  {
-    title: "Track expenses without losing the trip context",
-    copy: "Keep spending alongside the itinerary, so transport, stays, shared costs, and trip planning stay connected in the same workspace.",
-    mediaType: "video" as const,
-    mediaSrc: "/material/Recording_3.mp4",
-    mediaAlt: "Expense tracking recording",
-    mediaSide: "right" as const,
-  },
-];
+export default async function PublicLandingPage() {
+  const { dictionary, locale } = await getRequestDictionary();
+  const showcaseCards = [
+    {
+      title: dictionary.landing.featureItineraryTitle,
+      copy: dictionary.landing.featureItineraryCopy,
+      extraImg: "/material/Cat_1.png",
+      mediaType: "video" as const,
+      mediaSrc: "/material/Recording_1.mp4",
+      mediaAlt: "Planner map and itinerary recording",
+      mediaSide: "left" as const,
+    },
+    {
+      title: dictionary.landing.featureRouteTitle,
+      copy: dictionary.landing.featureRouteCopy,
+      extraImg: "/material/Compass.png",
+      mediaType: "image" as const,
+      mediaSrc: "/material/Route.jpg",
+      mediaAlt: "Route illustration",
+      mediaSide: "right" as const,
+    },
+    {
+      title: dictionary.landing.featureLogisticsTitle,
+      copy: dictionary.landing.featureLogisticsCopy,
+      mediaType: "video" as const,
+      mediaSrc: "/material/Transport_recording.mp4",
+      mediaAlt: "Transport planning recording",
+      mediaSide: "left" as const,
+    },
+    {
+      title: dictionary.landing.featureCollaborateTitle,
+      copy: dictionary.landing.featureCollaborateCopy,
+      extraImg: "/material/Notebook.png",
+      mediaType: "video" as const,
+      mediaSrc: "/material/Recording_2.mp4",
+      mediaAlt: "Collaboration planning recording",
+      mediaSide: "left" as const,
+    },
+    {
+      title: dictionary.landing.featureExpenseTitle,
+      copy: dictionary.landing.featureExpenseCopy,
+      mediaType: "video" as const,
+      mediaSrc: "/material/Recording_3.mp4",
+      mediaAlt: "Expense tracking recording",
+      mediaSide: "right" as const,
+    },
+  ];
 
-export default function PublicLandingPage() {
   return (
     <main className="flex min-h-screen flex-col overflow-x-hidden bg-[#f6f4ef] text-[#231c18]">
       <section className="relative min-h-screen overflow-hidden">
@@ -77,53 +81,73 @@ export default function PublicLandingPage() {
                 labelClassName="text-base text-[#f7f2e8]"
               />
               <div className="flex items-center gap-2">
+                <LanguageSwitcher variant="solid" className="h-11 px-3" />
                 <form action={signInWithAuth0Action}>
                   <input
                     type="hidden"
                     name="redirectTo"
-                    value="/auth/post-login"
+                    value={localizeHref(locale, "/auth/post-login")}
                   />
                   <Button
                     type="submit"
                     variant="outline"
                     className="h-11 rounded-lg border-white/15 bg-white/8 px-5 text-[#f7f2e8] hover:bg-white/12"
                   >
-                    Sign in
+                    {dictionary.landing.signIn}
                   </Button>
                 </form>
-                <Link href="/try">
+                <Link href={localizeHref(locale, "/try")}>
                   <Button className="h-11 rounded-lg bg-[#2f6e62] px-5 text-[#f7f2e8] hover:bg-[#285b51]">
-                    Try it out
+                    {dictionary.landing.tryItOut}
                   </Button>
                 </Link>
               </div>
             </div>
           </header>
 
+          <div className="absolute right-4 top-4 hidden z-20 md:flex items-center gap-2 sm:right-6 lg:right-8">
+            <LanguageSwitcher variant="solid" className="h-11 px-3" />
+            <form action={signInWithAuth0Action}>
+              <input
+                type="hidden"
+                name="redirectTo"
+                value={localizeHref(locale, "/auth/post-login")}
+              />
+              <Button
+                type="submit"
+                variant="outline"
+                className="h-11 rounded-lg border-white/15 bg-white/8 px-5 text-[#f7f2e8] hover:bg-white/12"
+              >
+                {dictionary.landing.signIn}
+              </Button>
+            </form>
+            <Link href={localizeHref(locale, "/try")}>
+              <Button className="h-11 rounded-lg bg-[#2f6e62] px-5 text-[#f7f2e8] hover:bg-[#285b51]">
+                {dictionary.landing.tryItOut}
+              </Button>
+            </Link>
+          </div>
+
           <div className="flex flex-1 items-center px-4 py-14 sm:px-6 lg:px-8">
             <div className="mx-auto flex w-full max-w-7xl justify-center text-center">
               <div className="w-full max-w-5xl">
                 <h1 className="font-brand text-3xl font-semibold leading-[0.93] tracking-[-0.05em] text-[#fff6ec] md:text-[clamp(3.3rem,8vw,7rem)]">
-                  Roamer&apos;s Ledger
+                  {dictionary.landing.heroTitle}
                 </h1>
                 <h2 className="mt-6 text-xl text-[#9fd3c8] md:text-5xl">
-                  Itinerary, map, expenses, travel notes & more in one place
+                  {dictionary.landing.heroSubtitle}
                 </h2>
-                <p className="mx-auto mt-6 max-w-3xl text-md md:text-xl leading-8 text-[#8eac9c]">
-                  A project built out of personal interest. Plan the route, keep the
-                  schedule readable, organize stays and transport, collaborate
-                  with friends, get suggestions & more.
+                <p className="mx-auto mt-6 max-w-3xl text-md leading-8 text-[#8eac9c] md:text-xl">
+                  {dictionary.landing.heroBody}
                 </p>
                 <p className="mx-auto mt-6 max-w-3xl text-xl leading-8 text-[#dce9e2]">
-                  Everything you can found in a paid travel planner app. You can
-                  get it done for{" "}
-                  <span className="text-2xl font-bold"> FREE</span> here.
+                  {dictionary.landing.heroFree}
                 </p>
 
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                  <Link href="/try">
+                  <Link href={localizeHref(locale, "/try")}>
                     <Button className="h-12 min-w-40 rounded-lg bg-[#2f6e62] px-6 text-[#f7f2e8] hover:bg-[#285b51]">
-                      Try it out
+                      {dictionary.landing.tryItOut}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
@@ -131,14 +155,14 @@ export default function PublicLandingPage() {
                     <input
                       type="hidden"
                       name="redirectTo"
-                      value="/auth/post-login"
+                      value={localizeHref(locale, "/auth/post-login")}
                     />
                     <Button
                       type="submit"
                       variant="outline"
                       className="h-12 min-w-40 rounded-lg border-white/15 bg-white/8 px-6 text-[#f7f2e8] hover:bg-white/12"
                     >
-                      Sign In
+                      {dictionary.landing.signIn}
                     </Button>
                   </form>
                 </div>
@@ -152,10 +176,10 @@ export default function PublicLandingPage() {
         <div className="mx-auto max-w-6xl">
           <div className="mb-10 max-w-3xl">
             <p className="text-sm uppercase tracking-[0.28em] text-[#6d6a64]">
-              Travel Planner
+              {dictionary.landing.sectionEyebrow}
             </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[#231c18] sm:text-4xl">
-              Plan your trips with friends and track your expenses in one place.
+              {dictionary.landing.sectionTitle}
             </h2>
           </div>
 
@@ -240,40 +264,40 @@ export default function PublicLandingPage() {
       <section className="border-t border-[#d7d2c7] bg-[#f1eee8] px-4 py-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="text-[11px] text-[#84786d]">
-            Features:{" "}
+            {dictionary.landing.featuresLabel}:{" "}
             <Link
-              href="/features/itinerary-planner"
+              href={localizeHref(locale, "/features/itinerary-planner")}
               className="hover:text-[#2f6e62] hover:underline"
             >
-              Itinerary Planner
+              {dictionary.landing.featureItineraryLink}
             </Link>
             {" · "}
             <Link
-              href="/features/route-planner"
+              href={localizeHref(locale, "/features/route-planner")}
               className="hover:text-[#2f6e62] hover:underline"
             >
-              Route Planner
+              {dictionary.landing.featureRouteLink}
             </Link>
             {" · "}
             <Link
-              href="/features/group-trip-planning"
+              href={localizeHref(locale, "/features/group-trip-planning")}
               className="hover:text-[#2f6e62] hover:underline"
             >
-              Group Trips
+              {dictionary.landing.featureGroupLink}
             </Link>
             {" · "}
             <Link
-              href="/features/travel-expense-tracker"
+              href={localizeHref(locale, "/features/travel-expense-tracker")}
               className="hover:text-[#2f6e62] hover:underline"
             >
-              Expense Tracking
+              {dictionary.landing.featureExpenseLink}
             </Link>
             {" · "}
             <Link
-              href="/features/trip-pdf-export"
+              href={localizeHref(locale, "/features/trip-pdf-export")}
               className="hover:text-[#2f6e62] hover:underline"
             >
-              Trip PDF
+              {dictionary.landing.featurePdfLink}
             </Link>
           </div>
         </div>

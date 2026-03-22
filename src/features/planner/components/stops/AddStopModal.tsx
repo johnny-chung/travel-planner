@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { usePathname } from "next/navigation";
 import { MapPin, X, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import {
   createStopAction,
@@ -14,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import TimePicker from "@/components/ui/TimePicker";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { TripDoc } from "@/features/planner/components/plan-map/types";
 
 type Location = {
@@ -49,6 +51,8 @@ export default function AddStopModal({
   onCancel,
   accessMode = "user",
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const createAction =
     accessMode === "guest" ? createGuestStopAction : createStopAction;
   const [state, formAction] = useActionState(createAction, initialState);
@@ -125,10 +129,10 @@ export default function AddStopModal({
             <div className="flex items-center justify-between rounded-2xl border border-border bg-muted/30 px-4 py-3">
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  Save for later
+                  {dictionary.planner.saveForLaterTitle}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Keep this stop unscheduled for now.
+                  {dictionary.planner.saveForLaterHelp}
                 </p>
               </div>
               <Switch
@@ -140,11 +144,11 @@ export default function AddStopModal({
                     setTime("");
                   }
                 }}
-                aria-label="Save stop for later"
+                aria-label={dictionary.planner.saveForLaterTitle}
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Date</Label>
+              <Label className="text-sm font-medium">{dictionary.planner.date}</Label>
               <DatePicker
                 name="date"
                 value={date}
@@ -156,16 +160,16 @@ export default function AddStopModal({
                 }}
                 className="rounded-xl"
                 disabled={saveForLater}
-                placeholder="Pick a date"
+                placeholder={dictionary.planner.pickDate}
                 highlightDates={tripDates}
-                highlightLabel="Trip days are highlighted"
+                highlightLabel={dictionary.planner.tripDaysHighlighted}
               />
               <p className="text-xs text-muted-foreground">
-                Required unless you save this stop for later.
+                {dictionary.planner.dateRequiredHint}
               </p>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Time (Optional)</Label>
+              <Label className="text-sm font-medium">{dictionary.planner.timeOptional}</Label>
               <TimePicker
                 value={time}
                 onChange={setTime}
@@ -176,10 +180,10 @@ export default function AddStopModal({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Notes</Label>
+            <Label className="text-sm font-medium">{dictionary.planner.notes}</Label>
             <Textarea
               name="notes"
-              placeholder="Add notes about this stop..."
+              placeholder={dictionary.planner.notesPlaceholder}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               maxLength={500}
@@ -199,7 +203,7 @@ export default function AddStopModal({
                 onClick={() => setDocsOpen((v) => !v)}
               >
                 <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <FileText className="w-4 h-4 text-muted-foreground" /> Link Documents
+                  <FileText className="w-4 h-4 text-muted-foreground" /> {dictionary.planner.linkDocuments}
                   {linkedDocIds.length > 0 && (
                     <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
                       {linkedDocIds.length}
@@ -276,13 +280,13 @@ export default function AddStopModal({
             className="flex-1 rounded-xl h-12"
             onClick={onCancel}
           >
-            Cancel
+            {dictionary.planner.cancel}
           </Button>
           <SubmitButton
             className="flex-1 rounded-xl h-12 bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
-            pendingLabel="Saving..."
+            pendingLabel={dictionary.planner.saving}
           >
-            Save Stop
+            {dictionary.planner.saveStop}
           </SubmitButton>
         </div>
       </form>

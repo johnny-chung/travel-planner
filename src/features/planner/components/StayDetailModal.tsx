@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
   BedDouble,
   ExternalLink,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { TripStayItem } from "@/types/trip-logistics";
 
 type Props = {
@@ -17,6 +19,8 @@ type Props = {
 };
 
 export default function StayDetailModal({ stay }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stay.address)}&query_place_id=${stay.placeId}`;
 
   return (
@@ -31,7 +35,8 @@ export default function StayDetailModal({ stay }: Props) {
               {stay.name}
             </h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              {stay.checkInDate} to {stay.checkOutDate}
+              {stay.checkInDate} {dictionary.planner.dateRangeConnector}{" "}
+              {stay.checkOutDate}
             </p>
           </div>
         </div>
@@ -52,7 +57,7 @@ export default function StayDetailModal({ stay }: Props) {
 
         <div className="overflow-hidden rounded-xl border border-border">
           <div className="border-b border-border px-4 py-3 text-sm font-semibold text-foreground">
-            Contact
+            {dictionary.planner.contact}
           </div>
           <div className="divide-y divide-border/60">
             <div className="flex items-start gap-3 px-4 py-3">
@@ -91,7 +96,7 @@ export default function StayDetailModal({ stay }: Props) {
         <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="block">
           <Button className="h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-primary/90">
             <ExternalLink className="mr-2 h-4 w-4" />
-            Open in Google Maps
+            {dictionary.planner.openInGoogleMaps}
           </Button>
         </a>
       </div>

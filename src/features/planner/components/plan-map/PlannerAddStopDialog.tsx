@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
 import AddStopModal from "@/features/planner/components/stops/AddStopModal";
 import type {
@@ -16,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getClientDictionary } from "@/features/i18n/client";
 
 type Props = {
   tripId: string;
@@ -40,6 +42,8 @@ export default function PlannerAddStopDialog({
   triggerClassName,
   iconOnly = true,
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [pendingLocation, setPendingLocation] = useState<PendingLocation | null>(
@@ -80,27 +84,25 @@ export default function PlannerAddStopDialog({
         className={triggerClassName}
         onClick={() => handleOpenChange(true)}
         disabled={disabled}
-        aria-label="Add stop"
-        title="Add stop"
+        aria-label={dictionary.planner.addStopAria}
+        title={dictionary.planner.addStopAria}
       >
         <Plus className="w-5 h-5" />
-        {iconOnly ? null : <span>Add Stop</span>}
+        {iconOnly ? null : <span>{dictionary.planner.addStop}</span>}
       </Button>
 
       <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="rounded-3xl mx-4 max-w-md">
           <DialogHeader>
-            <DialogTitle>Add a stop</DialogTitle>
+            <DialogTitle>{dictionary.planner.addStopDialogTitle}</DialogTitle>
             <DialogDescription>
-              Search for a place first, then optionally assign a date and time
-              in the next step.
+              {dictionary.planner.addStopDialogDescription}
             </DialogDescription>
           </DialogHeader>
 
           {!apiKey ? (
             <p className="rounded-2xl border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
-              Google Maps is not configured. Add{" "}
-              <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> to use place search.
+              {dictionary.planner.mapsNotConfigured}
             </p>
           ) : (
             <PlaceSearchInput
@@ -108,7 +110,7 @@ export default function PlannerAddStopDialog({
               value={query}
               onChange={setQuery}
               onSelect={handleSelect}
-              placeholder="Search by address or place"
+              placeholder={dictionary.planner.placeSearchPlaceholder}
               autoFocus
             />
           )}

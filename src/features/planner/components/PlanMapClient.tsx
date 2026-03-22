@@ -30,6 +30,7 @@ import {
   buildPlannerStayModalHref,
   buildPlannerStopModalHref,
 } from "@/features/planner/route-hrefs";
+import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
 import { loadGoogleLibrary } from "@/lib/google-maps-loader";
 
 export default function PlanMapClient({
@@ -49,6 +50,12 @@ export default function PlanMapClient({
   accessMode = "user",
 }: PlanMapProps) {
   const router = useRouter();
+  const dictionary = getClientDictionary(pathname);
+  const locale = getClientLocale(pathname);
+  const googleMapsLoadErrorMessage = dictionary.planner.googleMapsLoadError;
+  const suggestionMarkerLabel = dictionary.planner.suggestionMarker;
+  const unscheduledMarkerLabel = dictionary.planner.saveForLaterStatus;
+  const stayMarkerLabel = dictionary.planner.stays;
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<google.maps.Map | null>(null);
   const searchStateRef = useRef(searchState);
@@ -347,12 +354,12 @@ export default function PlanMapClient({
         setMapLoaded(true);
       } catch (error) {
         console.error("Map init error:", error);
-        toast.error("Failed to load Google Maps. Check your API key.");
+        toast.error(googleMapsLoadErrorMessage);
       }
     };
 
     void init();
-  }, [googleMapsApiKey, plan, router, setFocusHref, stops]);
+  }, [googleMapsApiKey, googleMapsLoadErrorMessage, plan, router, setFocusHref, stops]);
 
   useEffect(() => {
     if (!googleMapRef.current || !mapLoaded) return;
@@ -391,6 +398,7 @@ export default function PlanMapClient({
           representative,
           isMultiVisit ? "M" : representative.order,
           color,
+          locale,
         );
         const marker = new AdvancedMarkerElement({
           map,
@@ -425,7 +433,10 @@ export default function PlanMapClient({
 
       if (!searchState.hideUnscheduledMap) {
         unscheduledStops.forEach((stop) => {
-          const markerElement = createUnscheduledMarkerElement(stop);
+          const markerElement = createUnscheduledMarkerElement(
+            stop,
+            unscheduledMarkerLabel,
+          );
           const marker = new AdvancedMarkerElement({
             map,
             position: { lat: stop.lat, lng: stop.lng },
@@ -449,7 +460,11 @@ export default function PlanMapClient({
 
       if (!searchState.hideStaysMap) {
         stays.forEach((stay) => {
-          const markerElement = createStayMarkerElement(stay);
+          const markerElement = createStayMarkerElement(
+            stay,
+            locale,
+            stayMarkerLabel,
+          );
           const marker = new AdvancedMarkerElement({
             map,
             position: { lat: stay.lat, lng: stay.lng },
@@ -479,13 +494,14 @@ export default function PlanMapClient({
               Math.abs(suggestion.lng - suggestionMarkerPoint.lng) < 0.000001,
           ) ?? null;
         const markerElement = createSuggestionMarkerElement(
-          selectedSuggestion?.name ?? "Suggestion",
+          selectedSuggestion?.name ?? suggestionMarkerLabel,
+          suggestionMarkerLabel,
         );
         const marker = new AdvancedMarkerElement({
           map,
           position: suggestionMarkerPoint,
           content: markerElement,
-          title: selectedSuggestion?.name ?? "Suggestion",
+          title: selectedSuggestion?.name ?? suggestionMarkerLabel,
         });
         markersRef.current.set("suggestion:active", marker);
       }
@@ -523,16 +539,19 @@ export default function PlanMapClient({
   }, [
     googleMapsApiKey,
     mapLoaded,
+    locale,
     openStayHref,
     openStopHref,
     router,
     searchState.hideStaysMap,
     searchState.hideUnscheduledMap,
+    stayMarkerLabel,
     suggestionMarkerPoint,
+    suggestionMarkerLabel,
     suggestions,
-    setFocusHref,
     stays,
     stops,
+    unscheduledMarkerLabel,
     unscheduledStops,
     groupedStopMarkers,
   ]);
@@ -620,8 +639,8 @@ export default function PlanMapClient({
           <div className="absolute bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 z-10 flex rounded-full bg-card shadow-lg border border-border overflow-hidden text-xs font-semibold">
             {(
               [
-                ["roadmap", "Map"],
-                ["hybrid", "Satellite"],
+                ["roadmap", dictionary.planner.mapLabel],
+                ["hybrid", dictionary.planner.satelliteLabel],
               ] as const
             ).map(([type, label]) => (
               <button
@@ -645,7 +664,9 @@ export default function PlanMapClient({
           <div className="absolute inset-0 flex items-center justify-center bg-muted">
             <div className="text-center">
               <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">Loading map...</p>
+              <p className="text-muted-foreground text-sm">
+                {dictionary.planner.loadingMap}
+              </p>
             </div>
           </div>
         ) : null}
@@ -654,10 +675,10 @@ export default function PlanMapClient({
           <div className="absolute inset-0 flex items-center justify-center bg-muted">
             <div className="text-center p-6">
               <p className="text-foreground font-medium">
-                Google Maps API key not configured
+                {dictionary.planner.mapsApiMissingTitle}
               </p>
               <p className="text-muted-foreground text-sm mt-1">
-                Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to .env.local
+                {dictionary.planner.mapsApiMissingBody}
               </p>
             </div>
           </div>

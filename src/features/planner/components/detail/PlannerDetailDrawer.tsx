@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   DrawerDescription,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { getClientDictionary } from "@/features/i18n/client";
 
 type Props = {
   children: React.ReactNode;
@@ -26,6 +27,8 @@ export default function PlannerDetailDrawer({
   closeHref,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const [open, setOpen] = useState(true);
   const isClosingRef = useRef(false);
 
@@ -71,7 +74,7 @@ export default function PlannerDetailDrawer({
             size="icon"
             className="shrink-0 rounded-full"
             onClick={handleClose}
-            aria-label="Close detail drawer"
+            aria-label={dictionary.planner.closeDetailDrawer}
           >
             <X className="h-4 w-4" />
           </Button>

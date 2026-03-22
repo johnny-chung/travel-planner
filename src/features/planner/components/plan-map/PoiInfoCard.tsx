@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   ChevronDown,
   ExternalLink,
@@ -23,6 +24,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { PendingLocation } from "@/features/planner/components/plan-map/types";
 
 type Props = {
@@ -38,6 +40,8 @@ export default function PoiInfoCard({
   onAdd,
   onClose,
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const [hoursOpen, setHoursOpen] = useState(false);
   const hasOpeningHours = poiInfo.openingHours.length > 0;
   const hasContact = Boolean(poiInfo.phone || poiInfo.website);
@@ -88,7 +92,10 @@ export default function PoiInfoCard({
                     </span>
                     {poiInfo.userRatingCount ? (
                       <span className="text-gray-400">
-                        ({poiInfo.userRatingCount.toLocaleString()} reviews)
+                        {dictionary.planner.reviewsCount.replace(
+                          "{count}",
+                          poiInfo.userRatingCount.toLocaleString(),
+                        )}
                       </span>
                     ) : null}
                   </div>
@@ -128,7 +135,7 @@ export default function PoiInfoCard({
                     className="rounded-2xl border border-gray-100 bg-gray-50/70"
                   >
                     <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 text-left font-medium text-gray-700">
-                      <span>Opening hours</span>
+                      <span>{dictionary.planner.openingHours}</span>
                       <ChevronDown
                         className={`h-4 w-4 text-gray-400 transition-transform ${
                           hoursOpen ? "rotate-180" : ""
@@ -160,14 +167,15 @@ export default function PoiInfoCard({
               rel="noopener noreferrer"
               className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
             >
-              <ExternalLink className="h-3.5 w-3.5" /> Google Maps
+              <ExternalLink className="h-3.5 w-3.5" />{" "}
+              {dictionary.planner.openInGoogleMaps}
             </a>
             {!isArchived ? (
               <button
                 className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90"
                 onClick={onAdd}
               >
-                <Plus className="h-3.5 w-3.5" /> Add to Plan
+                <Plus className="h-3.5 w-3.5" /> {dictionary.planner.addToPlan}
               </button>
             ) : null}
           </div>
@@ -189,7 +197,7 @@ export default function PoiInfoCard({
                       />
                       {photo.attributions.length > 0 ? (
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-3 pt-10 text-[11px] text-white/90">
-                          Photo:&nbsp;
+                          {dictionary.planner.photoCredit}&nbsp;
                           {photo.attributions.map((attribution, attributionIndex) => (
                             <span key={`${attribution.displayName}-${attributionIndex}`}>
                               {attribution.uri ? (

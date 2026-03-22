@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Loader2, Route } from "lucide-react";
 import {
   calculateAllTravelTimesAction,
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import SubmitButton from "@/features/shared/components/SubmitButton";
 import { useActionState } from "react";
+import { getClientDictionary } from "@/features/i18n/client";
 
 type Props = {
   tripId: string;
@@ -35,6 +37,8 @@ export default function CalculateTravelTimesDialog({
   triggerClassName,
   iconOnly = false,
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const [state, formAction] = useActionState<TravelTimeActionState, FormData>(
     calculateAllTravelTimesAction,
     {},
@@ -55,35 +59,33 @@ export default function CalculateTravelTimesDialog({
         variant="outline"
         size={iconOnly ? "icon-lg" : "default"}
         className={triggerClassName}
-        title="Calculate travel times"
+        title={dictionary.planner.calculateTravelTimes}
         disabled={disabled}
       >
         <Route className="w-5 h-5" />
-        {iconOnly ? null : <span>Calculate</span>}
+        {iconOnly ? null : <span>{dictionary.planner.calculate}</span>}
       </Button>
       {restricted ? (
         <SignupGateDialog
           open={open}
           onOpenChange={setOpen}
-          title="Sign up to calculate routes"
-          description="Create an account to unlock route and travel-time calculation for your trip."
+          title={dictionary.planner.signupToCalculateTitle}
+          description={dictionary.planner.signupToCalculateDescription}
         />
       ) : (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-3xl mx-4 max-w-sm">
           <DialogHeader>
-            <DialogTitle>Calculate Travel Times</DialogTitle>
+            <DialogTitle>{dictionary.planner.calculateTravelTimes}</DialogTitle>
           </DialogHeader>
           <form action={formAction} className="space-y-3">
             <input type="hidden" name="tripId" value={tripId} />
             <input type="hidden" name="returnTo" value={returnTo} />
             <p className="text-sm text-muted-foreground">
-              Please ensure all your stops and times are finalised. Travel
-              times will be calculated between consecutive stops on the same
-              day.
+              {dictionary.planner.calculateDialogBody}
             </p>
             <p className="text-xs text-muted-foreground">
-              This uses 1 of your monthly calculation credits.
+              {dictionary.planner.calculateCredits}
             </p>
             {state.error ? (
               <p className="text-sm text-red-500">{state.error}</p>
@@ -95,18 +97,18 @@ export default function CalculateTravelTimesDialog({
                 className="flex-1 rounded-xl"
                 onClick={() => setOpen(false)}
               >
-                Cancel
+                {dictionary.planner.cancel}
               </Button>
               <SubmitButton
                 className="flex-1 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
                 pendingLabel={
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                    Calculating...
+                    {dictionary.planner.calculating}
                   </>
                 }
               >
-                Calculate
+                {dictionary.planner.calculate}
               </SubmitButton>
             </DialogFooter>
           </form>

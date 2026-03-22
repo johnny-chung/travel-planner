@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { format } from "date-fns";
 import { ArrowLeft, BadgeDollarSign, ReceiptText } from "lucide-react";
-
 import { Badge } from "@/components/ui/badge";
 import type { UserOrder } from "@/features/orders/service";
+import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
+import { localizeHref } from "@/features/i18n/config";
 
 type Props = {
   orders: UserOrder[];
@@ -19,6 +21,10 @@ function formatMoney(amountCents: number, currency: string) {
 }
 
 export default function OrdersPageClient({ orders }: Props) {
+  const pathname = usePathname();
+  const locale = getClientLocale(pathname);
+  const dictionary = getClientDictionary(pathname);
+
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0 md:pt-16">
       <section className="px-4 pb-6 pt-4 md:px-6">
@@ -26,24 +32,23 @@ export default function OrdersPageClient({ orders }: Props) {
           <div className="px-5 py-6 md:px-8">
             <div className="mb-4 flex items-center gap-3">
               <Link
-                href="/profile"
+                href={localizeHref(locale, "/profile")}
                 className="rounded-lg bg-white/8 p-2 text-[#fff6ec] transition-colors hover:bg-white/12"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Link>
               <div>
                 <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#d6e7de]">
-                  Billing
+                  {dictionary.orders.eyebrow}
                 </p>
                 <h1 className="text-xl font-bold text-[#fff6ec] md:text-2xl">
-                  Orders
+                  {dictionary.orders.title}
                 </h1>
               </div>
             </div>
 
             <p className="max-w-2xl text-sm text-[#dfe8e1]">
-              View completed Stripe payments recorded for your account, including
-              upgrade invoices and donations.
+              {dictionary.orders.body}
             </p>
           </div>
         </div>
@@ -56,9 +61,11 @@ export default function OrdersPageClient({ orders }: Props) {
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <ReceiptText className="h-5 w-5" />
               </div>
-              <p className="text-base font-semibold text-foreground">No orders yet</p>
+              <p className="text-base font-semibold text-foreground">
+                {dictionary.orders.emptyTitle}
+              </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Completed upgrades and donations will appear here.
+                {dictionary.orders.emptyBody}
               </p>
             </div>
           ) : (
@@ -78,7 +85,7 @@ export default function OrdersPageClient({ orders }: Props) {
                           {order.title}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Order {order.orderNumber}
+                          {dictionary.orders.orderPrefix} {order.orderNumber}
                         </p>
                       </div>
                     </div>
@@ -91,7 +98,7 @@ export default function OrdersPageClient({ orders }: Props) {
                     <p className="text-xs text-muted-foreground">
                       {order.orderDate
                         ? format(new Date(order.orderDate), "MMM d, yyyy")
-                        : "Unknown date"}
+                        : dictionary.orders.unknownDate}
                     </p>
                   </div>
                 </div>
@@ -101,7 +108,9 @@ export default function OrdersPageClient({ orders }: Props) {
                     variant="secondary"
                     className="bg-primary/12 text-primary hover:bg-primary/12"
                   >
-                    {order.kind === "donation" ? "Donation" : "Subscription"}
+                    {order.kind === "donation"
+                      ? dictionary.orders.donation
+                      : dictionary.orders.subscription}
                   </Badge>
                 </div>
               </article>

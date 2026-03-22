@@ -1,9 +1,11 @@
+import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp, Plane, Plus, Route, Trash2 } from "lucide-react";
 import { deleteTransportAction } from "@/features/trip-logistics/actions";
 import SubmitButton from "@/features/shared/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { TripTransportItem } from "@/types/trip-logistics";
 
 type Props = {
@@ -27,6 +29,8 @@ export default function TripTransportCard({
   onAddTransport,
   onEditTransport,
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   return (
     <Collapsible
       open={open}
@@ -35,7 +39,7 @@ export default function TripTransportCard({
     >
       <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors">
         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Plane className="w-4 h-4 text-muted-foreground" /> Transport
+          <Plane className="w-4 h-4 text-muted-foreground" /> {dictionary.tripDetail.transport}
           {items.length > 0 ? (
             <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-xs font-medium text-primary">
               {items.length}
@@ -53,7 +57,7 @@ export default function TripTransportCard({
           <CardContent className="p-0 border-t border-border">
             {items.length === 0 ? (
               <p className="text-center text-muted-foreground text-sm py-6">
-                No transport added yet
+                {dictionary.tripDetail.noTransportAdded}
               </p>
             ) : (
               <div className="divide-y divide-border">
@@ -110,7 +114,7 @@ export default function TripTransportCard({
                   onClick={onAddTransport}
                   className="flex items-center gap-2 p-0 text-sm font-medium text-primary transition-colors hover:text-primary/80"
                 >
-                  <Plus className="w-4 h-4" /> Add transport
+                  <Plus className="w-4 h-4" /> {dictionary.tripDetail.addTransport}
                 </Button>
               </div>
             ) : null}

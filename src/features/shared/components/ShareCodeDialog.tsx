@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Check, Copy } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { getClientDictionary } from "@/features/i18n/client";
 
 type Props = {
   open: boolean;
@@ -20,6 +22,8 @@ export default function ShareCodeDialog({
   description,
   shareCode,
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -62,7 +66,7 @@ export default function ShareCodeDialog({
         </div>
         <DialogFooter>
           <Button className="w-full rounded-xl" variant="outline" onClick={() => onOpenChange(false)}>
-            Done
+            {dictionary.common.done}
           </Button>
         </DialogFooter>
       </DialogContent>

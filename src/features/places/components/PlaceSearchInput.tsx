@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Loader2, MapPin, Search, X } from "lucide-react";
 import { loadGoogleLibrary } from "@/lib/google-maps-loader";
+import { getClientDictionary } from "@/features/i18n/client";
 import type { PendingLocation } from "@/features/planner/components/plan-map/types";
 
 type Prediction = {
@@ -30,6 +32,8 @@ export default function PlaceSearchInput({
   includedPrimaryTypes,
   autoFocus = false,
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterKeyRef = useRef<string>("");
   const [ready, setReady] = useState(false);
@@ -209,7 +213,7 @@ export default function PlaceSearchInput({
         <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
           {loading ? (
             <div className="px-4 py-3 text-sm text-muted-foreground">
-              Searching...
+              {dictionary.planner.searching}
             </div>
           ) : (
             predictions.map((prediction, index) => (

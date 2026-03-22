@@ -1,7 +1,6 @@
 "use client";
-
-import Link from "next/link";
 import { startTransition, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   PointerSensor,
@@ -28,6 +27,7 @@ import {
   Plane,
 } from "lucide-react";
 import { format } from "date-fns";
+import { getClientDictionary } from "@/features/i18n/client";
 import type {
   PlannerTimelineItem,
   Stop,
@@ -129,12 +129,17 @@ function buildStopHref(
 function StopCardContent({
   stop,
   orderLabel,
-  href,
   leaveByTime,
   isBacklog = false,
   dragHandle,
-}: Pick<StopCardItem, "stop" | "orderLabel" | "href" | "leaveByTime" | "isBacklog"> & {
+  saveForLaterLabel,
+  leaveByLabel,
+  onOpen,
+}: Pick<StopCardItem, "stop" | "orderLabel" | "leaveByTime" | "isBacklog"> & {
   dragHandle?: React.ReactNode;
+  saveForLaterLabel: string;
+  leaveByLabel: string;
+  onOpen: () => void;
 }) {
   const displayTime = !isBacklog && stop.displayTime && stop.time
     ? formatTime12Hour(stop.time)
@@ -142,8 +147,9 @@ function StopCardContent({
 
   return (
     <div className="relative">
-      <Link
-        href={href}
+      <button
+        type="button"
+        onClick={onOpen}
         className="block w-full rounded-2xl border border-border bg-card px-3.5 py-3 text-left shadow-sm transition-transform hover:shadow-md active:scale-[0.98]"
       >
         <div className="flex items-center gap-3">
@@ -164,7 +170,7 @@ function StopCardContent({
             {isBacklog ? (
               <div className="mt-0.5 flex items-center gap-1.5">
                 <Calendar className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Save for later</span>
+                <span className="text-xs text-muted-foreground">{saveForLaterLabel}</span>
               </div>
             ) : null}
             {stop.address ? (
@@ -178,7 +184,7 @@ function StopCardContent({
             {leaveByTime ? (
               <div className="mt-0.5 flex items-center gap-1">
                 <span className="text-xs font-medium text-orange-500">
-                  Leave by {formatTime12Hour(leaveByTime)}
+                  {leaveByLabel.replace("{time}", formatTime12Hour(leaveByTime))}
                 </span>
               </div>
             ) : null}
@@ -190,7 +196,7 @@ function StopCardContent({
           </div>
           <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/60" />
         </div>
-      </Link>
+      </button>
       {dragHandle}
     </div>
   );
@@ -199,10 +205,17 @@ function StopCardContent({
 function SortableStopCard({
   item,
   sortable,
+  saveForLaterLabel,
+  leaveByLabel,
+  dragAriaLabel,
 }: {
   item: StopCardItem;
   sortable: boolean;
+  saveForLaterLabel: string;
+  leaveByLabel: string;
+  dragAriaLabel: string;
 }) {
+  const router = useRouter();
   const {
     attributes,
     listeners,
@@ -227,9 +240,11 @@ function SortableStopCard({
       <StopCardContent
         stop={item.stop}
         orderLabel={item.orderLabel}
-        href={item.href}
         leaveByTime={item.leaveByTime}
         isBacklog={item.isBacklog}
+        saveForLaterLabel={saveForLaterLabel}
+        leaveByLabel={leaveByLabel}
+        onOpen={() => router.push(item.href)}
         dragHandle={
           sortable ? (
             <button
@@ -237,7 +252,7 @@ function SortableStopCard({
               {...attributes}
               {...listeners}
               className="absolute right-10 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl text-muted-foreground/70 hover:bg-muted hover:text-foreground"
-              aria-label="Drag to reorder"
+              aria-label={dragAriaLabel}
             >
               <GripVertical className="h-4 w-4" />
             </button>
@@ -375,6 +390,8 @@ export default function StopsList({
   travelTimes = [],
   accessMode = "user",
 }: Props) {
+  const router = useRouter();
+  const dictionary = getClientDictionary(pathname);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
@@ -471,9 +488,9 @@ export default function StopsList({
         <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10">
           <MapPin className="h-10 w-10 text-primary/60" />
         </div>
-        <h3 className="text-lg font-semibold text-foreground">No stops yet</h3>
+        <h3 className="text-lg font-semibold text-foreground">{dictionary.planner.noStopsYetTitle}</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Use the Add stop button to search for your first place.
+          {dictionary.planner.noStopsYetBody}
         </p>
       </div>
     );
@@ -585,6 +602,9 @@ export default function StopsList({
                       key={bucketItem.id}
                       item={bucketItem}
                       sortable={canSortDateBucket}
+                      saveForLaterLabel={dictionary.planner.saveForLaterStatus}
+                      leaveByLabel={dictionary.planner.leaveBy}
+                      dragAriaLabel={dictionary.planner.dragToReorder}
                     />,
                   );
                 }
@@ -602,6 +622,9 @@ export default function StopsList({
                       key={bucketItem.id}
                       item={bucketItem}
                       sortable={canSortDateBucket}
+                      saveForLaterLabel={dictionary.planner.saveForLaterStatus}
+                      leaveByLabel={dictionary.planner.leaveBy}
+                      dragAriaLabel={dictionary.planner.dragToReorder}
                     />
                   )),
                 );
@@ -687,9 +710,14 @@ export default function StopsList({
 
               renderedItems.push(
                 <div key={item.id}>
-                  <Link
-                    href={buildPlannerStayModalHref(pathname, searchState, stay._id)}
-                    className="my-1 block rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 transition-transform hover:shadow-sm active:scale-[0.99] dark:border-emerald-800/70 dark:bg-emerald-950/30"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(
+                        buildPlannerStayModalHref(pathname, searchState, stay._id),
+                      )
+                    }
+                    className="my-1 block w-full rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-left transition-transform hover:shadow-sm active:scale-[0.99] dark:border-emerald-800/70 dark:bg-emerald-950/30"
                   >
                     <div className="flex items-start gap-3">
                       <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700 dark:bg-emerald-900/70 dark:text-emerald-200">
@@ -705,7 +733,7 @@ export default function StopsList({
                       </div>
                       <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/60" />
                     </div>
-                  </Link>
+                  </button>
                   {segment ? (
                     <TravelTimeCard
                       travelTime={travelTime}
@@ -729,6 +757,9 @@ export default function StopsList({
                     key={bucketItem.id}
                     item={bucketItem}
                     sortable={canSortDateBucket}
+                    saveForLaterLabel={dictionary.planner.saveForLaterStatus}
+                    leaveByLabel={dictionary.planner.leaveBy}
+                    dragAriaLabel={dictionary.planner.dragToReorder}
                   />
                 )),
               );
@@ -762,7 +793,7 @@ export default function StopsList({
                       {renderedItems}
                       {bucketItems.length === 0 ? (
                         <div className="my-1 rounded-2xl border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">
-                          Drop a stop here
+                          {dictionary.planner.dropStopHere}
                         </div>
                       ) : null}
                     </div>
@@ -777,7 +808,7 @@ export default function StopsList({
               <div className="min-w-0 flex items-center gap-2">
                 <MapPin className="h-3.5 w-3.5 text-primary" />
                 <span className="truncate text-xs font-semibold uppercase tracking-wide text-primary">
-                  Unscheduled Stops
+                  {dictionary.planner.unscheduledStops}
                 </span>
                 <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                   {(buckets[UNSCHEDULED_BUCKET] ?? []).length}
@@ -797,11 +828,14 @@ export default function StopsList({
                       key={item.id}
                       item={item}
                       sortable
+                      saveForLaterLabel={dictionary.planner.saveForLaterStatus}
+                      leaveByLabel={dictionary.planner.leaveBy}
+                      dragAriaLabel={dictionary.planner.dragToReorder}
                     />
                   ))}
                   {(buckets[UNSCHEDULED_BUCKET] ?? []).length === 0 ? (
                     <div className="my-1 rounded-2xl border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">
-                      Drag a stop here to save it for later
+                      {dictionary.planner.dragStopHereToSave}
                     </div>
                   ) : null}
                 </div>

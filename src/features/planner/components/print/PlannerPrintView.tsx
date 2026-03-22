@@ -3,6 +3,7 @@ import { BedDouble, Bus, Car, Clock, Footprints, MapPin, Plane } from "lucide-re
 
 import type { PlannerTimelineItem, TravelTimeEntry } from "@/features/planner/components/plan-map/types";
 import { buildRouteSegments } from "@/features/planner/timeline";
+import { getRequestDictionary } from "@/features/i18n/server";
 
 type Props = {
   planName: string;
@@ -30,7 +31,7 @@ function buildGoogleMapsLink(address: string, lat: number, lng: number) {
   return address ? `https://maps.google.com/?q=${encodeURIComponent(address)}` : "";
 }
 
-export default function PlannerPrintView({
+export default async function PlannerPrintView({
   planName,
   description = "",
   timelineItems,
@@ -39,6 +40,7 @@ export default function PlannerPrintView({
   from = "",
   to = "",
 }: Props) {
+  const { dictionary } = await getRequestDictionary();
   const grouped = new Map<string, PlannerTimelineItem[]>();
   for (const item of timelineItems) {
     const items = grouped.get(item.date) ?? [];
@@ -72,7 +74,7 @@ export default function PlannerPrintView({
       <div className="space-y-5">
         <section className="rounded-[28px] border bg-card px-5 py-5 shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
-            Itinerary Snapshot
+            {dictionary.planner.itinerarySnapshot}
           </p>
           <h1 className="mt-2 text-2xl font-semibold text-foreground">{planName}</h1>
           {description ? (
@@ -80,14 +82,18 @@ export default function PlannerPrintView({
           ) : null}
           {from || to ? (
             <p className="mt-3 text-xs text-muted-foreground">
-              Showing {from || "start"} to {to || "end"}
+              {dictionary.planner.showingRange
+                .replace("{from}", from || dictionary.planner.rangeStart)
+                .replace("{to}", to || dictionary.planner.rangeEnd)}
             </p>
           ) : null}
         </section>
 
         {timelineItems.length === 0 ? (
           <section className="rounded-[28px] border bg-card px-5 py-6 text-center shadow-sm print:rounded-none print:border-0 print:px-0 print:py-4 print:shadow-none">
-            <p className="text-sm text-muted-foreground">No scheduled items yet.</p>
+            <p className="text-sm text-muted-foreground">
+              {dictionary.planner.noScheduledItemsYet}
+            </p>
           </section>
         ) : null}
 
@@ -131,7 +137,9 @@ export default function PlannerPrintView({
                           </p>
                           <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            <span>{stop.displayTime ? stop.time : "No time set"}</span>
+                            <span>
+                              {stop.displayTime ? stop.time : dictionary.planner.noTimeSet}
+                            </span>
                           </div>
                           {stop.address ? (
                             <p className="mt-1 text-xs leading-5 text-muted-foreground">
@@ -146,7 +154,7 @@ export default function PlannerPrintView({
                               className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
                             >
                               <MapPin className="h-3 w-3" />
-                              Open in Google Maps
+                              {dictionary.planner.openInGoogleMaps}
                             </a>
                           ) : null}
                           {travelTime ? (
@@ -179,7 +187,8 @@ export default function PlannerPrintView({
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-foreground">{stay.name}</p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {stay.checkInDate} to {stay.checkOutDate}
+                            {stay.checkInDate} {dictionary.planner.dateRangeConnector}{" "}
+                            {stay.checkOutDate}
                           </p>
                           {mapLink ? (
                             <a
@@ -189,7 +198,7 @@ export default function PlannerPrintView({
                               className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
                             >
                               <MapPin className="h-3 w-3" />
-                              Open in Google Maps
+                              {dictionary.planner.openInGoogleMaps}
                             </a>
                           ) : null}
                         </div>
@@ -212,7 +221,10 @@ export default function PlannerPrintView({
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-foreground">{transport.title}</p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {item.time} {item.boundary === "arrival" ? "Arrive" : "Depart"}
+                          {item.time}{" "}
+                          {item.boundary === "arrival"
+                            ? dictionary.planner.arrive
+                            : dictionary.planner.depart}
                         </p>
                         {location ? (
                           <p className="mt-1 text-xs text-muted-foreground">{location}</p>
@@ -253,7 +265,7 @@ export default function PlannerPrintView({
                         className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
                       >
                         <MapPin className="h-3 w-3" />
-                        Open in Google Maps
+                        {dictionary.planner.openInGoogleMaps}
                       </a>
                     ) : null}
                   </article>

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowLeft, Pencil, Plus, Trash2, X } from "lucide-react";
 import SubmitButton from "@/features/shared/components/SubmitButton";
 import {
@@ -17,6 +18,7 @@ import {
 } from "@/features/checklist/actions";
 import type { ChecklistItem } from "@/features/checklist/types";
 import { Input } from "@/components/ui/input";
+import { getClientDictionary } from "@/features/i18n/client";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -39,11 +41,18 @@ function InlineAddRow({
   returnTo,
   disabled,
   action,
+  labels,
 }: {
   tripId: string;
   returnTo: string;
   disabled: boolean;
   action: ChecklistMutation;
+  labels: {
+    addButton: string;
+    addPlaceholder: string;
+    save: string;
+    saving: string;
+  };
 }) {
   const [open, setOpen] = useState(false);
   const [state, formAction] = useActionState(action, {});
@@ -60,7 +69,7 @@ function InlineAddRow({
         )}
       >
         <Plus className="h-4 w-4" />
-        Add checklist item
+        {labels.addButton}
       </button>
     );
   }
@@ -75,12 +84,12 @@ function InlineAddRow({
       <div className="flex items-center gap-2">
         <Input
           name="text"
-          placeholder="Add a checklist item..."
+          placeholder={labels.addPlaceholder}
           autoFocus
           required
           maxLength={800}
         />
-        <SubmitButton pendingLabel="Saving...">Save</SubmitButton>
+        <SubmitButton pendingLabel={labels.saving}>{labels.save}</SubmitButton>
         <button
           type="button"
           onClick={() => setOpen(false)}
@@ -102,12 +111,17 @@ function InlineEditRow({
   item,
   action,
   onCancel,
+  labels,
 }: {
   tripId: string;
   returnTo: string;
   item: ChecklistItem;
   action: ChecklistMutation;
   onCancel: () => void;
+  labels: {
+    save: string;
+    saving: string;
+  };
 }) {
   const [state, formAction] = useActionState(action, {});
 
@@ -123,7 +137,7 @@ function InlineEditRow({
         required
         maxLength={800}
       />
-      <SubmitButton pendingLabel="Saving...">Save</SubmitButton>
+      <SubmitButton pendingLabel={labels.saving}>{labels.save}</SubmitButton>
       <button
         type="button"
         onClick={onCancel}
@@ -147,6 +161,8 @@ export default function ChecklistPageClient({
   backHref,
   returnTo,
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const createAction =
@@ -173,20 +189,20 @@ export default function ChecklistPageClient({
               href={backHref}
               className="flex items-center gap-1 text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground"
             >
-              <ArrowLeft className="h-4 w-4" /> Trip details
+              <ArrowLeft className="h-4 w-4" /> {dictionary.checklist.backTripDetails}
             </Link>
           </div>
 
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-foreground/75">
-            Checklist
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-foreground/75">{dictionary.checklist.title}</p>
           <h1 className="mt-2 text-2xl font-bold">{tripName}</h1>
           <p className="mt-2 text-sm text-primary-foreground/75">
-            {completedCount} of {items.length} item{items.length === 1 ? "" : "s"} completed
+            {dictionary.checklist.completedSummary
+              .replace("{completed}", String(completedCount))
+              .replace("{total}", String(items.length))}
           </p>
           {isArchived ? (
             <p className="mt-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm text-primary-foreground/85">
-              This trip is archived. Checklist items are view only.
+              {dictionary.checklist.archivedNotice}
             </p>
           ) : null}
         </div>
@@ -198,13 +214,19 @@ export default function ChecklistPageClient({
           returnTo={returnTo}
           disabled={isArchived}
           action={createAction}
+          labels={{
+            addButton: dictionary.checklist.addButton,
+            addPlaceholder: dictionary.checklist.addPlaceholder,
+            save: dictionary.checklist.save,
+            saving: dictionary.checklist.saving,
+          }}
         />
 
         {items.length === 0 ? (
           <div className="rounded-3xl border border-border bg-card px-5 py-10 text-center shadow-sm">
-            <p className="text-base font-semibold text-foreground">No checklist items yet</p>
+            <p className="text-base font-semibold text-foreground">{dictionary.checklist.emptyTitle}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Add your first checklist item for this trip.
+              {dictionary.checklist.emptyBody}
             </p>
           </div>
         ) : (
@@ -244,6 +266,10 @@ export default function ChecklistPageClient({
                       item={item}
                       action={updateAction}
                       onCancel={() => setEditingId(null)}
+                      labels={{
+                        save: dictionary.checklist.save,
+                        saving: dictionary.checklist.saving,
+                      }}
                     />
                   ) : (
                     <>
@@ -257,7 +283,7 @@ export default function ChecklistPageClient({
                       </p>
                       {item.checkedBy ? (
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Checked by {item.checkedBy}
+                          {dictionary.checklist.checkedBy.replace("{name}", item.checkedBy)}
                         </p>
                       ) : null}
                     </>
@@ -277,7 +303,7 @@ export default function ChecklistPageClient({
                     <form
                       action={deleteAction}
                       onSubmit={(event) => {
-                        if (!window.confirm("Delete this checklist item?")) {
+                        if (!window.confirm(dictionary.checklist.deleteConfirm)) {
                           event.preventDefault();
                         }
                       }}

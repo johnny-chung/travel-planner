@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { MapPin, X, Loader2 } from "lucide-react";
 import { loadGoogleLibrary } from "@/lib/google-maps-loader";
+import { getClientDictionary } from "@/features/i18n/client";
 
 type LocationResult = {
   name: string;
@@ -27,6 +29,8 @@ type Props = {
 };
 
 export default function LocationSearchInput({ value, onChange, onSelect, apiKey }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [ready, setReady] = useState(false);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -112,7 +116,7 @@ export default function LocationSearchInput({ value, onChange, onSelect, apiKey 
         onChange={handleInput}
         onFocus={() => value && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="e.g. Tokyo, Japan"
+        placeholder={dictionary.common.locationExample}
         className="w-full h-11 pl-9 pr-9 rounded-xl border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       />
       {loading && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
@@ -128,7 +132,11 @@ export default function LocationSearchInput({ value, onChange, onSelect, apiKey 
 
       {showDropdown && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
-          {loading && <div className="px-4 py-3 text-center text-sm text-muted-foreground">Searching…</div>}
+          {loading && (
+            <div className="px-4 py-3 text-center text-sm text-muted-foreground">
+              {dictionary.planner.searching}
+            </div>
+          )}
           {!loading && predictions.map((p, i) => (
             <button
               key={i}

@@ -1,5 +1,7 @@
 "use client";
 import TripListClient, { type Trip } from "./TripListClient";
+import { usePathname } from "next/navigation";
+import { getClientDictionary } from "@/features/i18n/client";
 
 type Props = {
   initialTrips: Trip[];
@@ -36,11 +38,29 @@ export default function TripsPageClient({
   showFilters = true,
   decorationImage = "/material/Compass.png",
 }: Props) {
+  const pathname = usePathname();
+  const dictionary = getClientDictionary(pathname);
+  const resolvedPageTitle =
+    pageTitle ??
+    (collectionPath === "/plans"
+      ? dictionary.tripsPage.plans
+      : collectionPath === "/expense"
+        ? dictionary.tripsPage.expenses
+        : collectionPath === "/try"
+          ? dictionary.tripsPage.trialTitle
+          : dictionary.tripsPage.myTrips);
+  const resolvedCreateDialogTitle =
+    collectionPath === "/try"
+      ? dictionary.tripsPage.trialCreateTitle
+      : createDialogTitle === "New Trip"
+        ? dictionary.tripsPage.newTrip
+        : createDialogTitle;
+
   return (
     <TripListClient
       initialTrips={initialTrips}
       googleMapsApiKey={googleMapsApiKey}
-      pageTitle={pageTitle}
+      pageTitle={resolvedPageTitle}
       showCreate={showCreate}
       currentView={currentView}
       activeTripCount={activeTripCount}
@@ -49,7 +69,7 @@ export default function TripsPageClient({
       createMode={createMode}
       canShareCode={canShareCode}
       allowJoin={allowJoin}
-      createDialogTitle={createDialogTitle}
+      createDialogTitle={resolvedCreateDialogTitle}
       autoOpenCreate={autoOpenCreate}
       showFilters={showFilters}
       decorationImage={decorationImage}

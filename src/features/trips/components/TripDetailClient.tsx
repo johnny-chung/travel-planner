@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowLeft, DollarSign, ListChecks, Map, MapPin, Share2 } from "lucide-react";
 import SignupGateDialog from "@/features/shared/components/SignupGateDialog";
 import ShareCodeDialog from "@/features/shared/components/ShareCodeDialog";
@@ -15,6 +16,8 @@ import TripStayCard from "@/features/trips/components/detail/TripStayCard";
 import TripTransportCard from "@/features/trips/components/detail/TripTransportCard";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
+import { localizeHref } from "@/features/i18n/config";
 import { cn } from "@/lib/utils";
 import type { TripStayItem, TripTransportItem } from "@/types/trip-logistics";
 import type { TripDetail, TripMember } from "@/types/travel";
@@ -43,6 +46,9 @@ export default function TripDetailClient({
   checklistHref,
   accessMode = "user",
 }: Props) {
+  const pathname = usePathname();
+  const locale = getClientLocale(pathname);
+  const dictionary = getClientDictionary(pathname);
   const [membersOpen, setMembersOpen] = useState(false);
   const [documentsOpen, setDocumentsOpen] = useState(false);
   const [transportOpen, setTransportOpen] = useState(true);
@@ -58,9 +64,13 @@ export default function TripDetailClient({
   const isOwner = currentUserId === trip.userId;
   const isArchived = trip.status === "archived";
   const showJapanTransitNotice = trip.centerCountryCode === "JP";
-  const resolvedPlanHref = planHref ?? `/trips/${trip._id}/plan`;
-  const resolvedExpenseHref = expenseHref ?? `/trips/${trip._id}/expense`;
-  const resolvedChecklistHref = checklistHref ?? `/trips/${trip._id}/checklist`;
+  const resolvedBackHref = localizeHref(locale, backHref);
+  const resolvedPlanHref =
+    planHref ?? localizeHref(locale, `/trips/${trip._id}/plan`);
+  const resolvedExpenseHref =
+    expenseHref ?? localizeHref(locale, `/trips/${trip._id}/expense`);
+  const resolvedChecklistHref =
+    checklistHref ?? localizeHref(locale, `/trips/${trip._id}/checklist`);
 
   function openRestrictedFeature() {
     setShowSignupGate(true);
@@ -86,10 +96,10 @@ export default function TripDetailClient({
           <div className="rounded-2xl border border-black/10 bg-white/15 px-4 py-4 backdrop-blur-sm dark:border-white/15 dark:bg-black/32 md:px-5">
             <div className="mb-4 flex items-center justify-between">
             <Link
-              href={backHref}
+              href={resolvedBackHref}
               className="flex items-center gap-1 text-sm text-primary-foreground/80 transition-colors hover:text-primary-foreground dark:text-foreground dark:hover:text-foreground"
             >
-              <ArrowLeft className="w-4 h-4" /> All Trips
+              <ArrowLeft className="w-4 h-4" /> {dictionary.tripDetail.backAllTrips}
             </Link>
             {!isArchived ? (
               <button
@@ -103,7 +113,7 @@ export default function TripDetailClient({
                 }}
                 className="flex items-center gap-1.5 text-sm text-primary-foreground/80 transition-colors hover:text-primary-foreground dark:text-foreground dark:hover:text-foreground"
               >
-                <Share2 className="w-4 h-4" /> Share
+                <Share2 className="w-4 h-4" /> {dictionary.tripDetail.share}
               </button>
             ) : null}
             </div>
@@ -111,7 +121,7 @@ export default function TripDetailClient({
               <h1 className="text-2xl font-bold text-primary-foreground dark:text-foreground">{trip.name}</h1>
               {isArchived ? (
                 <Badge className="bg-yellow-400 text-yellow-900 hover:bg-yellow-400 text-xs">
-                  Archived
+                  {dictionary.tripDetail.archived}
                 </Badge>
               ) : null}
             </div>
@@ -132,7 +142,7 @@ export default function TripDetailClient({
       <div className="flex-1 px-4 py-5 max-w-2xl mx-auto w-full space-y-4">
         {showJapanTransitNotice ? (
           <div className="rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-sm">
-            Transit route calculation is not available in Japan with the Google Routes API. You can still open public transit directions in Google Maps.
+            {dictionary.tripDetail.japanTransitNotice}
           </div>
         ) : null}
 
@@ -143,9 +153,9 @@ export default function TripDetailClient({
               buttonVariants({ variant: "outline" }),
               "h-16 rounded-lg border flex-col gap-1.5 text-sm font-semibold",
             )}
-          >
-            <Map className="w-5 h-5" />
-            View Plan
+            >
+              <Map className="w-5 h-5" />
+              {dictionary.tripDetail.viewPlan}
           </Link>
           {trip.capabilities.canUseExpenses ? (
             <Link
@@ -156,7 +166,7 @@ export default function TripDetailClient({
               )}
             >
               <DollarSign className="w-5 h-5" />
-              View Expenses
+              {dictionary.tripDetail.viewExpenses}
             </Link>
           ) : (
             <button
@@ -168,7 +178,7 @@ export default function TripDetailClient({
               )}
             >
               <DollarSign className="w-5 h-5" />
-              View Expenses
+              {dictionary.tripDetail.viewExpenses}
             </button>
           )}
           <Link
@@ -177,9 +187,9 @@ export default function TripDetailClient({
               buttonVariants({ variant: "outline" }),
               "h-16 rounded-lg border flex-col gap-1.5 text-sm font-semibold",
             )}
-          >
-            <ListChecks className="w-5 h-5" />
-            Checklist
+            >
+              <ListChecks className="w-5 h-5" />
+              {dictionary.tripDetail.checklist}
           </Link>
         </div>
 
@@ -267,8 +277,11 @@ export default function TripDetailClient({
         <ShareCodeDialog
           open={showShareDialog}
           onOpenChange={setShowShareDialog}
-          title="Share Trip"
-          description={`Share this code so others can request to join ${trip.name}.`}
+          title={dictionary.tripDetail.shareTitle}
+          description={dictionary.tripDetail.shareDescription.replace(
+            "{tripName}",
+            trip.name,
+          )}
           shareCode={trip.shareCode}
         />
       ) : null}

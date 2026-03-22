@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   Bell,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { signOutAction } from "@/features/auth/actions";
 import BrandLogo from "@/components/layout/BrandLogo";
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import TripCardGrid from "@/features/trips/components/list/TripCardGrid";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import type { TripSummary } from "@/types/travel";
+import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
+import { localizeHref } from "@/features/i18n/config";
 
 type Props = {
   user: { name: string; email: string; image: string };
@@ -37,11 +40,15 @@ type Props = {
 };
 
 export default function HomeClient({ user, plans, membershipStatus }: Props) {
+  const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const locale = getClientLocale(pathname);
+  const dictionary = getClientDictionary(pathname);
   const isDark = (resolvedTheme ?? "light") === "dark";
-  const firstName = user.name?.split(" ")[0] ?? "there";
+  const firstName =
+    user.name?.split(" ")[0] ?? dictionary.home.userFallback;
   const recentPlans = plans.slice(0, 3);
   const initials =
     user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? "U";
@@ -49,7 +56,7 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0 md:pt-16">
       <section
-        className="px-2 pb-6 md:pt-4 md:px-6"
+        className="px-2 pb-6 md:px-6 md:pt-4"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
       >
         <div className="relative mx-auto max-w-5xl overflow-hidden rounded-xl border border-border/70 shadow-[0_22px_55px_rgba(31,26,23,0.12)]">
@@ -63,7 +70,7 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
             <source src="/material/carousell.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(28,36,33,0.98)_0%,rgba(47,110,98,0.95)_58%,rgba(93,127,118,0.98)_100%)]" />
-          <div className="md:hidden border-b border-white/12 px-5 py-4 md:px-8">
+          <div className="border-b border-white/12 px-5 py-4 md:hidden md:px-8">
             <div className="relative z-10 flex items-center justify-between">
               <BrandLogo
                 size={40}
@@ -72,15 +79,17 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                 labelClassName="text-base text-[#f7efe2]"
               />
 
-              <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-                <SheetTrigger className="rounded-full outline-none">
-                  <Avatar className="h-10 w-10 border border-white/20">
-                    <AvatarImage src={user.image} />
-                    <AvatarFallback className="bg-white/10 text-sm font-semibold text-[#fff6ec]">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                </SheetTrigger>
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher variant="solid" className="h-10 px-3" />
+                <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                  <SheetTrigger className="rounded-full outline-none">
+                    <Avatar className="h-10 w-10 border border-white/20">
+                      <AvatarImage src={user.image} />
+                      <AvatarFallback className="bg-white/10 text-sm font-semibold text-[#fff6ec]">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </SheetTrigger>
                 <SheetContent side="right" className="flex w-72 flex-col p-0">
                   <SheetHeader className="bg-[linear-gradient(135deg,#1c2421_0%,#2f6e62_100%)] px-5 pb-6 pt-8 text-white">
                     <div className="flex flex-col items-center gap-3">
@@ -92,7 +101,7 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                       </Avatar>
                       <div className="text-center">
                         <SheetTitle className="text-base font-bold text-white">
-                          {user.name || "User"}
+                          {user.name || dictionary.home.userFallback}
                         </SheetTitle>
                         <p className="mt-0.5 flex items-center justify-center gap-1 text-xs text-[#d8e6df]">
                           <Mail className="h-3 w-3" />
@@ -105,7 +114,9 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                               : "bg-white/10 text-[#f1ebe0]/85"
                           }`}
                         >
-                          {membershipStatus === "pro" ? "PRO" : "BASIC"}
+                          {membershipStatus === "pro"
+                            ? dictionary.home.membershipPro
+                            : dictionary.home.membershipBasic}
                         </span>
                       </div>
                     </div>
@@ -116,14 +127,14 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                       className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors hover:bg-muted"
                       onClick={() => {
                         setSheetOpen(false);
-                        router.push("/profile");
+                        router.push(localizeHref(locale, "/profile"));
                       }}
                     >
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/70">
                         <User className="h-5 w-5 text-primary" />
                       </div>
                       <span className="font-medium text-foreground">
-                        Profile
+                        {dictionary.common.profile}
                       </span>
                       <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground/60" />
                     </button>
@@ -140,22 +151,28 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                         )}
                       </div>
                       <span className="font-medium text-foreground">
-                        {isDark ? "Light Mode" : "Dark Mode"}
+                        {isDark
+                          ? dictionary.nav.lightMode
+                          : dictionary.nav.darkMode}
                       </span>
                     </button>
+
+                    <div className="px-4 py-1">
+                      <LanguageSwitcher variant="outline" className="h-11 w-full justify-between px-4" />
+                    </div>
 
                     <button
                       className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors hover:bg-muted"
                       onClick={() => {
                         setSheetOpen(false);
-                        router.push("/notifications");
+                        router.push(localizeHref(locale, "/notifications"));
                       }}
                     >
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/70">
                         <Bell className="h-5 w-5 text-primary" />
                       </div>
                       <span className="font-medium text-foreground">
-                        Notifications
+                        {dictionary.nav.notifications}
                       </span>
                       <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground/60" />
                     </button>
@@ -169,26 +186,29 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                         className="h-12 w-full rounded-2xl gap-2 border-red-200 font-semibold text-red-500 hover:bg-red-50"
                       >
                         <LogOut className="h-4 w-4" />
-                        Sign Out
+                        {dictionary.profile.signOut}
                       </Button>
                     </form>
                   </div>
                 </SheetContent>
-              </Sheet>
+                </Sheet>
+              </div>
             </div>
           </div>
 
           <div className="relative z-10 grid gap-8 px-5 py-7 md:px-8 lg:grid-cols-[minmax(0,1.08fr)_19rem] lg:items-end">
+            <div className="absolute right-5 top-5 hidden md:block">
+              <LanguageSwitcher variant="solid" className="h-10 px-3" />
+            </div>
             <div>
               <p className="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-[#d6e7de]">
-                Member Home
+                {dictionary.home.memberHome}
               </p>
               <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[#fff6ec] md:text-4xl">
-                Hello, {firstName}
+                {dictionary.home.hello.replace("{name}", firstName)}
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#deeadf] md:text-base">
-                Reopen the journal, find your last routes, and pick up the next
-                trip.
+                {dictionary.home.heroBody}
               </p>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
@@ -197,15 +217,17 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                     {plans.length}
                   </p>
                   <p className="mt-0.5 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-[#deeadf]">
-                    Trips
+                    {dictionary.home.tripCount}
                   </p>
                 </div>
                 <Link
-                  href="/donate"
+                  href={localizeHref(locale, "/donate")}
                   className="rounded-lg border border-white/14 bg-white/8 p-4 transition-colors hover:bg-white/12"
                 >
-                  <Heart className="h-6 w-6 text-[#fff1d9] fill-red-600" />
-                  <p className="mt-2 text-sm text-[#deeadf]">Support Me</p>
+                  <Heart className="h-6 w-6 fill-red-600 text-[#fff1d9]" />
+                  <p className="mt-2 text-sm text-[#deeadf]">
+                    {dictionary.home.supportMe}
+                  </p>
                 </Link>
               </div>
             </div>
@@ -230,13 +252,14 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
             <div>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-base font-semibold text-foreground">
-                  Recent Trips
+                  {dictionary.home.recentTrips}
                 </h2>
                 <Link
-                  href="/trips"
+                  href={localizeHref(locale, "/trips")}
                   className="flex items-center gap-1 text-md font-medium text-primary hover:underline"
                 >
-                  See all <ChevronRight className="h-4 w-4" />
+                  {dictionary.home.seeAll}{" "}
+                  <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
               <TripCardGrid trips={recentPlans} canShareCode={false} />
@@ -247,17 +270,17 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                 <Map className="h-10 w-10 text-primary" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">
-                No Trips yet
+                {dictionary.home.emptyTitle}
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Go to{" "}
+                {dictionary.home.emptyBodyPrefix}{" "}
                 <Link
-                  href="/trips"
+                  href={localizeHref(locale, "/trips")}
                   className="font-medium text-primary hover:underline"
                 >
-                  Trips
+                  {dictionary.home.emptyBodyLink}
                 </Link>{" "}
-                to create your first trip
+                {dictionary.home.emptyBodySuffix}
               </p>
             </div>
           )}
