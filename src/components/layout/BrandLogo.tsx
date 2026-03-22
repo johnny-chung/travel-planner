@@ -20,7 +20,7 @@ export default function BrandLogo({
   priority = false,
 }: Props) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex items-center gap-0.5", className)}>
       <Image
         src={BRAND_LOGO_SRC}
         alt="Roamer's Ledger logo"

@@ -37,7 +37,7 @@ import {
 import SubmitButton from "@/features/shared/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import DatePicker from "@/components/ui/date-picker";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -136,6 +136,7 @@ export default function StopDetailModal({
   const visitAgainDate = newVisitDate
     ? new Date(`${newVisitDate}T00:00:00`)
     : undefined;
+  const editSelectedDate = date ? new Date(`${date}T00:00:00`) : undefined;
   const highlightedTripDates = useMemo(
     () =>
       tripDates
@@ -143,6 +144,7 @@ export default function StopDetailModal({
         .filter((tripDate) => !Number.isNaN(tripDate.getTime())),
     [tripDates],
   );
+  const defaultTripMonth = highlightedTripDates[0] ?? new Date();
 
   const formattedDate = (() => {
     if (!stop.date) {
@@ -206,17 +208,63 @@ export default function StopDetailModal({
             <div className="grid grid-cols-1 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-gray-500">Date</Label>
-                <DatePicker
-                  value={date}
-                  onChange={(nextDate) => {
-                    setDate(nextDate);
-                    if (!nextDate) {
-                      setTime("");
-                    }
-                  }}
-                  className="rounded-xl"
-                  placeholder="Pick a date"
-                />
+                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_12rem]">
+                  <div className="overflow-hidden rounded-2xl border border-border bg-background">
+                    <Calendar
+                      mode="single"
+                      selected={editSelectedDate}
+                      defaultMonth={editSelectedDate ?? defaultTripMonth}
+                      onSelect={(nextDate) => {
+                        if (!nextDate) {
+                          setDate("");
+                          setTime("");
+                          return;
+                        }
+
+                        setDate(format(nextDate, "yyyy-MM-dd"));
+                      }}
+                      modifiers={{ highlighted: highlightedTripDates }}
+                      modifiersClassNames={{
+                        highlighted:
+                          "bg-emerald-500/15 font-semibold text-emerald-900 dark:text-emerald-100",
+                      }}
+                      className="mx-auto"
+                    />
+                  </div>
+                  <div className="space-y-2 rounded-2xl border border-border bg-background p-3">
+                    <Label
+                      htmlFor="stop-edit-date-input"
+                      className="text-xs font-medium text-gray-500"
+                    >
+                      Enter date
+                    </Label>
+                    <Input
+                      id="stop-edit-date-input"
+                      type="date"
+                      value={date}
+                      onChange={(event) => {
+                        const nextDate = event.target.value;
+                        setDate(nextDate);
+                        if (!nextDate) {
+                          setTime("");
+                        }
+                      }}
+                      className="h-11 rounded-xl"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 w-full rounded-xl"
+                      onClick={() => {
+                        setDate("");
+                        setTime("");
+                      }}
+                      disabled={!date}
+                    >
+                      Clear date
+                    </Button>
+                  </div>
+                </div>
                 <p className="text-[11px] text-gray-400">
                   Leave blank to keep this stop in the unscheduled list.
                 </p>
@@ -235,10 +283,14 @@ export default function StopDetailModal({
                 name="notes"
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
+                maxLength={500}
                 className="resize-none rounded-xl text-sm"
                 rows={3}
                 placeholder="Add notes..."
               />
+              <p className="text-right text-[11px] text-muted-foreground">
+                {notes.length}/500
+              </p>
             </div>
 
             {tripDocs.length > 0 ? (

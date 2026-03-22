@@ -27,6 +27,8 @@ export class StopServiceError extends Error {
   }
 }
 
+const STOP_NOTES_MAX_LENGTH = 500;
+
 type TripAccessRecord = {
   userId?: string;
   ownerType?: "user" | "guest";
@@ -103,6 +105,18 @@ function normalizeStringArray(value: string[] | undefined) {
   return value
     .map((entry) => entry.trim())
     .filter(Boolean);
+}
+
+function normalizeNotes(notes?: string) {
+  const normalized = notes?.trim() ?? "";
+  if (normalized.length > STOP_NOTES_MAX_LENGTH) {
+    throw new StopServiceError(
+      "VALIDATION_ERROR",
+      `Stop notes must be ${STOP_NOTES_MAX_LENGTH} characters or fewer`,
+    );
+  }
+
+  return normalized;
 }
 
 function normalizeSchedule(date: string | undefined, time: string | undefined) {
@@ -311,7 +325,7 @@ async function createStopForActor(
     lat: input.lat,
     lng: input.lng,
     placeId: input.placeId ?? "",
-    notes: input.notes ?? "",
+    notes: normalizeNotes(input.notes),
     openingHours: normalizeStringArray(input.openingHours),
     phone: input.phone ?? "",
     website: input.website ?? "",
@@ -380,7 +394,7 @@ async function updateStopForActor(
   };
 
   if (input.notes !== undefined) {
-    update.notes = input.notes;
+    update.notes = normalizeNotes(input.notes);
   }
 
   if (input.linkedDocIds !== undefined) {
@@ -494,7 +508,9 @@ async function duplicateStopForActor(
     lat: existingStop.lat ?? 0,
     lng: existingStop.lng ?? 0,
     placeId: existingStop.placeId ?? "",
-    notes: existingStop.notes ?? "",
+    notes: normalizeNotes(
+      typeof existingStop.notes === "string" ? existingStop.notes : "",
+    ),
     openingHours: Array.isArray(existingStop.openingHours) ? existingStop.openingHours : [],
     phone: existingStop.phone ?? "",
     website: existingStop.website ?? "",

@@ -18,6 +18,7 @@ import type {
 } from "@/features/planner/components/plan-map/types";
 import {
   createMarkerElement,
+  createSuggestionMarkerElement,
   createStayMarkerElement,
   createUnscheduledMarkerElement,
   getDateColorMap,
@@ -64,11 +65,26 @@ export default function PlanMapClient({
   const [mapType, setMapType] = useState<"roadmap" | "hybrid">("roadmap");
   const [poiInfo, setPoiInfo] = useState<PendingLocation | null>(null);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
-  const focusPoint = useMemo(() => {
-    const lat = Number(searchState.focusLat);
-    const lng = Number(searchState.focusLng);
+
+  function parseCoordinatePoint(latValue?: string, lngValue?: string) {
+    if (!latValue?.trim() || !lngValue?.trim()) {
+      return null;
+    }
+
+    const lat = Number(latValue);
+    const lng = Number(lngValue);
     return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+  }
+
+  const focusPoint = useMemo(() => {
+    return parseCoordinatePoint(searchState.focusLat, searchState.focusLng);
   }, [searchState.focusLat, searchState.focusLng]);
+  const suggestionMarkerPoint = useMemo(() => {
+    return parseCoordinatePoint(
+      searchState.suggestionMarkerLat,
+      searchState.suggestionMarkerLng,
+    );
+  }, [searchState.suggestionMarkerLat, searchState.suggestionMarkerLng]);
 
   const groupedStopMarkers = useMemo(() => {
     const groups = new Map<
@@ -122,6 +138,8 @@ export default function PlanMapClient({
           options?.keepSuggestions ?? true ? searchState.suggestLookup : false,
         focusLat: String(lat),
         focusLng: String(lng),
+        suggestionMarkerLat: null,
+        suggestionMarkerLng: null,
         suggestLat:
           (options?.keepSuggestions ?? true) && searchState.suggestLat
             ? searchState.suggestLat
@@ -145,10 +163,14 @@ export default function PlanMapClient({
         pathname,
         {
           ...current,
-          focusLat:
-            typeof lat === "number" && typeof lng === "number" ? String(lat) : "",
-          focusLng:
-            typeof lat === "number" && typeof lng === "number" ? String(lng) : "",
+          focusLat: current.view === "map" && typeof lat === "number" && typeof lng === "number"
+            ? String(lat)
+            : "",
+          focusLng: current.view === "map" && typeof lat === "number" && typeof lng === "number"
+            ? String(lng)
+            : "",
+          suggestionMarkerLat: "",
+          suggestionMarkerLng: "",
           travelFrom: "",
           travelTo: "",
           stopId: "",
@@ -166,10 +188,14 @@ export default function PlanMapClient({
       const current = searchStateRef.current;
       return buildPlannerStayModalHref(pathname, {
         ...current,
-        focusLat:
-          typeof lat === "number" && typeof lng === "number" ? String(lat) : "",
-        focusLng:
-          typeof lat === "number" && typeof lng === "number" ? String(lng) : "",
+        focusLat: current.view === "map" && typeof lat === "number" && typeof lng === "number"
+          ? String(lat)
+          : "",
+        focusLng: current.view === "map" && typeof lat === "number" && typeof lng === "number"
+          ? String(lng)
+          : "",
+        suggestionMarkerLat: "",
+        suggestionMarkerLng: "",
         travelFrom: "",
         travelTo: "",
         stopId: "",
@@ -445,6 +471,25 @@ export default function PlanMapClient({
         });
       }
 
+      if (suggestionMarkerPoint) {
+        const selectedSuggestion =
+          suggestions.find(
+            (suggestion) =>
+              Math.abs(suggestion.lat - suggestionMarkerPoint.lat) < 0.000001 &&
+              Math.abs(suggestion.lng - suggestionMarkerPoint.lng) < 0.000001,
+          ) ?? null;
+        const markerElement = createSuggestionMarkerElement(
+          selectedSuggestion?.name ?? "Suggestion",
+        );
+        const marker = new AdvancedMarkerElement({
+          map,
+          position: suggestionMarkerPoint,
+          content: markerElement,
+          title: selectedSuggestion?.name ?? "Suggestion",
+        });
+        markersRef.current.set("suggestion:active", marker);
+      }
+
       if (
         !userFocusedMapRef.current &&
         (
@@ -483,6 +528,8 @@ export default function PlanMapClient({
     router,
     searchState.hideStaysMap,
     searchState.hideUnscheduledMap,
+    suggestionMarkerPoint,
+    suggestions,
     setFocusHref,
     stays,
     stops,
@@ -495,8 +542,8 @@ export default function PlanMapClient({
       const map = googleMapRef.current;
       if (map) {
         userFocusedMapRef.current = true;
-        map.panTo({ lat: info.lat, lng: info.lng });
-        map.setZoom(16);
+      map.panTo({ lat: info.lat, lng: info.lng });
+      map.setZoom(16);
       }
       router.replace(setFocusHref(info.lat, info.lng));
 
@@ -553,9 +600,17 @@ export default function PlanMapClient({
       userFocusedMapRef.current = true;
       map.panTo({ lat: suggestion.lat, lng: suggestion.lng });
       map.setZoom(Math.max(map.getZoom() ?? 13, 15));
-      router.replace(setFocusHref(suggestion.lat, suggestion.lng, { keepSuggestions: true }));
+      router.replace(
+        buildPlannerHref(pathname, searchStateRef.current, {
+          suggestLookup: true,
+          focusLat: String(suggestion.lat),
+          focusLng: String(suggestion.lng),
+          suggestionMarkerLat: String(suggestion.lat),
+          suggestionMarkerLng: String(suggestion.lng),
+        }),
+      );
     },
-    [router, setFocusHref],
+    [pathname, router],
   );
 
   return (

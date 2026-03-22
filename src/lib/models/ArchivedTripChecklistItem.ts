@@ -4,7 +4,7 @@ const ArchivedTripChecklistItemSchema = new Schema(
   {
     originalId: { type: String, required: true, index: true },
     tripId: { type: String, required: true, index: true },
-    text: { type: String, required: true, trim: true },
+    text: { type: String, required: true, trim: true, maxlength: 800 },
     isCompleted: { type: Boolean, default: false },
     checkedBy: { type: String, default: "", trim: true },
     completedAt: { type: Date, default: null },

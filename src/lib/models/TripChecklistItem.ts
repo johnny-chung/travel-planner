@@ -3,7 +3,7 @@ import mongoose, { Schema, model } from "mongoose";
 const TripChecklistItemSchema = new Schema(
   {
     tripId: { type: String, required: true, index: true },
-    text: { type: String, required: true, trim: true },
+    text: { type: String, required: true, trim: true, maxlength: 800 },
     isCompleted: { type: Boolean, default: false, index: true },
     checkedBy: { type: String, default: "", trim: true },
     completedAt: { type: Date, default: null },

@@ -21,7 +21,7 @@ const TripSchema = new Schema(
     userId: { type: String, default: "", index: true },
     guestId: { type: String, default: null, index: true },
     name: { type: String, required: true },
-    description: { type: String, default: "" },
+    description: { type: String, default: "", maxlength: 500 },
     centerName: { type: String, default: "" },
     centerPlaceId: { type: String, default: "" },
     centerCountryCode: { type: String, default: "" },

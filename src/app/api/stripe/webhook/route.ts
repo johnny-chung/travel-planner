@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { NextRequest, NextResponse } from "next/server";
+import { Order } from "@/lib/models/Order";
 import { User } from "@/lib/models/User";
 import { connectDB } from "@/lib/mongodb";
 
@@ -27,6 +28,82 @@ async function getUserIdFromSubscription(subscription: Stripe.Subscription) {
       : subscription.customer?.id;
 
   return findUserIdByCustomerId(customerId);
+}
+
+async function recordDonationOrderFromCheckoutSession(
+  session: Stripe.Checkout.Session,
+) {
+  const customerId =
+    typeof session.customer === "string"
+      ? session.customer
+      : session.customer?.id;
+  const userId = await findUserIdByCustomerId(customerId);
+
+  if (!userId) {
+    return;
+  }
+
+  await Order.updateOne(
+    { stripeCheckoutSessionId: session.id },
+    {
+      $setOnInsert: {
+        userId,
+        stripeCustomerId: customerId ?? "",
+        stripeCheckoutSessionId: session.id,
+        stripePaymentIntentId:
+          typeof session.payment_intent === "string"
+            ? session.payment_intent
+            : session.payment_intent?.id ?? "",
+        orderNumber:
+          typeof session.payment_intent === "string" && session.payment_intent
+            ? session.payment_intent
+            : session.id,
+        kind: "donation",
+        title: "Roamer's Ledger Donation",
+        amountCents: session.amount_total ?? 0,
+        currency: session.currency ?? "usd",
+        orderDate: new Date((session.created ?? Math.floor(Date.now() / 1000)) * 1000),
+      },
+    },
+    { upsert: true },
+  );
+}
+
+async function recordSubscriptionOrderFromInvoice(invoice: Stripe.Invoice) {
+  const customerId =
+    typeof invoice.customer === "string"
+      ? invoice.customer
+      : invoice.customer?.id;
+  const userId =
+    (invoice.parent?.subscription_details?.metadata?.userId as string | undefined) ??
+    (await findUserIdByCustomerId(customerId));
+
+  if (!userId) {
+    return null;
+  }
+
+  await Order.updateOne(
+    { stripeInvoiceId: invoice.id },
+    {
+      $setOnInsert: {
+        userId,
+        stripeCustomerId: customerId ?? "",
+        stripeInvoiceId: invoice.id,
+        orderNumber: invoice.number || invoice.id,
+        kind: "subscription",
+        title: "Roamer's Ledger Pro",
+        amountCents: invoice.amount_paid ?? invoice.total ?? 0,
+        currency: invoice.currency ?? "usd",
+        orderDate: new Date(
+          ((invoice.status_transitions?.paid_at as number | null | undefined) ??
+            invoice.created) * 1000,
+        ),
+      },
+    },
+    { upsert: true },
+  );
+
+  return userId;
 }
 
 export async function POST(req: NextRequest) {
@@ -63,6 +140,13 @@ export async function POST(req: NextRequest) {
   switch (event.type) {
     case "checkout.session.completed": {
       const checkoutSession = event.data.object as Stripe.Checkout.Session;
+      if (checkoutSession.mode === "payment") {
+        if (checkoutSession.payment_status === "paid") {
+          await recordDonationOrderFromCheckoutSession(checkoutSession);
+        }
+        break;
+      }
+
       if (checkoutSession.mode !== "subscription") {
         break;
       }
@@ -117,6 +201,7 @@ export async function POST(req: NextRequest) {
 
     case "invoice.paid": {
       const invoice = event.data.object as Stripe.Invoice;
+      await recordSubscriptionOrderFromInvoice(invoice);
       const customerId =
         typeof invoice.customer === "string"
           ? invoice.customer

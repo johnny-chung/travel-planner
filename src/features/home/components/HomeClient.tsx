@@ -68,7 +68,7 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
               <BrandLogo
                 size={40}
                 priority
-                iconClassName="h-10 w-10 rounded-xl border border-white/15 bg-white/8 p-1.5"
+                iconClassName="h-12 w-12"
                 labelClassName="text-base text-[#f7efe2]"
               />
 
@@ -205,7 +205,7 @@ export default function HomeClient({ user, plans, membershipStatus }: Props) {
                   className="rounded-lg border border-white/14 bg-white/8 p-4 transition-colors hover:bg-white/12"
                 >
                   <Heart className="h-6 w-6 text-[#fff1d9] fill-red-600" />
-                  <p className="mt-2 text-sm text-[#deeadf]">Support us</p>
+                  <p className="mt-2 text-sm text-[#deeadf]">Support Me</p>
                 </Link>
               </div>
             </div>

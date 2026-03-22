@@ -182,9 +182,13 @@ export default function AddStopModal({
               placeholder="Add notes about this stop..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              maxLength={500}
               className="rounded-xl resize-none"
               rows={3}
             />
+            <p className="text-right text-[11px] text-muted-foreground">
+              {notes.length}/500
+            </p>
           </div>
 
           {tripDocs.length > 0 && (

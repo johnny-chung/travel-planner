@@ -31,6 +31,8 @@ import type {
 
 export { TripServiceError } from "@/features/trips/errors";
 
+const TRIP_DESCRIPTION_MAX_LENGTH = 500;
+
 type LocationInput = {
   location?: string;
   locationLat?: number | null;
@@ -414,6 +416,14 @@ export async function createTripForUser(userId: string, input: CreateTripInput) 
     throw new TripServiceError("VALIDATION_ERROR", "Name is required");
   }
 
+  const description = input.description?.trim() ?? "";
+  if (description.length > TRIP_DESCRIPTION_MAX_LENGTH) {
+    throw new TripServiceError(
+      "VALIDATION_ERROR",
+      `Trip description must be ${TRIP_DESCRIPTION_MAX_LENGTH} characters or fewer`,
+    );
+  }
+
   await connectDB();
 
   const membershipStatus = await getMembershipStatus(userId);
@@ -441,7 +451,7 @@ export async function createTripForUser(userId: string, input: CreateTripInput) 
     ownerType: "user",
     userId,
     name,
-    description: input.description?.trim() ?? "",
+    description,
     shareCode,
     travelDates: [],
     transportMode: input.transportMode ?? "transit",
@@ -456,6 +466,14 @@ export async function createTrialTripForGuest(
   const name = input.name.trim();
   if (!name) {
     throw new TripServiceError("VALIDATION_ERROR", "Name is required");
+  }
+
+  const description = input.description?.trim() ?? "";
+  if (description.length > TRIP_DESCRIPTION_MAX_LENGTH) {
+    throw new TripServiceError(
+      "VALIDATION_ERROR",
+      `Trip description must be ${TRIP_DESCRIPTION_MAX_LENGTH} characters or fewer`,
+    );
   }
 
   await connectDB();
@@ -483,7 +501,7 @@ export async function createTrialTripForGuest(
     guestId,
     userId: "",
     name,
-    description: input.description?.trim() ?? "",
+    description,
     shareCode,
     travelDates: [],
     transportMode: input.transportMode ?? "transit",

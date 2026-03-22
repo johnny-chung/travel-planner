@@ -4,6 +4,15 @@ import type { TripStayItem } from "@/types/trip-logistics";
 
 const UNTYPED_STOP_SORT_TIME = "23:58";
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 export function getStopSortTime(stop: Pick<Stop, "time" | "displayTime">) {
   return stop.displayTime && stop.time ? stop.time : UNTYPED_STOP_SORT_TIME;
 }
@@ -176,6 +185,8 @@ export function createMarkerElement(
   const hour12 = hour % 12 || 12;
   const timeLabel = `${hour12}:${minute.toString().padStart(2, "0")}${period}`;
   const dateTimeLabel = stop.displayTime ? `${dateLabel} · ${timeLabel}` : dateLabel;
+  const safeName = escapeHtml(truncName);
+  const safeDateTimeLabel = escapeHtml(dateTimeLabel);
 
   const element = document.createElement("div");
   element.innerHTML = `
@@ -193,8 +204,8 @@ export function createMarkerElement(
           padding:3px 7px 4px;min-width:72px;max-width:110px;
           box-shadow:0 2px 8px rgba(0,0,0,0.18);text-align:center;
           border:1px solid rgba(0,0,0,0.08);">
-          <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${truncName}</div>
-          <div style="font-size:9px;color:${pinColor};font-weight:600;margin-top:1px;white-space:nowrap;">${dateTimeLabel}</div>
+          <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
+          <div style="font-size:9px;color:${pinColor};font-weight:600;margin-top:1px;white-space:nowrap;">${safeDateTimeLabel}</div>
         </div>
       </div>`;
   return element;
@@ -202,6 +213,7 @@ export function createMarkerElement(
 
 export function createUnscheduledMarkerElement(stop: Stop) {
   const truncName = stop.name.length > 20 ? `${stop.name.slice(0, 20)}…` : stop.name;
+  const safeName = escapeHtml(truncName);
 
   const element = document.createElement("div");
   element.innerHTML = `
@@ -219,8 +231,33 @@ export function createUnscheduledMarkerElement(stop: Stop) {
           padding:3px 7px 4px;min-width:72px;max-width:110px;
           box-shadow:0 2px 8px rgba(0,0,0,0.18);text-align:center;
           border:1px solid rgba(0,0,0,0.08);">
-          <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${truncName}</div>
+          <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
           <div style="font-size:9px;color:#546d69;font-weight:600;margin-top:1px;white-space:nowrap;">Unscheduled</div>
+        </div>
+      </div>`;
+  return element;
+}
+
+export function createSuggestionMarkerElement(title = "Suggestion") {
+  const safeTitle = escapeHtml(title);
+  const element = document.createElement("div");
+  element.innerHTML = `
+      <div class="waypoint-marker" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.18s ease;">
+        <div style="
+          background:#d38a45;color:white;width:32px;height:32px;
+          border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+          display:flex;align-items:center;justify-content:center;
+          border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);
+          font-size:12px;font-weight:700;flex-shrink:0;">
+          <span style="transform:rotate(45deg)">S</span>
+        </div>
+        <div style="
+          background:white;border-radius:8px;margin-top:5px;
+          padding:3px 7px 4px;min-width:72px;max-width:120px;
+          box-shadow:0 2px 8px rgba(0,0,0,0.18);text-align:center;
+          border:1px solid rgba(0,0,0,0.08);">
+          <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeTitle}</div>
+          <div style="font-size:9px;color:#d38a45;font-weight:600;margin-top:1px;white-space:nowrap;">Suggestion</div>
         </div>
       </div>`;
   return element;
@@ -244,6 +281,8 @@ export function createStayMarkerElement(stay: TripStayItem) {
     "Dec",
   ];
   const dateLabel = `${months[month - 1]} ${day}${stay.checkOutDate !== stay.checkInDate ? ` - ${stay.checkOutDate.slice(5)}` : ""}`;
+  const safeName = escapeHtml(truncName);
+  const safeDateLabel = escapeHtml(dateLabel);
 
   const element = document.createElement("div");
   element.innerHTML = `
@@ -260,8 +299,8 @@ export function createStayMarkerElement(stay: TripStayItem) {
           padding:3px 7px 4px;min-width:72px;max-width:110px;
           box-shadow:0 2px 8px rgba(0,0,0,0.18);text-align:center;
           border:1px solid rgba(139,107,71,0.18);">
-          <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${truncName}</div>
-          <div style="font-size:9px;color:#8b6b47;font-weight:600;margin-top:1px;white-space:nowrap;">Stay · ${dateLabel}</div>
+          <div style="font-size:10px;font-weight:700;color:#1f1a17;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
+          <div style="font-size:9px;color:#8b6b47;font-weight:600;margin-top:1px;white-space:nowrap;">Stay · ${safeDateLabel}</div>
         </div>
       </div>`;
   return element;

@@ -9,7 +9,7 @@ const StopSchema = new Schema(
     lat: { type: Number, required: true },
     lng: { type: Number, required: true },
     placeId: { type: String, default: "" },
-    notes: { type: String, default: "" },
+    notes: { type: String, default: "", maxlength: 500 },
     openingHours: { type: [String], default: [] },
     phone: { type: String, default: "" },
     website: { type: String, default: "" },

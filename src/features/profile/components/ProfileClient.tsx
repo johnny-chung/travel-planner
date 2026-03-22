@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
+  CreditCard,
   Crown,
   LogOut,
   Mail,
@@ -181,6 +182,23 @@ export default function ProfileClient({ user }: Props) {
               </span>
             </div>
           </div>
+
+          <Link href="/orders" className="block">
+            <div className="flex items-center justify-between rounded-xl border border-border/70 bg-card px-4 py-4 shadow-sm transition-colors hover:bg-muted/40">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-accent/70">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Orders</p>
+                  <p className="text-xs text-muted-foreground">
+                    View completed Stripe payments
+                  </p>
+                </div>
+              </div>
+              <ArrowLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
+            </div>
+          </Link>
 
           <form action={signOutAction}>
             <Button

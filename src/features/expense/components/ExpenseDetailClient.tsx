@@ -43,15 +43,17 @@ export default function ExpenseDetailClient({
   return (
     <div className="h-screen flex flex-col bg-background pb-16 md:pb-0 md:pt-16 overflow-hidden">
       <div
-        className="bg-[linear-gradient(180deg,rgba(52,92,89,0.98)_0%,rgba(39,72,70,0.96)_100%)] px-4 pb-4 text-primary-foreground md:pb-6 shrink-0"
+        className="bg-[linear-gradient(180deg,rgba(52,92,89,0.98)_0%,rgba(39,72,70,0.96)_100%)] px-4 pb-4 text-primary-foreground dark:text-white md:pb-6 shrink-0"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
       >
         <div className="max-w-2xl mx-auto">
-          <Link href="/expense" className="mb-3 flex items-center gap-1 text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
-            <ArrowLeft className="w-4 h-4" /> All Expenses
-          </Link>
-          <h1 className="text-xl font-bold">{tripName}</h1>
-          <p className="mt-0.5 text-sm text-primary-foreground/70">Expense Tracker</p>
+          <div className="rounded-2xl border border-white/10 bg-black/18 px-4 py-4 backdrop-blur-sm md:px-5">
+            <Link href="/expense" className="mb-3 flex items-center gap-1 text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground dark:text-foreground dark:hover:text-foreground">
+              <ArrowLeft className="w-4 h-4" /> All Expenses
+            </Link>
+            <h1 className="text-xl font-bold text-primary-foreground dark:text-foreground">{tripName}</h1>
+            <p className="mt-0.5 text-sm text-primary-foreground/75 dark:text-foreground">Expense Tracker</p>
+          </div>
         </div>
       </div>
 

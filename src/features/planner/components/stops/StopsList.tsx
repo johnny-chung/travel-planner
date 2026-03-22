@@ -23,7 +23,6 @@ import {
   Calendar,
   ChevronDown,
   ChevronRight,
-  Clock,
   GripVertical,
   MapPin,
   Plane,
@@ -87,13 +86,44 @@ function computeLeaveBy(arrivalTime: string, durationMinutes: number): string {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
+function formatTime12Hour(time: string) {
+  if (!time) {
+    return "";
+  }
+
+  const [hourString, minuteString] = time.split(":");
+  const hour = Number(hourString);
+  const minute = Number(minuteString);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+    return time;
+  }
+
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
+}
+
 function buildStopHref(
   pathname: string,
   searchState: PlannerSearchState,
   stop: Stop,
   edit = false,
 ) {
-  return buildPlannerStopModalHref(pathname, searchState, stop._id, { edit });
+  const nextSearchState =
+    searchState.view === "list"
+      ? {
+          ...searchState,
+          focusLat: "",
+          focusLng: "",
+          suggestionMarkerLat: "",
+          suggestionMarkerLng: "",
+        }
+      : searchState;
+
+  return buildPlannerStopModalHref(pathname, nextSearchState, stop._id, {
+    edit,
+  });
 }
 
 function StopCardContent({
@@ -106,48 +136,49 @@ function StopCardContent({
 }: Pick<StopCardItem, "stop" | "orderLabel" | "href" | "leaveByTime" | "isBacklog"> & {
   dragHandle?: React.ReactNode;
 }) {
-  const label = isBacklog
-    ? "Save for later"
-    : stop.displayTime
-      ? stop.time
-      : "No time set";
+  const displayTime = !isBacklog && stop.displayTime && stop.time
+    ? formatTime12Hour(stop.time)
+    : "";
 
   return (
     <div className="relative">
       <Link
         href={href}
-        className="block w-full rounded-2xl border border-border bg-card p-4 text-left shadow-sm transition-transform hover:shadow-md active:scale-[0.98]"
+        className="block w-full rounded-2xl border border-border bg-card px-3.5 py-3 text-left shadow-sm transition-transform hover:shadow-md active:scale-[0.98]"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary shadow-sm">
-            <span className="text-[9px] font-bold text-white">{orderLabel}</span>
+          <div className="flex w-14 flex-shrink-0 flex-col items-center">
+            <div className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-primary shadow-sm">
+              <span className="text-[9px] font-bold text-white">{orderLabel}</span>
+            </div>
+            {displayTime ? (
+              <span className="mt-1 whitespace-nowrap text-center text-[11px] font-semibold uppercase tracking-wide text-primary">
+                {displayTime}
+              </span>
+            ) : null}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-foreground">
               {stop.name}
             </p>
-            <div className="mt-0.5 flex items-center gap-1.5">
-              {isBacklog ? (
+            {isBacklog ? (
+              <div className="mt-0.5 flex items-center gap-1.5">
                 <Calendar className="h-3 w-3 text-muted-foreground" />
-              ) : (
-                <Clock className="h-3 w-3 text-muted-foreground" />
-              )}
-              <span className="text-sm font-medium text-foreground">{label}</span>
-              {stop.address ? (
-                <>
-                  <span className="text-muted-foreground/40">·</span>
-                  <MapPin className="h-3 w-3 text-muted-foreground/60" />
-                  <span className="truncate text-xs text-muted-foreground">
-                    {stop.address.split(",")[0]}
-                  </span>
-                </>
-              ) : null}
-            </div>
+                <span className="text-xs text-muted-foreground">Save for later</span>
+              </div>
+            ) : null}
+            {stop.address ? (
+              <div className="mt-0.5 flex items-center gap-1.5">
+                <MapPin className="h-3 w-3 text-muted-foreground/60" />
+                <span className="truncate text-xs text-muted-foreground">
+                  {stop.address.split(",")[0]}
+                </span>
+              </div>
+            ) : null}
             {leaveByTime ? (
               <div className="mt-0.5 flex items-center gap-1">
-                <Clock className="h-3 w-3 text-orange-400" />
                 <span className="text-xs font-medium text-orange-500">
-                  Leave by {leaveByTime}
+                  Leave by {formatTime12Hour(leaveByTime)}
                 </span>
               </div>
             ) : null}
@@ -598,9 +629,9 @@ export default function StopsList({
                     : null;
                 renderedItems.push(
                   <div key={item.id}>
-                    <div className="my-1 rounded-2xl border border-amber-300 bg-amber-50/60 px-4 py-0">
+                    <div className="my-1 rounded-2xl border border-amber-300 bg-amber-50/60 px-4 py-0 dark:border-amber-800/70 dark:bg-amber-950/30">
                       <div className="flex items-start gap-3">
-                        <div className="mt-1 rounded-xl bg-amber-100 p-2 text-amber-700">
+                        <div className="mt-1 rounded-xl bg-amber-100 p-2 text-amber-700 dark:bg-amber-900/70 dark:text-amber-200">
                           <Plane className="h-4 w-4" />
                         </div>
                         <div className="min-w-0 flex-1">
@@ -658,10 +689,10 @@ export default function StopsList({
                 <div key={item.id}>
                   <Link
                     href={buildPlannerStayModalHref(pathname, searchState, stay._id)}
-                    className="my-1 block rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 transition-transform hover:shadow-sm active:scale-[0.99]"
+                    className="my-1 block rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 transition-transform hover:shadow-sm active:scale-[0.99] dark:border-emerald-800/70 dark:bg-emerald-950/30"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
+                      <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700 dark:bg-emerald-900/70 dark:text-emerald-200">
                         <BedDouble className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">

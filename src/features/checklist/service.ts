@@ -11,6 +11,8 @@ import {
 import { TripServiceError } from "@/features/trips/errors";
 import type { ChecklistItem, ChecklistPageData } from "@/features/checklist/types";
 
+const CHECKLIST_TEXT_MAX_LENGTH = 800;
+
 type RawChecklistItem = {
   _id: unknown;
   text?: string;
@@ -108,6 +110,12 @@ async function createChecklistItemForActor(
   if (!text) {
     throw new TripServiceError("VALIDATION_ERROR", "Checklist item is required");
   }
+  if (text.length > CHECKLIST_TEXT_MAX_LENGTH) {
+    throw new TripServiceError(
+      "VALIDATION_ERROR",
+      `Checklist item must be ${CHECKLIST_TEXT_MAX_LENGTH} characters or fewer`,
+    );
+  }
 
   await TripChecklistItem.create({
     tripId,
@@ -129,6 +137,12 @@ async function updateChecklistItemForActor(
   const text = input.text.trim();
   if (!text) {
     throw new TripServiceError("VALIDATION_ERROR", "Checklist item is required");
+  }
+  if (text.length > CHECKLIST_TEXT_MAX_LENGTH) {
+    throw new TripServiceError(
+      "VALIDATION_ERROR",
+      `Checklist item must be ${CHECKLIST_TEXT_MAX_LENGTH} characters or fewer`,
+    );
   }
 
   const updated = await TripChecklistItem.findOneAndUpdate(

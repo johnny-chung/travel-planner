@@ -39,23 +39,32 @@ export default function DonateClient({ success, canceled }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col bg-[radial-gradient(circle_at_top,rgba(91,143,137,0.18),transparent_32%),linear-gradient(180deg,rgba(246,244,239,1)_0%,rgba(236,231,224,1)_100%)] dark:bg-[radial-gradient(circle_at_top,rgba(91,143,137,0.18),transparent_26%),linear-gradient(180deg,rgba(28,24,22,1)_0%,rgba(20,18,16,1)_100%)]">
-      <div className="px-4 pt-24 pb-8 text-center text-foreground">
-        <Link href="/" className="absolute top-24 left-4 rounded-xl border border-border/70 bg-card/80 p-2 transition-colors hover:bg-muted">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-border/80 bg-card/80 shadow-sm">
-          <Heart className="w-8 h-8 fill-[color:var(--color-accent)] text-primary" />
+      <div className="px-4 pb-8 pt-24 text-foreground">
+        <div className="mx-auto max-w-lg">
+          <Link
+            href="/"
+            className="mb-6 inline-flex rounded-xl border border-border/70 bg-card/80 p-2 transition-colors hover:bg-muted"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-border/80 bg-card/80 shadow-sm">
+              <Heart className="w-8 h-8 fill-red-500 text-red-700" />
+            </div>
+            <h1 className="text-2xl font-bold">Support Roamer&apos;s Ledger</h1>
+            <p className="my-2 text-sm text-muted-foreground">
+              This is a personal project, and the APIs behind maps, route calculation,
+              and suggestions are not free to run.
+            </p>
+            <p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">
+              Your contribution helps keep Roamer&apos;s Ledger free and growing.
+              Every bit counts.
+            </p>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold">Support Roamer&apos;s Ledger</h1>
-        <p className="my-2 text-sm text-muted-foreground">
-            This is jsut a personal project and API call ain&apos;t free.            
-          </p>
-        <p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">
-          Your contribution helps keep Roamer&apos;s Ledger free and growing. Every bit counts!
-        </p>
       </div>
 
-      <div className="mx-auto flex w-full max-w-lg flex-1 rounded-t-[1.6rem] border border-border/70 bg-card px-6 pt-8 pb-10 shadow-[0_-18px_45px_rgba(47,67,65,0.08)]">
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col rounded-t-[1.6rem] border border-border/70 bg-card px-6 pb-10 pt-8 shadow-[0_-18px_45px_rgba(47,67,65,0.08)]">
         {success ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <CheckCircle2 className="w-14 h-14 text-green-500 mb-4" />
@@ -81,10 +90,9 @@ export default function DonateClient({ success, canceled }: Props) {
           </div>
         ) : (
           <>
-            <h2 className="text-base font-semibold text-foreground mb-4">Choose an amount</h2>
+            <h2 className="mb-4 text-base font-semibold text-foreground">Choose an amount (CAD)</h2>
 
-            {/* Preset buttons */}
-            <div className="grid grid-cols-4 gap-2 mb-5">
+            <div className="mb-5 grid grid-cols-4 gap-2">
               {PRESETS.map(p => (
                 <button
                   key={p}
@@ -101,7 +109,6 @@ export default function DonateClient({ success, canceled }: Props) {
               ))}
             </div>
 
-            {/* Custom amount */}
             <div className="relative mb-1">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">$</span>
               <Input
@@ -114,9 +121,9 @@ export default function DonateClient({ success, canceled }: Props) {
                 placeholder="Other amount"
               />
             </div>
-            <p className="text-xs text-muted-foreground mb-6">Minimum $1.00 · Processed securely by Stripe</p>
+            <p className="mb-6 text-xs text-muted-foreground">Minimum $1.00 · Processed securely by Stripe</p>
 
-            {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
+            {error ? <p className="mb-4 text-center text-sm text-red-500">{error}</p> : null}
 
             <Button
               className="h-12 w-full gap-2 rounded-2xl bg-primary text-base font-bold text-primary-foreground hover:bg-primary/90"
@@ -127,7 +134,7 @@ export default function DonateClient({ success, canceled }: Props) {
               {loading ? "Redirecting…" : `Donate $${isValid ? numericAmount.toFixed(2) : "–"}`}
             </Button>
 
-            <p className="text-center text-xs text-muted-foreground mt-4">
+            <p className="mt-4 text-center text-xs text-muted-foreground">
               One-time payment · No account required
             </p>
           </>

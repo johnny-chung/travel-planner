@@ -201,9 +201,13 @@ export default function TripCreateDialog({
                   placeholder="What's this trip about?"
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
+                  maxLength={500}
                   className="rounded-xl resize-none"
                   rows={2}
                 />
+                <p className="text-right text-[11px] text-muted-foreground">
+                  {description.length}/500
+                </p>
               </div>
               <div className="flex items-center gap-3 py-1">
                 <Switch

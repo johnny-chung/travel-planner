@@ -78,6 +78,7 @@ function InlineAddRow({
           placeholder="Add a checklist item..."
           autoFocus
           required
+          maxLength={800}
         />
         <SubmitButton pendingLabel="Saving...">Save</SubmitButton>
         <button
@@ -115,7 +116,13 @@ function InlineEditRow({
       <input type="hidden" name="tripId" value={tripId} />
       <input type="hidden" name="itemId" value={item._id} />
       <input type="hidden" name="returnTo" value={returnTo} />
-      <Input name="text" defaultValue={item.text} autoFocus required />
+      <Input
+        name="text"
+        defaultValue={item.text}
+        autoFocus
+        required
+        maxLength={800}
+      />
       <SubmitButton pendingLabel="Saving...">Save</SubmitButton>
       <button
         type="button"

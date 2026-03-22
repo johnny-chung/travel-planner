@@ -1,372 +1,318 @@
-# Roamer's Ledger — Travel Planner
+# Roamer's Ledger
 
-A mobile-first travel planning web app built with Next.js 16, Auth0, MongoDB, and Google Maps.
+A mobile-first travel planning web app built to feel like a real product, not a toy demo.
 
----
+Roamer's Ledger combines itinerary planning, map-based trip exploration, transport and stay management, collaborative editing, expense tracking, checklist workflows, guest trial mode, and PDF export in a single Next.js application.
 
-## Table of Contents
+This repository is written as a portfolio-quality full-stack project: it shows product thinking, App Router architecture, server-first data loading, real third-party integrations, and non-trivial UI state across map, list, modal, and pricing flows.
 
-1. [Prerequisites](#prerequisites)
-2. [Google Maps API Setup](#google-maps-api-setup)
-3. [Auth0 Setup](#auth0-setup)
-4. [MongoDB Setup](#mongodb-setup)
-5. [Stripe Setup](#stripe-setup)
-6. [Environment Variables](#environment-variables)
-7. [Running the App](#running-the-app)
+## Highlights
 
----
+- Plan trips in both list and map views
+- Add stops with optional date/time or keep them unscheduled for later
+- Manage flights/custom transport and stays
+- Calculate travel times between route segments
+- Share trips with collaborators and handle join approvals
+- Track trip expenses and checklist items
+- Support a guest `/try` mode with restrictions
+- Export itinerary snapshots to PDF with Playwright
+- Use a public marketing site plus authenticated workspace flows in one codebase
 
-## Prerequisites
+## Tech Stack
 
-- **Node.js** v18 or higher
-- A **Google account** (for Google Cloud / Maps)
-- An **Auth0 account** (free at auth0.com)
-- A **MongoDB** database (free at mongodb.com/atlas)
+### Core
 
----
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- MongoDB + Mongoose
 
-## Google Maps API Setup
+### UI / Interaction
 
-This is the most important step. The app needs three Google APIs enabled.
+- shadcn-style components built on Base UI
+- Vaul drawer
+- DnD Kit for stop reordering
+- React Day Picker for calendar UX
+- Embla carousel
 
-### Step 1 — Create a Google Cloud Project
+### Auth / Billing / Infra
 
-1. Go to [https://console.cloud.google.com](https://console.cloud.google.com)
-2. Click the project dropdown at the top → **New Project**
-3. Give it a name (e.g. `waypoint-travel`) and click **Create**
-4. Make sure your new project is selected in the dropdown
+- Auth.js with Auth0
+- Stripe Checkout + Stripe webhooks
+- Vercel-friendly server actions and route handlers
 
-### Step 2 — Enable Billing
+### External APIs
 
-Google Maps APIs require a billing account (you get $200/month free credit, enough for personal use).
+- Google Maps JavaScript API
+- Google Places
+- Google Routes
+- AirLabs flight lookup
+- Geoapify place suggestions
 
-1. In the left sidebar go to **Billing**
-2. Link or create a billing account
+### Tooling
 
-### Step 3 — Enable the Required APIs
+- ESLint
+- TypeScript type-checking
+- Playwright for PDF rendering
 
-Go to **APIs & Services → Library** and search for and enable each of these:
+## Product Surface
 
-| API | What it does |
-|-----|-------------|
-| **Maps JavaScript API** | Renders the interactive map |
-| **Places API** | Powers the search box and location details (hours, phone, photos) |
-| **Geocoding API** | Converts a map tap (lat/lng) into an address |
+### Public experience
 
-For each one: search → click the result → click **Enable**.
+- Marketing landing page
+- Feature landing pages for SEO
+- Public guest trial entry at `/try`
 
-### Step 4 — Create an API Key
+### Authenticated workspace
 
-1. Go to **APIs & Services → Credentials**
-2. Click **+ Create Credentials → API key**
-3. Copy the key — this is your `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+- Home dashboard
+- Trip list / plan list / expense list
+- Trip detail page
+- Planner list view and planner map view
+- Expense page
+- Checklist page
+- Notifications
+- Profile / upgrade / donate
 
-### Step 5 — Restrict the API Key (Recommended)
+## Interesting Engineering Decisions
 
-To prevent unauthorised use of your key:
+- Server Components are used for data-heavy route rendering, with client components only where local interactivity is necessary
+- Planner detail is implemented with intercepted modal routes rather than loading everything in one page component
+- The app mixes direct server actions with a very small remaining route-handler surface for the cases that still need it, such as Stripe and flight lookup
+- Guest mode is not a separate app; it reuses the same planner/detail surfaces with capability gating
+- Planner data is normalized server-side, then rendered into timeline items for stops, stays, transport boundaries, and travel-time segments
+- PDF export is generated server-side with Playwright rather than relying on browser print
 
-1. Click the pencil icon next to your API key
-2. Under **Application restrictions** → select **Websites**
-3. Add your allowed referrers:
-   ```
-   http://localhost:3000/*
-   https://yourdomain.com/*
-   ```
-4. Under **API restrictions** → select **Restrict key**
-5. Select these three APIs: Maps JavaScript API, Places API, Geocoding API
-6. Click **Save**
+## APIs and Services Connected
 
----
+### Google Maps Platform
 
-## Auth0 Setup
+Used for:
 
-### Step 1 — Create an Auth0 Account and Application
+- interactive map rendering
+- place search / autocomplete
+- place details such as photos, opening hours, phone, website, and rating
+- route calculation
 
-1. Sign up at [https://auth0.com](https://auth0.com) (free tier is fine)
-2. Go to **Applications → Applications → Create Application**
-3. Name it (e.g. `Waypoint`) and choose **Regular Web Application**
-4. Click **Create**
+Environment variables:
 
-### Step 2 — Configure Callback URLs
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+- `GOOGLE_MAPS_SERVER_API_KEY` (recommended for server-side route calls)
 
-In your application settings, fill in:
+### Auth0
 
-| Field | Value |
-|-------|-------|
-| Allowed Callback URLs | `http://localhost:3000/api/auth/callback/auth0` |
-| Allowed Logout URLs | `http://localhost:3000` |
-| Allowed Web Origins | `http://localhost:3000` |
+Used for:
 
-For production, add your production URLs alongside the localhost ones (comma-separated).
+- sign-in / sign-out
+- authenticated user identity
+- protected workspace routes
 
-### Step 3 — Copy Your Credentials
+Environment variables:
 
-From the **Basic Information** section of your application, copy:
+- `AUTH_SECRET`
+- `AUTH_AUTH0_ID`
+- `AUTH_AUTH0_SECRET`
+- `AUTH_AUTH0_ISSUER`
+- `NEXTAUTH_URL`
 
-- **Domain** → `AUTH_AUTH0_ISSUER` (prefix with `https://`, e.g. `https://dev-xxxx.us.auth0.com`)
-- **Client ID** → `AUTH_AUTH0_ID`
-- **Client Secret** → `AUTH_AUTH0_SECRET`
+### MongoDB Atlas
 
----
+Used for:
 
-## MongoDB Setup
+- trips
+- stops
+- stays
+- transport
+- expenses
+- checklist items
+- archived records
+- usage tracking
+- app settings / limits
 
-### Option A — MongoDB Atlas (Free Cloud, Recommended)
+Environment variables:
 
-1. Sign up at [https://www.mongodb.com/atlas](https://www.mongodb.com/atlas)
-2. Create a free **M0 cluster** (choose any region)
-3. Under **Database Access** → Add a database user with a username and password
-4. Under **Network Access** → Add IP Address → **Allow Access from Anywhere** (`0.0.0.0/0`) for development
-5. Go to **Clusters → Connect → Drivers**
-6. Copy the connection string, it looks like:
-   ```
-   mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-   ```
-7. Replace `<password>` with your database user password and add the database name:
-   ```
-   mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/waypoint?retryWrites=true&w=majority
-   ```
+- `MONGODB_URI`
+- `MONGO_DB_NAME` (optional, defaults to `waypoint`)
 
-### Option B — Local MongoDB
+### Stripe
+
+Used for:
+
+- donation checkout
+- Pro membership checkout
+- webhook-driven membership updates
+
+Environment variables:
+
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRO_PRICE_ID`
+
+### AirLabs
+
+Used for:
+
+- flight number route lookup
+- airport metadata for transport autofill
+
+Environment variable:
+
+- `AIRLABS_API_KEY`
+
+### Geoapify
+
+Used for:
+
+- nearby suggestion search in planner map view
+
+Environment variable:
+
+- `GEOAPIFY_API_KEY`
+
+## Local Setup
+
+### 1. Install dependencies
 
 ```bash
-# Install and run MongoDB locally
-brew install mongodb-community   # macOS
-# or download from mongodb.com/try/download/community
-
-mongod --dbpath ~/data/db
-
-# Connection string:
-MONGODB_URI=mongodb://localhost:27017/waypoint
+npm install
 ```
 
----
-
-## Stripe Setup
-
-The app uses Stripe for two purposes:
-
-- **Donations** — one-time payment on the Donate page (no membership change)
-- **Pro Membership** — recurring subscription that upgrades the user's `membershipStatus` to `"pro"` in MongoDB
-
-### How payment confirmation works
-
-Stripe uses **webhooks** — after a successful payment, Stripe sends a `POST` request to your app's webhook endpoint (`/api/webhooks/stripe`). Your handler verifies the event signature, then updates the user's record in MongoDB. This is the only reliable method: a redirect URL alone is not safe because users can close the browser before it fires.
-
-```
-User pays → Stripe processes → Stripe POST /api/webhooks/stripe
-                                       ↓
-                              verify signature
-                                       ↓
-                    User.findOneAndUpdate({ membershipStatus: "pro" })
-```
-
----
-
-### Step 1 — Create a Stripe Account
-
-1. Sign up at [https://stripe.com](https://stripe.com)
-2. You start in **Test Mode** — all test card numbers work without real charges
-
----
-
-### Step 2 — Get Your API Keys
-
-1. In the Stripe Dashboard, go to **Developers → API keys**
-2. Copy:
-   - **Publishable key** → starts with `pk_test_...` → `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-   - **Secret key** → starts with `sk_test_...` → `STRIPE_SECRET_KEY`
-
-> For production, switch to **Live mode** (toggle top-left) and copy the live keys.
-
----
-
-### Step 3 — Create Products and Prices
-
-#### 3a — Pro Membership (Recurring Subscription)
-
-1. Go to **Product catalogue → + Add product**
-2. **Name**: `Pro Membership`
-3. Under **Pricing**, set:
-   - **Pricing model**: Standard pricing
-   - **Price**: e.g. $9.99
-   - **Billing period**: Monthly (or yearly — your choice)
-   - **Currency**: USD (or your preference)
-4. Click **Save product**
-5. On the product page, click the price row → copy the **Price ID** (starts with `price_...`) → `STRIPE_PRO_PRICE_ID`
-
-#### 3b — Donation (One-time)
-
-The donation page lets users enter any amount dynamically. No fixed product is needed — the app creates a Stripe Checkout session with a custom amount at the time of payment. No Price ID is required for donations.
-
----
-
-### Step 4 — Set Up the Webhook
-
-Stripe needs to be able to call your app when a payment succeeds. In development you use the Stripe CLI to forward events locally; in production you register your live URL.
-
-#### Development (Stripe CLI)
-
-1. Install the Stripe CLI: [https://stripe.com/docs/stripe-cli](https://stripe.com/docs/stripe-cli)
-2. Log in:
-   ```bash
-   stripe login
-   ```
-3. Forward events to your local server:
-   ```bash
-   stripe listen --forward-to localhost:3000/api/webhooks/stripe
-   ```
-4. The CLI prints a **webhook signing secret** like `whsec_...` — copy it → `STRIPE_WEBHOOK_SECRET`
-
-> Keep this terminal running while you test payments locally.
-
-#### Production
-
-1. In the Stripe Dashboard go to **Developers → Webhooks → + Add endpoint**
-2. **Endpoint URL**: `https://yourdomain.com/api/webhooks/stripe`
-3. Under **Events to listen to**, add:
-   - `checkout.session.completed` — fires when any payment succeeds
-   - `customer.subscription.deleted` — fires when a Pro subscription is cancelled/expires
-   - `invoice.payment_failed` — fires when a subscription renewal fails
-4. Click **Add endpoint**
-5. On the endpoint detail page, reveal the **Signing secret** → copy it → `STRIPE_WEBHOOK_SECRET`
-
----
-
-### Step 5 — Add Environment Variables
-
-Add these to your `.env.local`:
+### 2. Create `.env.local`
 
 ```env
-# ─── Stripe ────────────────────────────────────────────────────────────────────
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRO_PRICE_ID=price_...        # Only needed for Pro subscription
-```
-
----
-
-### Step 6 — Test a Payment
-
-Use Stripe's test card numbers (Test Mode only):
-
-| Card number | Result |
-|-------------|--------|
-| `4242 4242 4242 4242` | Payment succeeds |
-| `4000 0000 0000 0002` | Card declined |
-| `4000 0025 0000 3155` | Requires 3D Secure |
-
-Use any future expiry date, any 3-digit CVC, and any postal code.
-
----
-
-### Webhook Event Reference
-
-| Event | What it means | App action |
-|-------|--------------|------------|
-| `checkout.session.completed` | Payment succeeded (donation or sub) | If Pro sub → set `membershipStatus = "pro"` |
-| `customer.subscription.deleted` | Sub cancelled or expired | Set `membershipStatus = "basic"` |
-| `invoice.payment_failed` | Sub renewal failed | Set `membershipStatus = "basic"` |
-
-The user ID is passed as `metadata.userId` when creating the Checkout session, so the webhook can look up the correct MongoDB document.
-
----
-
-Create a `.env.local` file in the project root (it is already gitignored):
-
-```env
-# ─── AuthJS ────────────────────────────────────────────────────────────────────
-# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-# Or on Mac/Linux: openssl rand -base64 32
-AUTH_SECRET=your-random-secret-here
-
-# ─── Auth0 ─────────────────────────────────────────────────────────────────────
+AUTH_SECRET=your-random-secret
 AUTH_AUTH0_ID=your-auth0-client-id
 AUTH_AUTH0_SECRET=your-auth0-client-secret
-AUTH_AUTH0_ISSUER=https://your-domain.us.auth0.com
+AUTH_AUTH0_ISSUER=https://your-tenant.us.auth0.com
+NEXTAUTH_URL=http://localhost:3000
 
-# ─── MongoDB ───────────────────────────────────────────────────────────────────
-MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/waypoint?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/waypoint?retryWrites=true&w=majority
+MONGO_DB_NAME=waypoint
 
-# ─── Google Maps ───────────────────────────────────────────────────────────────
-# Must be prefixed with NEXT_PUBLIC_ so the browser can access it
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-browser-google-maps-key
+GOOGLE_MAPS_SERVER_API_KEY=your-server-google-maps-key
 
-# ─── Stripe ────────────────────────────────────────────────────────────────────
+AIRLABS_API_KEY=your-airlabs-key
+GEOAPIFY_API_KEY=your-geoapify-key
+
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRO_PRICE_ID=price_...        # Price ID for Pro membership subscription
-
-# ─── App URL ───────────────────────────────────────────────────────────────────
-NEXTAUTH_URL=http://localhost:3000
+STRIPE_PRO_PRICE_ID=price_...
 ```
 
-### Generating AUTH_SECRET
+### 3. Configure providers
 
-**Windows (PowerShell):**
-```powershell
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
+#### Google Maps
 
-**Mac / Linux:**
+Enable the APIs your app uses:
+
+- Maps JavaScript API
+- Places API
+- Routes API
+
+Using a separate server key for route calculation is recommended.
+
+#### Auth0
+
+Create a Regular Web Application and add:
+
+- callback URL: `http://localhost:3000/api/auth/callback/auth0`
+- logout URL: `http://localhost:3000`
+- web origin: `http://localhost:3000`
+
+#### MongoDB
+
+Create a database and point `MONGODB_URI` at it.
+
+#### Stripe
+
+If you want to test billing locally, run a webhook forwarder:
+
 ```bash
-openssl rand -base64 32
+stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
----
+Then copy the generated signing secret into `STRIPE_WEBHOOK_SECRET`.
 
-## Running the App
+### 4. Optional: seed app settings
+
+The app has hardcoded fallback limits, so this is optional.
+
+If you want a settings document in MongoDB, create one in `appSettings`:
+
+```json
+{
+  "key": "default",
+  "limits": {
+    "basicActiveTrips": 2,
+    "basicArchivedTrips": 3,
+    "basicEditorTrips": 5,
+    "basicEditorsPerTrip": 5,
+    "basicRouteCallsPerMonth": 30,
+    "proRouteCallsPerMonth": 100,
+    "guestActiveTrips": 1,
+    "guestStops": 5,
+    "globalRouteCallsPerMonth": 10000
+  }
+}
+```
+
+### 5. Start the dev server
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — you will be redirected to the login page.
+Open:
 
-### Build for Production
+- `http://localhost:3000` for the main app
+- `http://localhost:3000/try` for guest trial mode
+
+## Validation
+
+Useful checks during development:
 
 ```bash
-npm run build
-npm start
+npm run lint
+npx tsc --noEmit
+```
+
+## What This Project Demonstrates
+
+This project is useful in a hiring context because it is not just CRUD.
+
+It demonstrates:
+
+- App Router architecture with real route conventions
+- server/client boundary decisions
+- server actions and mutation workflows
+- third-party API integration across auth, billing, maps, flights, and suggestions
+- state-heavy UI with map, drag-and-drop, drawers, dialogs, and filters
+- domain modeling for trips, stops, stays, transport, expenses, archived data, and guest mode
+- product thinking around onboarding, free trial restrictions, upgrade flow, SEO, and PDF export
+
+## Repository Notes
+
+- The app is optimized for browser use, especially mobile-sized layouts
+- Some features are intentionally capability-gated between guest, basic, and pro flows
+- PDF export uses Playwright and requires a working browser runtime in the execution environment
+
+## Commands
+
+```bash
+npm run dev
+npm run lint
+npx tsc --noEmit
 ```
 
 ---
 
-## Troubleshooting
+If you are reviewing this repo for hiring or collaboration, the strongest areas to inspect are:
 
-### Map is blank or shows "This page can't load Google Maps correctly"
-- Make sure **Maps JavaScript API**, **Places API**, and **Geocoding API** are all enabled in Google Cloud
-- Verify `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set in `.env.local`
-- Check that billing is enabled on your Google Cloud project
-- If you restricted the key, make sure `http://localhost:3000/*` is in the allowed referrers
-
-### Auth0 login redirects to an error page
-- Double-check `AUTH_AUTH0_ISSUER` includes `https://` and has no trailing slash
-- Verify the Callback URL in Auth0 matches exactly: `http://localhost:3000/api/auth/callback/auth0`
-- Make sure `AUTH_SECRET` is set (any long random string)
-
-### MongoDB connection error
-- Check the `MONGODB_URI` includes your actual password (not `<password>`)
-- In Atlas, verify your current IP is allowed under **Network Access**
-- Try adding `0.0.0.0/0` to Network Access for development
-
-### Search box not finding places
-- The **Places API** must be enabled (separate from Maps JavaScript API)
-- The API key must have Places API access (check API restrictions)
-
-### Stripe webhook returns 400 "No signatures found"
-- Make sure `STRIPE_WEBHOOK_SECRET` matches the secret shown in the Stripe Dashboard for that endpoint
-- In development, ensure `stripe listen --forward-to localhost:3000/api/webhooks/stripe` is running
-- The webhook route must read the raw request body as a `Buffer` — do **not** parse it as JSON before calling `stripe.webhooks.constructEvent`
-
-### Pro membership not upgrading after payment
-- Check your webhook endpoint is registered for `checkout.session.completed` in the Stripe Dashboard
-- Verify you are passing `metadata: { userId: session.user.id }` when creating the Checkout session
-- In development, check the Stripe CLI terminal — it shows each event and whether your endpoint returned 200
-
+- `src/app` for route architecture
+- `src/features/planner` for the main planning experience
+- `src/features/trips`, `src/features/trip-logistics`, and `src/features/stops` for domain logic
+- `src/app/api/stripe` for billing/webhook handling

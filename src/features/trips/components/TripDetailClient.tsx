@@ -69,7 +69,7 @@ export default function TripDetailClient({
   return (
     <div className="min-h-screen bg-background flex flex-col pb-20 md:pb-0 md:pt-16">
       <div
-        className="relative overflow-hidden px-4 pb-8 text-primary-foreground md:pt-6"
+        className="relative overflow-hidden px-4 pb-8 text-primary-foreground dark:text-white md:pt-6"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
       >
         {trip.centerThumbnail ? (
@@ -83,10 +83,11 @@ export default function TripDetailClient({
           <div className="absolute inset-0 bg-[linear-gradient(180deg,#1c2421_0%,#2f6e62_100%)]" />
         ) : null}
         <div className="relative max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
+          <div className="rounded-2xl border border-black/10 bg-white/15 px-4 py-4 backdrop-blur-sm dark:border-white/15 dark:bg-black/32 md:px-5">
+            <div className="mb-4 flex items-center justify-between">
             <Link
               href={backHref}
-              className="flex items-center gap-1 text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground"
+              className="flex items-center gap-1 text-sm text-primary-foreground/80 transition-colors hover:text-primary-foreground dark:text-foreground dark:hover:text-foreground"
             >
               <ArrowLeft className="w-4 h-4" /> All Trips
             </Link>
@@ -100,26 +101,31 @@ export default function TripDetailClient({
                   }
                   openRestrictedFeature();
                 }}
-                className="flex items-center gap-1.5 text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground"
+                className="flex items-center gap-1.5 text-sm text-primary-foreground/80 transition-colors hover:text-primary-foreground dark:text-foreground dark:hover:text-foreground"
               >
                 <Share2 className="w-4 h-4" /> Share
               </button>
             ) : null}
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold">{trip.name}</h1>
-            {isArchived ? (
-              <Badge className="bg-yellow-400 text-yellow-900 hover:bg-yellow-400 text-xs">
-                Archived
-              </Badge>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold text-primary-foreground dark:text-foreground">{trip.name}</h1>
+              {isArchived ? (
+                <Badge className="bg-yellow-400 text-yellow-900 hover:bg-yellow-400 text-xs">
+                  Archived
+                </Badge>
+              ) : null}
+            </div>
+            {trip.description ? (
+              <p className="mt-1 text-sm text-primary-foreground/80 dark:text-foreground">
+                {trip.description}
+              </p>
+            ) : null}
+            {trip.centerName ? (
+              <div className="mt-2 flex items-center gap-1.5 text-sm text-primary-foreground/80 dark:text-foreground">
+                <MapPin className="w-3.5 h-3.5" /> {trip.centerName}
+              </div>
             ) : null}
           </div>
-          {trip.description ? <p className="mt-1 text-sm text-primary-foreground/75">{trip.description}</p> : null}
-          {trip.centerName ? (
-            <div className="mt-2 flex items-center gap-1.5 text-sm text-primary-foreground/75">
-              <MapPin className="w-3.5 h-3.5" /> {trip.centerName}
-            </div>
-          ) : null}
         </div>
       </div>
 

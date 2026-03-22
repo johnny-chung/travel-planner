@@ -17,6 +17,8 @@ type PlannerBaseOverrides = Partial<{
   focusLng: string | null;
   suggestLat: string | null;
   suggestLng: string | null;
+  suggestionMarkerLat: string | null;
+  suggestionMarkerLng: string | null;
   suggestCategory: "tourism" | "catering" | null;
   travelFrom: string | null;
   travelTo: string | null;
@@ -42,6 +44,8 @@ function buildPlannerBaseStateOverrides(overrides: PlannerBaseOverrides = {}) {
     focusLng: overrides.focusLng,
     suggestLat: overrides.suggestLat,
     suggestLng: overrides.suggestLng,
+    suggestionMarkerLat: overrides.suggestionMarkerLat,
+    suggestionMarkerLng: overrides.suggestionMarkerLng,
     suggestCategory: overrides.suggestCategory,
   };
 }
@@ -87,8 +91,18 @@ export function buildPlannerPrintHref(
   searchState: PlannerSearchState,
 ) {
   const baseHref = buildPlannerBaseHref(pathname, searchState, {
+    view: "list",
+    sidebarTab: "itinerary",
     travelFrom: null,
     travelTo: null,
+    focusLat: null,
+    focusLng: null,
+    suggestLookup: null,
+    suggestLat: null,
+    suggestLng: null,
+    suggestionMarkerLat: null,
+    suggestionMarkerLng: null,
+    suggestCategory: null,
   });
   const url = new URL(baseHref, "https://planner.local");
   const search = url.searchParams.toString();
@@ -100,8 +114,18 @@ export function buildPlannerPdfHref(
   searchState: PlannerSearchState,
 ) {
   const baseHref = buildPlannerBaseHref(pathname, searchState, {
+    view: "list",
+    sidebarTab: "itinerary",
     travelFrom: null,
     travelTo: null,
+    focusLat: null,
+    focusLng: null,
+    suggestLookup: null,
+    suggestLat: null,
+    suggestLng: null,
+    suggestionMarkerLat: null,
+    suggestionMarkerLng: null,
+    suggestCategory: null,
   });
   const url = new URL(baseHref, "https://planner.local");
   const search = url.searchParams.toString();

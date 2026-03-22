@@ -13,6 +13,8 @@ export type PlannerSearchState = {
   focusLng: string;
   suggestLat: string;
   suggestLng: string;
+  suggestionMarkerLat: string;
+  suggestionMarkerLng: string;
   suggestCategory: "tourism" | "catering";
   stopId: string;
   stayId: string;
@@ -38,6 +40,8 @@ type PlannerSearchOverrides = Partial<{
   focusLng: string | null;
   suggestLat: string | null;
   suggestLng: string | null;
+  suggestionMarkerLat: string | null;
+  suggestionMarkerLng: string | null;
   suggestCategory: "tourism" | "catering" | null;
   stopId: string | null;
   stayId: string | null;
@@ -85,6 +89,10 @@ export function parsePlannerSearchParams(
     focusLng: readValue(source, "focusLng")?.trim() ?? "",
     suggestLat: readValue(source, "suggestLat")?.trim() ?? "",
     suggestLng: readValue(source, "suggestLng")?.trim() ?? "",
+    suggestionMarkerLat:
+      readValue(source, "suggestionMarkerLat")?.trim() ?? "",
+    suggestionMarkerLng:
+      readValue(source, "suggestionMarkerLng")?.trim() ?? "",
     suggestCategory:
       rawSuggestCategory === "catering"
         ? "catering"
@@ -184,6 +192,18 @@ export function buildPlannerHref(
         : overrides.suggestLng === undefined
           ? current.suggestLng
           : overrides.suggestLng,
+    suggestionMarkerLat:
+      overrides.suggestionMarkerLat === null
+        ? ""
+        : overrides.suggestionMarkerLat === undefined
+          ? current.suggestionMarkerLat
+          : overrides.suggestionMarkerLat,
+    suggestionMarkerLng:
+      overrides.suggestionMarkerLng === null
+        ? ""
+        : overrides.suggestionMarkerLng === undefined
+          ? current.suggestionMarkerLng
+          : overrides.suggestionMarkerLng,
     suggestCategory:
       overrides.suggestCategory === null || overrides.suggestCategory === undefined
         ? current.suggestCategory
@@ -250,6 +270,10 @@ export function buildPlannerHref(
   if (next.suggestLat && next.suggestLng) {
     query.set("suggestLat", next.suggestLat);
     query.set("suggestLng", next.suggestLng);
+  }
+  if (next.suggestionMarkerLat && next.suggestionMarkerLng) {
+    query.set("suggestionMarkerLat", next.suggestionMarkerLat);
+    query.set("suggestionMarkerLng", next.suggestionMarkerLng);
   }
   if (next.suggestCategory !== "tourism") {
     query.set("suggestCategory", next.suggestCategory);

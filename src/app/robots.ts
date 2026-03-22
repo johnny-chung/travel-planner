@@ -14,6 +14,7 @@ export default function robots(): MetadataRoute.Robots {
           "/trips",
           "/plans",
           "/profile",
+          "/orders",
           "/expense",
           "/notifications",
           "/upgrade",
