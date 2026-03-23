@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Download, ListChecks } from "lucide-react";
 
 import SignupGateDialog from "@/features/shared/components/SignupGateDialog";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getClientDictionary } from "@/features/i18n/client";
+import { cn } from "@/lib/utils";
 
 type Props = {
   href: string;
@@ -120,9 +121,15 @@ export default function PlannerMyMapsExportButton({
               >
                 {dictionary.planner.cancel}
               </Button>
-              <Button asChild className="min-w-36 rounded-xl whitespace-nowrap">
-                <Link href={href}>{copy.download}</Link>
-              </Button>
+              <Link
+                href={href}
+                className={cn(
+                  buttonVariants({ variant: "default", size: "default" }),
+                  "min-w-36 rounded-xl whitespace-nowrap",
+                )}
+              >
+                {copy.download}
+              </Link>
             </DialogFooter>
           </DialogContent>
         </Dialog>
