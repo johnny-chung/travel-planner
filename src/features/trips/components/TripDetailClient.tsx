@@ -51,7 +51,7 @@ export default function TripDetailClient({
   const dictionary = getClientDictionary(pathname);
   const [membersOpen, setMembersOpen] = useState(false);
   const [documentsOpen, setDocumentsOpen] = useState(false);
-  const [transportOpen, setTransportOpen] = useState(true);
+  const [transportOpen, setTransportOpen] = useState(accessMode !== "guest");
   const [stayOpen, setStayOpen] = useState(true);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showAddDocumentDialog, setShowAddDocumentDialog] = useState(false);

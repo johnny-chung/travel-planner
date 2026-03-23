@@ -32,7 +32,9 @@ function getActionError(error: unknown, fallback: string) {
 function parseReturnTo(formData: FormData, tripId: string) {
   const fallback = `/trips/${tripId}/plan`;
   const returnTo = String(formData.get("returnTo") ?? "");
-  return returnTo.startsWith(fallback) ? returnTo : fallback;
+  const pathname = new URL(returnTo || fallback, "https://planner.local")
+    .pathname;
+  return pathname.endsWith(fallback) ? returnTo : fallback;
 }
 
 function parseStringList(formData: FormData, key: string) {
