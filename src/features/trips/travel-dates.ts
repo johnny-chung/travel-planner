@@ -16,14 +16,21 @@ export function normalizeTravelDates(dates: string[]) {
   );
 }
 
-function collectDateRange(startDate: string, endDate: string) {
+export function expandTravelDateRange(startDate: string, endDate: string) {
+  if (isDateString(startDate) && !isDateString(endDate)) {
+    return [startDate];
+  }
+
   if (!isDateString(startDate) || !isDateString(endDate)) {
     return [];
   }
 
+  const [normalizedStart, normalizedEnd] =
+    startDate <= endDate ? [startDate, endDate] : [endDate, startDate];
+
   const dates: string[] = [];
-  const current = new Date(`${startDate}T00:00:00Z`);
-  const end = new Date(`${endDate}T00:00:00Z`);
+  const current = new Date(`${normalizedStart}T00:00:00Z`);
+  const end = new Date(`${normalizedEnd}T00:00:00Z`);
 
   while (current <= end) {
     dates.push(current.toISOString().slice(0, 10));
@@ -36,11 +43,13 @@ function collectDateRange(startDate: string, endDate: string) {
 export async function syncTripTravelDates(tripId: string) {
   await connectDB();
 
-  const [stops, transports, stays] = (await Promise.all([
+  const [trip, stops, transports, stays] = (await Promise.all([
+    Trip.findById(tripId).select("travelDates").lean(),
     Stop.find({ planId: tripId }).select("status date").lean(),
     TripTransport.find({ tripId }).select("departureDate arrivalDate").lean(),
     TripStay.find({ tripId }).select("checkInDate checkOutDate").lean(),
   ])) as [
+    { travelDates?: string[] } | null,
     Array<{ status?: string; date?: string }>,
     Array<{ departureDate?: string; arrivalDate?: string }>,
     Array<{ checkInDate?: string; checkOutDate?: string }>,
@@ -56,8 +65,9 @@ export async function syncTripTravelDates(tripId: string) {
         transport.arrivalDate,
       ]),
       ...stays.flatMap((stay) =>
-        collectDateRange(stay.checkInDate ?? "", stay.checkOutDate ?? ""),
+        expandTravelDateRange(stay.checkInDate ?? "", stay.checkOutDate ?? ""),
       ),
+      ...(trip?.travelDates ?? []),
     ].filter(isDateString),
   );
 

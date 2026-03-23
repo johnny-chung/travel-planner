@@ -2,12 +2,14 @@
 
 import { ChevronDown } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type Props = {
   value: string;
   onChange: (v: string) => void;
   className?: string;
+  clearLabel?: string;
 };
 
 const HOURS = [
@@ -30,7 +32,12 @@ function buildTime(hour: number | null, minute: number | null) {
     .padStart(2, "0")}`;
 }
 
-export default function TimePicker({ value, onChange, className }: Props) {
+export default function TimePicker({
+  value,
+  onChange,
+  className,
+  clearLabel,
+}: Props) {
   const [rawHour, rawMinute] = value
     ? value.split(":").map((part) => Number(part))
     : [NaN, NaN];
@@ -83,6 +90,18 @@ export default function TimePicker({ value, onChange, className }: Props) {
         </select>
         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       </label>
+
+      {clearLabel ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 shrink-0 rounded-xl px-3"
+          onClick={() => onChange("")}
+          disabled={!value}
+        >
+          {clearLabel}
+        </Button>
+      ) : null}
     </div>
   );
 }

@@ -35,7 +35,7 @@ export function buildTripCapabilities(actor: TripActor): TripCapabilities {
       canUseExpenses: false,
       canCollaborate: false,
       canCalculateRoutes: false,
-      canVisitAgain: false,
+      canVisitAgain: true,
     };
   }
 

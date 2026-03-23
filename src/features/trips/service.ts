@@ -10,6 +10,7 @@ import {
 } from "@/features/trips/access";
 import { connectDB } from "@/lib/mongodb";
 import { normalizeTravelDates } from "@/features/trips/travel-dates";
+import { expandTravelDateRange } from "@/features/trips/travel-dates";
 import { Expense } from "@/lib/models/Expense";
 import { Trip, generateShareCode } from "@/lib/models/Trip";
 import { User } from "@/lib/models/User";
@@ -46,6 +47,8 @@ type CreateTripInput = LocationInput & {
   name: string;
   description?: string;
   transportMode?: TransportMode;
+  travelDateFrom?: string;
+  travelDateTo?: string;
 };
 
 type RawTrip = {
@@ -446,6 +449,12 @@ export async function createTripForUser(userId: string, input: CreateTripInput) 
     resolveLocation(input),
     generateUniqueShareCode(),
   ]);
+  const travelDates = normalizeTravelDates(
+    expandTravelDateRange(
+      input.travelDateFrom?.trim() ?? "",
+      input.travelDateTo?.trim() ?? "",
+    ),
+  );
 
   return Trip.create({
     ownerType: "user",
@@ -453,7 +462,7 @@ export async function createTripForUser(userId: string, input: CreateTripInput) 
     name,
     description,
     shareCode,
-    travelDates: [],
+    travelDates,
     transportMode: input.transportMode ?? "transit",
     ...location,
   });
@@ -495,6 +504,12 @@ export async function createTrialTripForGuest(
     resolveLocation(input),
     generateUniqueShareCode(),
   ]);
+  const travelDates = normalizeTravelDates(
+    expandTravelDateRange(
+      input.travelDateFrom?.trim() ?? "",
+      input.travelDateTo?.trim() ?? "",
+    ),
+  );
 
   return Trip.create({
     ownerType: "guest",
@@ -503,7 +518,7 @@ export async function createTrialTripForGuest(
     name,
     description,
     shareCode,
-    travelDates: [],
+    travelDates,
     transportMode: input.transportMode ?? "transit",
     ...location,
   });

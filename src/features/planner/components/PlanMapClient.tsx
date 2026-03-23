@@ -696,6 +696,7 @@ export default function PlanMapClient({
               <PlannerStopsSidebarMobile
                 pathname={pathname}
                 searchState={searchState}
+                tripDates={tripDates}
                 stops={stops}
                 unscheduledStops={unscheduledStops}
                 stays={stays}
@@ -719,6 +720,7 @@ export default function PlanMapClient({
               <PlannerStopsSidebarDesktopPanel
                 pathname={pathname}
                 searchState={searchState}
+                tripDates={tripDates}
                 stops={stops}
                 unscheduledStops={unscheduledStops}
                 stays={stays}

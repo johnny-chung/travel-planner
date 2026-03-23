@@ -12,6 +12,7 @@ import { createTrialTripAction } from "@/features/guest/actions";
 import SubmitButton from "@/features/shared/components/SubmitButton";
 import LocationSearchInput from "@/features/places/components/LocationSearchInput";
 import { Button } from "@/components/ui/button";
+import DateRangePicker from "@/components/ui/date-range-picker";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +64,8 @@ export default function TripCreateDialog({
   const [locationPlaceId, setLocationPlaceId] = useState("");
   const [locationCountryCode, setLocationCountryCode] = useState("");
   const [locationThumbnail, setLocationThumbnail] = useState("");
+  const [travelDateFrom, setTravelDateFrom] = useState("");
+  const [travelDateTo, setTravelDateTo] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [rentCar, setRentCar] = useState(false);
 
@@ -77,6 +80,8 @@ export default function TripCreateDialog({
     setLocationPlaceId("");
     setLocationCountryCode("");
     setLocationThumbnail("");
+    setTravelDateFrom("");
+    setTravelDateTo("");
     setJoinCode("");
     setRentCar(false);
   }
@@ -196,6 +201,24 @@ export default function TripCreateDialog({
                 <input type="hidden" name="locationPlaceId" value={locationPlaceId} />
                 <input type="hidden" name="locationCountryCode" value={locationCountryCode} />
                 <input type="hidden" name="locationThumbnail" value={locationThumbnail} />
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  {dictionary.expense.dateRange}{" "}
+                  <span className="text-muted-foreground text-xs">
+                    ({dictionary.tripCreate.optional})
+                  </span>
+                </Label>
+                <DateRangePicker
+                  fromValue={travelDateFrom}
+                  toValue={travelDateTo}
+                  fromName="travelDateFrom"
+                  toName="travelDateTo"
+                  onChange={({ from, to }) => {
+                    setTravelDateFrom(from);
+                    setTravelDateTo(to);
+                  }}
+                />
               </div>
               <div className="space-y-2">
                 <Label>

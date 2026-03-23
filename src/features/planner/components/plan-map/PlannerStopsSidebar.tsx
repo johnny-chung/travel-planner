@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 type SharedProps = {
   pathname: string;
   searchState: PlannerSearchState;
+  tripDates?: string[];
   stops: Stop[];
   unscheduledStops: Stop[];
   stays: TripStayItem[];
@@ -58,7 +59,7 @@ type ToggleProps = {
   onToggle: () => void;
 };
 
-function useGroupedStops(stops: Stop[]) {
+function useGroupedStops(stops: Stop[], tripDates: string[] = []) {
   return useMemo(() => {
     const groups = new Map<string, Stop[]>();
     for (const stop of stops) {
@@ -66,8 +67,15 @@ function useGroupedStops(stops: Stop[]) {
       list.push(stop);
       groups.set(stop.date, list);
     }
-    return [...groups.entries()];
-  }, [stops]);
+    for (const date of tripDates) {
+      if (!groups.has(date)) {
+        groups.set(date, []);
+      }
+    }
+    return [...groups.entries()].sort(([left], [right]) =>
+      left.localeCompare(right),
+    );
+  }, [stops, tripDates]);
 }
 
 function formatPlannerDate(date: string, locale: string) {
@@ -106,6 +114,7 @@ function formatPlannerTime(time: string, locale: string) {
 function SidebarContent({
   pathname,
   searchState,
+  tripDates = [],
   stops,
   unscheduledStops,
   stays,
@@ -116,7 +125,14 @@ function SidebarContent({
   onStaySelect,
   onSuggestionSelect,
 }: SharedProps) {
-  const groupedStops = useGroupedStops(stops);
+  const groupedStops = useGroupedStops(
+    stops,
+    tripDates.filter(
+      (date) =>
+        (!searchState.from || date >= searchState.from) &&
+        (!searchState.to || date <= searchState.to),
+    ),
+  );
   const router = useRouter();
   const [isLookingSuggestions, startLookingSuggestions] = useTransition();
   const dictionary = getClientDictionary(pathname);
@@ -190,38 +206,40 @@ function SidebarContent({
                   <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
                 </summary>
                 <div className="mt-2 space-y-0.5">
-                  {dateStops.map((stop) => {
-                    const isActive = searchState.stopId === stop._id;
+                  {dateStops.length === 0 ? null : (
+                    dateStops.map((stop) => {
+                      const isActive = searchState.stopId === stop._id;
 
-                    return (
-                      <button
-                        key={stop._id}
-                        type="button"
-                        onClick={() => onStopSelect?.(stop)}
-                        className={cn(
-                          "flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition-colors",
-                          isActive
-                            ? "bg-primary/10 text-primary"
-                            : "hover:bg-muted text-foreground",
-                        )}
-                      >
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/12 text-[9px] font-bold text-primary">
-                          {stop.order}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] font-medium leading-4">
-                            {stop.name}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {stop.displayTime && stop.time
-                              ? formatPlannerTime(stop.time, locale)
-                              : dictionary.planner.noTime}
-                          </p>
-                        </div>
-                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
-                      </button>
-                    );
-                  })}
+                      return (
+                        <button
+                          key={stop._id}
+                          type="button"
+                          onClick={() => onStopSelect?.(stop)}
+                          className={cn(
+                            "flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition-colors",
+                            isActive
+                              ? "bg-primary/10 text-primary"
+                              : "hover:bg-muted text-foreground",
+                          )}
+                        >
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/12 text-[9px] font-bold text-primary">
+                            {stop.order}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[13px] font-medium leading-4">
+                              {stop.name}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {stop.displayTime && stop.time
+                                ? formatPlannerTime(stop.time, locale)
+                                : dictionary.planner.noTime}
+                            </p>
+                          </div>
+                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </details>
             ))}
@@ -474,6 +492,7 @@ export function PlannerStopsSidebarDesktopToggle({
 export function PlannerStopsSidebarDesktopPanel({
   pathname,
   searchState,
+  tripDates,
   stops,
   unscheduledStops,
   stays,
@@ -498,6 +517,7 @@ export function PlannerStopsSidebarDesktopPanel({
       <SidebarContent
         pathname={pathname}
         searchState={searchState}
+        tripDates={tripDates}
         stops={stops}
         unscheduledStops={unscheduledStops}
         stays={stays}
@@ -515,6 +535,7 @@ export function PlannerStopsSidebarDesktopPanel({
 export function PlannerStopsSidebarMobile({
   pathname,
   searchState,
+  tripDates,
   stops,
   unscheduledStops,
   stays,
@@ -548,6 +569,7 @@ export function PlannerStopsSidebarMobile({
         <SidebarContent
           pathname={pathname}
           searchState={searchState}
+          tripDates={tripDates}
           stops={stops}
           unscheduledStops={unscheduledStops}
           stays={stays}

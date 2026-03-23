@@ -58,6 +58,7 @@ type Props = {
   tripId: string;
   searchState: PlannerSearchState;
   timelineItems: PlannerTimelineItem[];
+  tripDates?: string[];
   unscheduledStops: Stop[];
   travelTimes?: TravelTimeEntry[];
   accessMode?: "user" | "guest";
@@ -386,6 +387,7 @@ export default function StopsList({
   tripId,
   searchState,
   timelineItems,
+  tripDates = [],
   unscheduledStops,
   travelTimes = [],
   accessMode = "user",
@@ -411,6 +413,24 @@ export default function StopsList({
     });
     return groups;
   }, [timelineItems]);
+
+  const visibleTripDates = useMemo(
+    () =>
+      tripDates.filter(
+        (date) =>
+          (!searchState.from || date >= searchState.from) &&
+          (!searchState.to || date <= searchState.to),
+      ),
+    [searchState.from, searchState.to, tripDates],
+  );
+
+  const displayDates = useMemo(
+    () =>
+      [...new Set([...Object.keys(grouped), ...visibleTripDates])].sort(
+        (left, right) => left.localeCompare(right),
+      ),
+    [grouped, visibleTripDates],
+  );
 
   const initialBuckets = useMemo(() => {
     const nextBuckets: BucketsState = {};
@@ -473,8 +493,14 @@ export default function StopsList({
       isBacklog: true,
     }));
 
+    visibleTripDates.forEach((date) => {
+      if (!nextBuckets[date]) {
+        nextBuckets[date] = [];
+      }
+    });
+
     return nextBuckets;
-  }, [grouped, pathname, searchState, travelTimes, unscheduledStops]);
+  }, [grouped, pathname, searchState, travelTimes, unscheduledStops, visibleTripDates]);
 
   const [buckets, setBuckets] = useState(initialBuckets);
 
@@ -482,7 +508,7 @@ export default function StopsList({
     setBuckets(initialBuckets);
   }, [initialBuckets]);
 
-  if (timelineItems.length === 0 && unscheduledStops.length === 0) {
+  if (timelineItems.length === 0 && unscheduledStops.length === 0 && visibleTripDates.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6 text-center">
         <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10">
@@ -576,7 +602,8 @@ export default function StopsList({
         onDragEnd={handleDragEnd}
       >
         <div className="mx-auto max-w-5xl space-y-5">
-          {Object.entries(grouped).map(([date, dayItems]) => {
+          {displayDates.map((date) => {
+            const dayItems = grouped[date] ?? [];
             const formattedDate = (() => {
               try {
                 return format(new Date(`${date}T00:00:00`), "EEE, MMM d, yyyy");
@@ -586,9 +613,6 @@ export default function StopsList({
             })();
 
             const bucketItems = buckets[date] ?? [];
-            const canSortDateBucket =
-              bucketItems.length > 1 ||
-              dayItems.some((item) => item.kind !== "stop");
             let bucketCursor = 0;
             const renderedItems: React.ReactNode[] = [];
 
@@ -601,7 +625,7 @@ export default function StopsList({
                     <SortableStopCard
                       key={bucketItem.id}
                       item={bucketItem}
-                      sortable={canSortDateBucket}
+                      sortable
                       saveForLaterLabel={dictionary.planner.saveForLaterStatus}
                       leaveByLabel={dictionary.planner.leaveBy}
                       dragAriaLabel={dictionary.planner.dragToReorder}
@@ -621,7 +645,7 @@ export default function StopsList({
                     <SortableStopCard
                       key={bucketItem.id}
                       item={bucketItem}
-                      sortable={canSortDateBucket}
+                      sortable
                       saveForLaterLabel={dictionary.planner.saveForLaterStatus}
                       leaveByLabel={dictionary.planner.leaveBy}
                       dragAriaLabel={dictionary.planner.dragToReorder}
@@ -756,7 +780,7 @@ export default function StopsList({
                   <SortableStopCard
                     key={bucketItem.id}
                     item={bucketItem}
-                    sortable={canSortDateBucket}
+                    sortable
                     saveForLaterLabel={dictionary.planner.saveForLaterStatus}
                     leaveByLabel={dictionary.planner.leaveBy}
                     dragAriaLabel={dictionary.planner.dragToReorder}
@@ -778,7 +802,7 @@ export default function StopsList({
                       {formattedDate}
                     </span>
                     <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                      {dayItems.length}
+                      {dayItems.filter((item) => item.kind === "stop").length}
                     </span>
                   </div>
                   <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />

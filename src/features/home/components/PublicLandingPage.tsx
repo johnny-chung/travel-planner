@@ -134,6 +134,11 @@ export default async function PublicLandingPage() {
                 <h1 className="font-brand text-3xl font-semibold leading-[0.93] tracking-[-0.05em] text-[#fff6ec] md:text-[clamp(3.3rem,8vw,7rem)]">
                   {dictionary.landing.heroTitle}
                 </h1>
+                {locale !== "en" && dictionary.landing.heroNameTranslation ? (
+                  <h3 className="font-brand mt-3 text-xl font-medium leading-none tracking-[-0.03em] text-[#e8f1ec] md:text-4xl">
+                    {dictionary.landing.heroNameTranslation}
+                  </h3>
+                ) : null}
                 <h2 className="mt-6 text-xl text-[#9fd3c8] md:text-5xl">
                   {dictionary.landing.heroSubtitle}
                 </h2>

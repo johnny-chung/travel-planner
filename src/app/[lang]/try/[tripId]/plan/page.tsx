@@ -122,6 +122,7 @@ export default async function TrialPlanPage({ params, searchParams }: Props) {
             tripId={tripId}
             searchState={searchState}
             timelineItems={plannerData.timelineItems}
+            tripDates={plannerData.travelDates}
             unscheduledStops={plannerData.unscheduledStops}
             travelTimes={plannerData.travelTimes}
             accessMode="guest"

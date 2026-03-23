@@ -231,7 +231,7 @@ export default function StopDetailModal({
                         highlighted:
                           "bg-emerald-500/15 font-semibold text-emerald-900 dark:text-emerald-100",
                       }}
-                      className="mx-auto"
+                      className="mx-auto p-1.5 [--cell-size:2.5rem]"
                     />
                   </div>
                   <div className="space-y-2 rounded-2xl border border-border bg-background p-3">
@@ -274,7 +274,11 @@ export default function StopDetailModal({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-gray-500">{dictionary.planner.timeOptional}</Label>
-                <TimePicker value={time} onChange={setTime} />
+                <TimePicker
+                  value={time}
+                  onChange={setTime}
+                  clearLabel={dictionary.planner.clearTime}
+                />
                 <p className="text-[11px] text-gray-400">
                   {dictionary.planner.timeOptionalWhenDate}
                 </p>
@@ -752,7 +756,7 @@ export default function StopDetailModal({
                   <Calendar
                     mode="single"
                     selected={visitAgainDate}
-                    defaultMonth={visitAgainDate ?? new Date()}
+                    defaultMonth={visitAgainDate ?? defaultTripMonth}
                     onSelect={(nextDate) => {
                       if (!nextDate) {
                         setNewVisitDate("");
