@@ -131,3 +131,7 @@ export function buildPlannerPdfHref(
   const search = url.searchParams.toString();
   return `${pathname}/pdf${search ? `?${search}` : ""}`;
 }
+
+export function buildPlannerMyMapsExportHref(pathname: string) {
+  return `${pathname}/export/google-my-maps`;
+}

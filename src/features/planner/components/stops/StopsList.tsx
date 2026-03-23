@@ -595,7 +595,7 @@ export default function StopsList({
   }
 
   return (
-    <div className="h-full overflow-y-auto px-4 py-4 pb-24">
+    <div className="h-full overflow-y-auto px-4 py-4 pb-36 md:pb-32">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

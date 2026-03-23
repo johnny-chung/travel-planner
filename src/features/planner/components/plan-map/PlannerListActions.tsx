@@ -1,11 +1,15 @@
 import { buildPlannerHref, type PlannerSearchState } from "@/features/planner/search-params";
 import CalculateTravelTimesDialog from "@/features/planner/components/plan-map/CalculateTravelTimesDialog";
 import PlannerAddStopDialog from "@/features/planner/components/plan-map/PlannerAddStopDialog";
+import PlannerMyMapsExportButton from "@/features/planner/components/plan-map/PlannerMyMapsExportButton";
 import SharePlanButton from "@/features/planner/components/plan-map/SharePlanButton";
 import PlannerPrintButton from "@/features/planner/components/print/PlannerPrintButton";
 import type { TripDoc } from "@/features/planner/components/plan-map/types";
 import type { TripCapabilities } from "@/types/travel";
-import { buildPlannerPdfHref } from "@/features/planner/route-hrefs";
+import {
+  buildPlannerMyMapsExportHref,
+  buildPlannerPdfHref,
+} from "@/features/planner/route-hrefs";
 
 type Props = {
   pathname: string;
@@ -43,13 +47,19 @@ export default function PlannerListActions({
     travelTo: null,
   });
   const printHref = buildPlannerPdfHref(pathname, searchState);
+  const myMapsExportHref = buildPlannerMyMapsExportHref(pathname);
 
   return (
     <>
       <div className="hidden md:flex fixed bottom-6 right-6 z-30 items-center gap-3">
+        <PlannerMyMapsExportButton
+          href={myMapsExportHref}
+          restricted={accessMode === "guest"}
+          triggerClassName="h-10 rounded-full border bg-card px-5 shadow-lg whitespace-nowrap"
+        />
         <PlannerPrintButton
           href={printHref}
-          className="inline-flex h-10 items-center rounded-full border bg-card px-4 shadow-lg"
+          className="inline-flex h-10 min-w-36 items-center rounded-full border bg-card px-5 shadow-lg whitespace-nowrap"
         />
         <SharePlanButton
           title={`${planName} itinerary`}
@@ -78,6 +88,12 @@ export default function PlannerListActions({
       </div>
 
       <div className="md:hidden fixed bottom-20 right-4 z-30 flex items-center gap-2">
+        <PlannerMyMapsExportButton
+          href={myMapsExportHref}
+          restricted={accessMode === "guest"}
+          iconOnly
+          triggerClassName="size-12 rounded-full border bg-card shadow-lg"
+        />
         <PlannerPrintButton
           href={printHref}
           iconOnly
