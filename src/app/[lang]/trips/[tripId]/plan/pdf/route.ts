@@ -6,7 +6,7 @@ import { parsePlannerSearchParams } from "@/features/planner/search-params";
 import { renderPlannerPdf } from "@/features/planner/pdf";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 type Context = {
   params: Promise<{ lang: string; tripId: string }>;

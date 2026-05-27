@@ -7,7 +7,7 @@ import { parsePlannerSearchParams } from "@/features/planner/search-params";
 import { getTripPlannerDataForGuest } from "@/features/planner/service";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 type Context = {
   params: Promise<{ lang: string; tripId: string }>;
