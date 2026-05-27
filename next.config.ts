@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["@sparticuz/chromium", "playwright-core"],
+  outputFileTracingIncludes: {
+    "/[lang]/trips/[tripId]/plan/pdf": [
+      "./node_modules/@sparticuz/chromium/bin/**/*",
+    ],
+    "/[lang]/try/[tripId]/plan/pdf": [
+      "./node_modules/@sparticuz/chromium/bin/**/*",
+    ],
+  },
   images: {
     remotePatterns: [
       {

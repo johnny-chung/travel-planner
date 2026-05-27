@@ -12,6 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import ShareCodeDialog from "@/features/shared/components/ShareCodeDialog";
 import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
 import { localizeHref } from "@/features/i18n/config";
+import { usePlacePhotoUrl } from "@/features/places/usePlacePhotoUrl";
 import type { TripSummary } from "@/types/travel";
 
 type Props = {
@@ -91,6 +92,11 @@ export default function TripCardGrid({
   }
 
   function TripCard({ trip }: { trip: TripSummary }) {
+    const thumbnailUrl = usePlacePhotoUrl(
+      trip.centerPlaceId,
+      trip.centerThumbnail,
+      { maxWidth: 240, maxHeight: 240 },
+    );
     const isPending = trip.role === "pending";
     const canShare =
       canShareCode && trip.role !== "pending" && trip.status !== "archived";
@@ -111,9 +117,9 @@ export default function TripCardGrid({
         }}
       >
         <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
-          {trip.centerThumbnail ? (
+          {thumbnailUrl ? (
             <Image
-              src={trip.centerThumbnail}
+              src={thumbnailUrl}
               alt=""
               fill
               unoptimized

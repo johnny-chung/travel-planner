@@ -91,8 +91,6 @@ export function buildPlannerPrintHref(
   searchState: PlannerSearchState,
 ) {
   const baseHref = buildPlannerBaseHref(pathname, searchState, {
-    view: "list",
-    sidebarTab: "itinerary",
     travelFrom: null,
     travelTo: null,
     focusLat: null,
@@ -114,8 +112,6 @@ export function buildPlannerPdfHref(
   searchState: PlannerSearchState,
 ) {
   const baseHref = buildPlannerBaseHref(pathname, searchState, {
-    view: "list",
-    sidebarTab: "itinerary",
     travelFrom: null,
     travelTo: null,
     focusLat: null,

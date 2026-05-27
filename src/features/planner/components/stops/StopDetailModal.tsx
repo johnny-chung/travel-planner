@@ -43,6 +43,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import TimePicker from "@/components/ui/TimePicker";
 import { getClientDictionary } from "@/features/i18n/client";
+import { usePlacePhotoUrl } from "@/features/places/usePlacePhotoUrl";
 import type { Stop, TripDoc } from "@/features/planner/components/plan-map/types";
 
 type Props = {
@@ -107,6 +108,10 @@ export default function StopDetailModal({
   const [showVisitAgain, setShowVisitAgain] = useState(false);
   const [newVisitDate, setNewVisitDate] = useState("");
   const [newVisitTime, setNewVisitTime] = useState("");
+  const thumbnailUrl = usePlacePhotoUrl(stop.placeId, stop.thumbnail, {
+    maxWidth: 1280,
+    maxHeight: 720,
+  });
 
   function toggleDoc(id: string) {
     setLinkedDocIds((previous) =>
@@ -182,13 +187,14 @@ export default function StopDetailModal({
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-6 pb-2">
-        {stop.thumbnail ? (
+        {thumbnailUrl ? (
           <div className="h-40 overflow-hidden rounded-2xl bg-muted">
             <Image
-              src={stop.thumbnail}
+              src={thumbnailUrl}
               alt={stop.name}
               width={640}
               height={320}
+              unoptimized
               className="h-full w-full object-cover"
             />
           </div>

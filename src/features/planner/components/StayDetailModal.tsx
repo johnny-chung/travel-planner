@@ -12,6 +12,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { getClientDictionary } from "@/features/i18n/client";
+import { usePlacePhotoUrl } from "@/features/places/usePlacePhotoUrl";
 import type { TripStayItem } from "@/types/trip-logistics";
 
 type Props = {
@@ -21,6 +22,10 @@ type Props = {
 export default function StayDetailModal({ stay }: Props) {
   const pathname = usePathname();
   const dictionary = getClientDictionary(pathname);
+  const thumbnailUrl = usePlacePhotoUrl(stay.placeId, stay.thumbnail, {
+    maxWidth: 1280,
+    maxHeight: 720,
+  });
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stay.address)}&query_place_id=${stay.placeId}`;
 
   return (
@@ -43,13 +48,14 @@ export default function StayDetailModal({ stay }: Props) {
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-6 pb-4">
-        {stay.thumbnail ? (
+        {thumbnailUrl ? (
           <div className="h-44 overflow-hidden rounded-xl bg-muted">
             <Image
-              src={stay.thumbnail}
+              src={thumbnailUrl}
               alt={stay.name}
               width={640}
               height={352}
+              unoptimized
               className="h-full w-full object-cover"
             />
           </div>

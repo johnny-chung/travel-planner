@@ -19,6 +19,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { getClientDictionary, getClientLocale } from "@/features/i18n/client";
 import { localizeHref } from "@/features/i18n/config";
 import { cn } from "@/lib/utils";
+import { usePlacePhotoUrl } from "@/features/places/usePlacePhotoUrl";
 import type { TripStayItem, TripTransportItem } from "@/types/trip-logistics";
 import type { TripDetail, TripMember } from "@/types/travel";
 
@@ -71,6 +72,11 @@ export default function TripDetailClient({
     expenseHref ?? localizeHref(locale, `/trips/${trip._id}/expense`);
   const resolvedChecklistHref =
     checklistHref ?? localizeHref(locale, `/trips/${trip._id}/checklist`);
+  const heroPhotoUrl = usePlacePhotoUrl(
+    trip.centerPlaceId,
+    trip.centerThumbnail,
+    { maxWidth: 1600, maxHeight: 900 },
+  );
 
   function openRestrictedFeature() {
     setShowSignupGate(true);
@@ -82,14 +88,14 @@ export default function TripDetailClient({
         className="relative overflow-hidden px-4 pb-8 text-primary-foreground dark:text-white md:pt-6"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
       >
-        {trip.centerThumbnail ? (
+        {heroPhotoUrl ? (
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url("${trip.centerThumbnail}")` }}
+            style={{ backgroundImage: `url("${heroPhotoUrl}")` }}
           />
         ) : null}
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(18,26,23,0.56)_0%,rgba(29,46,40,0.76)_55%,rgba(39,64,56,0.86)_100%)]" />
-        {!trip.centerThumbnail ? (
+        {!heroPhotoUrl ? (
           <div className="absolute inset-0 bg-[linear-gradient(180deg,#1c2421_0%,#2f6e62_100%)]" />
         ) : null}
         <div className="relative max-w-2xl mx-auto">

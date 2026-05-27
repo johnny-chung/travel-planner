@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "global_map_path": "C:/Users/johnn/.codex/notion-map.json",
+  "workspace": {
+    "hub_page_id": "331a8021-19b1-8126-91f2-e83fe4509000",
+    "hub_page_url": "https://www.notion.so/331a802119b1812691f2e83fe4509000",
+    "projects": {
+      "database_id": "9bedcbc3-eb48-448a-892f-d4a2574e2510",
+      "data_source_id": "1b50a340-27b8-488b-8c48-f0deb3de9239"
+    },
+    "plans": {
+      "database_id": "44b36265-b0cd-4fb2-a3d1-3d318e7c8b80",
+      "data_source_id": "08a25887-ab15-4f88-804c-77d10e28c9bb"
+    }
+  },
+  "projects": {
+    "C:/Users/johnn/Desktop/Project/travel-planner": {
+      "repo_name": "travel-planner",
+      "notion_project_url": "https://www.notion.so/331a802119b1817ab31cc3f73ac5b618",
+      "latest_plan_url": "https://www.notion.so/331a802119b18108aeebd05c064fb273"
+    }
+  }
+}
